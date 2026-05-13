@@ -3,55 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상담 예약 시스템</title>
+    <title>학생 상담 예약</title>
     <style>
-        body { font-family: sans-serif; background: #f0fdfa; padding: 20px; margin: 0; }
+        /* (관리자 페이지와 유사한 스타일 생략/동일 적용) */
+        body { font-family: sans-serif; background: #f0fdfa; padding: 15px; margin: 0; }
         .header-wrap { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; color: #0d9488; }
-        .nav-btn { font-size: 18px; border: none; background: white; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; color: #0d9488; font-weight: bold; }
-        
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .day-header { text-align: center; font-size: 14px; font-weight: bold; color: #64748b; margin-bottom: 10px; }
-        .day-cell { height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 10px; border-radius: 12px; font-size: 16px; background: #f8fafc; border: 1px solid transparent; cursor: not-allowed; opacity: 0.5; }
-        .day-cell.available { opacity: 1; cursor: pointer; background: #ccfbf1; color: #0f766e; font-weight: bold; border: 1px solid #14b8a6; transition: 0.2s; }
-        .day-cell.available:hover { background: #99f6e4; transform: scale(1.05); }
-        .badge { font-size: 10px; background: #0d9488; color: white; padding: 2px 6px; border-radius: 10px; margin-top: 5px; }
-
-        /* 팝업 모달창 스타일 */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-close { float: right; cursor: pointer; font-size: 20px; color: #94a3b8; border: none; background: none; }
-        
-        .slot-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 10px; background: white; cursor: pointer; font-size: 16px; }
-        .slot-btn.selected { background: #0d9488; color: white; border-color: #0d9488; font-weight: bold; }
-        
-        input, textarea { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .submit-btn { width: 100%; padding: 15px; background: #0d9488; color: white; border: none; border-radius: 10px; margin-top: 15px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 16px; }
+        .day-cell { height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background: #f8fafc; opacity: 0.3; cursor: not-allowed; }
+        .day-cell.available { opacity: 1; cursor: pointer; background: #ccfbf1; border: 1px solid #14b8a6; color: #0f766e; font-weight: bold; }
+        /* 팝업 모달 스타일은 이전과 동일하게 유지 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 90%; max-width: 350px; padding: 20px; border-radius: 15px; }
+        .slot-btn { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
+        .slot-btn.selected { background: #0d9488; color: white; }
     </style>
 </head>
 <body>
     <div class="header-wrap">
-        <button class="nav-btn" onclick="changeMonth(-1)">◀</button>
+        <button onclick="changeMonth(-1)">◀</button>
         <h2 id="monthTitle"></h2>
-        <button class="nav-btn" onclick="changeMonth(1)">▶</button>
+        <button onclick="changeMonth(1)">▶</button>
     </div>
+    <div class="calendar-grid" id="calendar"></div>
 
-    <div class="calendar-grid" id="calendar">
-        <div class="day-header">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header">토</div>
-    </div>
-
-    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal(event, true)">✖</button>
-            <h3 style="margin-top: 0; color: #0d9488;" id="modalDateTitle">날짜</h3>
-            
-            <p style="margin-bottom: 5px; font-weight: bold; font-size: 14px;">1. 시간대 선택</p>
-            <div id="slotButtons"></div>
-
-            <div id="infoForm" style="display: none;">
-                <input type="text" id="name" placeholder="학번 및 이름 (예: 30101 홍길동)" required>
-                <textarea id="memo" rows="3" placeholder="간단한 상담 내용"></textarea>
-                <button class="submit-btn" onclick="submitBooking()">예약 신청하기</button>
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">날짜 선택</h3>
+            <div id="slotArea"></div>
+            <div id="formArea" style="display:none;">
+                <input type="text" id="name" placeholder="학번 및 이름" style="width:100%; padding:10px; margin-bottom:5px;">
+                <textarea id="memo" placeholder="상담 주제" style="width:100%; padding:10px;"></textarea>
+                <button onclick="submit()" style="width:100%; padding:10px; background:#0d9488; color:white; border:none; margin-top:10px;">신청하기</button>
             </div>
+            <button onclick="closeModal()" style="width:100%; margin-top:5px; border:none; background:none; color:#666;">닫기</button>
         </div>
     </div>
 
@@ -59,11 +43,11 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQkqTTPcl6iEmIALNmQb4B03Vpa12GJ_JvmHxm6RKt9QQcPSemCGbhmPYVRfZtbNCjdQ/exec";
         let activeSlots = [];
         let currentDate = new Date();
-        let selectedDate = "";
-        let selectedSlot = "";
+        let selDate = "", selSlot = "";
 
-        async function init() {
-            const res = await fetch(SCRIPT_URL);
+        async function loadData() {
+            // URL 끝에 무작위 값을 붙여 브라우저 캐시를 무시하고 최신 데이터를 강제 로드
+            const res = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
             activeSlots = await res.json();
             render();
         }
@@ -77,9 +61,8 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
-
             const container = document.getElementById('calendar');
-            Array.from(container.children).forEach((child, i) => { if(i > 6) child.remove(); });
+            container.innerHTML = "";
 
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
@@ -93,71 +76,47 @@
                 cell.innerText = d;
 
                 const daySlots = activeSlots.filter(s => s.date === dateStr);
-                if (daySlots.length > 0) {
+                if(daySlots.length > 0) {
                     cell.classList.add('available');
-                    const badge = document.createElement('span');
-                    badge.className = 'badge';
-                    badge.innerText = "예약가능";
-                    cell.appendChild(badge);
-                    
                     cell.onclick = () => openModal(dateStr, daySlots);
                 }
                 container.appendChild(cell);
             }
         }
 
-        function openModal(dateStr, slots) {
-            selectedDate = dateStr;
-            selectedSlot = "";
-            document.getElementById('modalDateTitle').innerText = `🗓️ ${dateStr}`;
-            document.getElementById('infoForm').style.display = 'none';
-            document.getElementById('name').value = '';
-            document.getElementById('memo').value = '';
-            
-            const btnArea = document.getElementById('slotButtons');
-            btnArea.innerHTML = "";
-            
+        function openModal(date, slots) {
+            selDate = date;
+            document.getElementById('modalTitle').innerText = date;
+            const area = document.getElementById('slotArea');
+            area.innerHTML = "";
             slots.forEach(s => {
-                const btn = document.createElement('button');
-                btn.className = 'slot-btn';
-                btn.innerText = s.slot;
-                btn.onclick = () => {
-                    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    selectedSlot = s.slot;
-                    document.getElementById('infoForm').style.display = 'block';
+                const b = document.createElement('button');
+                b.className = 'slot-btn';
+                b.innerText = s.slot;
+                b.onclick = () => {
+                    selSlot = s.slot;
+                    document.getElementById('formArea').style.display = 'block';
+                    document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
+                    b.classList.add('selected');
                 };
-                btnArea.appendChild(btn);
+                area.appendChild(b);
             });
-            
             document.getElementById('modal').style.display = 'flex';
         }
 
-        function closeModal(e, force = false) {
-            if (force || e.target === document.getElementById('modal')) {
-                document.getElementById('modal').style.display = 'none';
-            }
-        }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
-        async function submitBooking() {
-            if (!document.getElementById('name').value) return alert("이름을 입력하세요!");
-            
-            const btn = document.querySelector('.submit-btn');
-            btn.innerText = "처리 중...";
-            btn.disabled = true;
-
-            const data = {
-                date: selectedDate,
-                slot: selectedSlot,
-                name: document.getElementById('name').value,
-                memo: document.getElementById('memo').value
-            };
-            
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
-            alert("예약이 확정되었습니다!");
+        async function submit() {
+            const name = document.getElementById('name').value;
+            if(!name) return alert("이름을 써주세요!");
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({date: selDate, slot: selSlot, name, memo: document.getElementById('memo').value})
+            });
+            alert("완료!");
             location.reload();
         }
-        init();
+        loadData();
     </script>
 </body>
 </html>
