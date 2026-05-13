@@ -1,0 +1,283 @@
+import os
+
+# Create HTML content for the consultation booking system
+html_content = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>선생님 상담 예약 시스템</title>
+    <style>
+        :root {
+            --primary: #0d9488;
+            --primary-hover: #0f766e;
+            --bg: #f0fdfa;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            ring: 2px solid var(--primary);
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .slot-btn {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .slot-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button.submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗓️ 상담 예약하기</h1>
+        <p class="description">원하는 날짜와 시간대를 선택해 주세요.</p>
+        
+        <form id="bookingForm">
+            <div class="form-group">
+                <label for="date">상담 날짜</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label>상담 시간대</label>
+                <div class="slot-grid">
+                    <div class="slot-btn" onclick="selectSlot('점심시간', this)">점심시간</div>
+                    <div class="slot-btn" onclick="selectSlot('방과후 1차', this)">방과후 1차</div>
+                    <div class="slot-btn" onclick="selectSlot('방과후 2차', this)">방과후 2차</div>
+                    <div class="slot-btn" onclick="selectSlot('방과후 3차', this)">방과후 3차</div>
+                </div>
+                <input type="hidden" id="slot" required>
+            </div>
+
+            <div class="form-group">
+                <label for="name">이름 (학번 포함)</label>
+                <input type="text" id="name" placeholder="예: 30101 홍길동" required>
+            </div>
+
+            <div class="form-group">
+                <label for="memo">상담하고 싶은 내용 (간략히)</label>
+                <textarea id="memo" rows="3" placeholder="예: 진로 고민, 성적 상담 등"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">예약 신청하기</button>
+            <div id="loading" class="loading">신청 중입니다. 잠시만 기다려 주세요...</div>
+        </form>
+    </div>
+
+    <script>
+        // 1. 여기에 선생님의 Google Apps Script 배포 URL을 넣으세요.
+        const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+        let selectedSlotValue = "";
+
+        function selectSlot(value, element) {
+            document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            selectedSlotValue = value;
+            document.getElementById('slot').value = value;
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedSlotValue) {
+                alert("시간대를 선택해 주세요!");
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            const formData = {
+                date: document.getElementById('date').value,
+                slot: selectedSlotValue,
+                name: document.getElementById('name').value,
+                memo: document.getElementById('memo').value
+            };
+
+            try {
+                // Apps Script에 데이터 전송
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Apps Script CORS 이슈 방지
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                alert("예약 신청이 완료되었습니다! 시트에서 확인해 주세요.");
+                document.getElementById('bookingForm').reset();
+                document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('active'));
+                selectedSlotValue = "";
+            } catch (error) {
+                console.error('Error!', error.message);
+                alert("오류가 발생했습니다. 다시 시도해 주세요.");
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+# Create Google Apps Script code content
+gas_content = """
+/**
+ * 구글 시트와 연동되는 백엔드 코드 (Code.gs)
+ * 1. 구글 시트 -> 확장 프로그램 -> Apps Script에 복사하세요.
+ * 2. 'Bookings'라는 이름의 시트 탭이 있어야 합니다.
+ */
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000); // 중복 예약 방지를 위해 10초간 잠금 대기
+  
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Bookings");
+    
+    // 시트가 없으면 생성
+    if (!sheet) {
+      sheet = ss.insertSheet("Bookings");
+      sheet.appendRow(["신청시간", "상담날짜", "시간대", "학생이름", "상담내용"]);
+    }
+
+    var data = JSON.parse(e.postData.contents);
+    
+    // 시트에 데이터 추가
+    sheet.appendRow([
+      new Date(), 
+      data.date, 
+      data.slot, 
+      data.name, 
+      data.memo
+    ]);
+
+    return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
+    
+  } catch (f) {
+    return ContentService.createTextOutput("Error: " + f.message).setMimeType(ContentService.MimeType.TEXT);
+  } finally {
+    lock.releaseLock();
+  }
+}
+"""
+
+# Save instructions and codes to a markdown file
+readme_content = f"""# 학생 상담 예약 시스템 구축 가이드
+
+## 1. 구글 시트 및 백엔드 설정 (Google Apps Script)
+1. 새로운 구글 시트를 만듭니다.
+2. 상단 메뉴에서 **확장 프로그램** > **Apps Script**를 클릭합니다.
+3. 아래의 `Code.gs` 내용을 복사하여 붙여넣습니다.
+4. 상단 **배포** 버튼 > **새 배포**를 클릭합니다.
+5. 유형을 **웹 앱**으로 선택하고, '액세스할 수 있는 사용자'를 **모든 사용자(Anyone)**로 설정한 후 배포합니다.
+6. 제공되는 **웹 앱 URL**을 복사해 두세요.
+
+## 2. 웹사이트 코드 수정 (index.html)
+1. 아래 `index.html` 코드의 하단 자바스크립트 부분에서 `YOUR_APPS_SCRIPT_URL_HERE`를 방금 복사한 URL로 바꿉니다.
+
+## 3. GitHub Pages로 웹사이트 만들기
+1. GitHub 리포지토리를 만들고 `index.html` 파일을 올립니다.
+2. 설정(Settings) > Pages 메뉴에서 배포하면 전용 웹사이트 주소가 생깁니다.
+
+---
+
+### [Code.gs]
