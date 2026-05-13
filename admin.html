@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>상담 날짜 관리자</title>
+    <style>
+        :root { --primary: #0d9488; --selected: #14b8a6; }
+        body { font-family: sans-serif; text-align: center; background: #f8fafc; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); max-width: 400px; margin: 20px auto; gap: 5px; }
+        .day { padding: 15px; background: white; border: 1px solid #ddd; cursor: pointer; border-radius: 8px; }
+        .day.active { background: var(--selected); color: white; border-color: var(--primary); }
+        .header { font-weight: bold; background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <h1>📅 상담 가능일 설정</h1>
+    <p>날짜를 클릭하여 활성화/비활성화 하세요.</p>
+    <div id="calendar" class="calendar"></div>
+
+    <script>
+        const SCRIPT_URL = "선생님의_웹_앱_URL";
+        let activeDates = [];
+
+        async function init() {
+            const res = await fetch(SCRIPT_URL);
+            activeDates = await res.json();
+            renderCalendar();
+        }
+
+        async function toggleDate(dateStr) {
+            await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "toggle", date: dateStr })
+            });
+            location.reload(); // 상태 반영을 위해 새로고침
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendar');
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 1; i <= lastDay; i++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const div = document.createElement('div');
+                div.className = `day ${activeDates.includes(dateStr) ? 'active' : ''}`;
+                div.innerText = i;
+                div.onclick = () => toggleDate(dateStr);
+                container.appendChild(div);
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
