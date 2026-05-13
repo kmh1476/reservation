@@ -9,13 +9,14 @@
   :root {
     --ink: #1a1a2e; --paper: #f5f0e8; --accent: #c0392b; --accent2: #2980b9;
     --muted: #8c7b6e; --border: #d4c9ba; --card: #fffdf8;
-    --lunch: #e8f4fd; --after: #fdf3e8;
-    --lunch-accent: #2980b9; --after-accent: #e67e22; --open: #27ae60; --closed: #e0d8cc;
+    --lunch: #e8f4fd; --after: #fdf3e8; --custom: #f0ede8;
+    --lunch-accent: #2980b9; --after-accent: #e67e22; --custom-accent: #6c4f8e;
+    --open: #27ae60; --closed: #e0d8cc;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; min-height: 100vh; }
 
-  /* 로딩/로그인 */
+  /* 로그인 */
   #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--ink); }
   .login-box { background: var(--card); border: 2px solid var(--border); padding: 48px 40px; width: 360px; text-align: center; }
   .login-box h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.6rem; margin-bottom: 6px; }
@@ -29,7 +30,7 @@
   header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.25rem; }
   .logout-btn { background: none; border: 1px solid #555; color: #ccc; padding: 6px 14px; cursor: pointer; font-size: .8rem; }
 
-  .main-wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: 1fr 380px; gap: 32px; }
+  .main-wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: 1fr 400px; gap: 32px; }
 
   /* 달력 */
   .cal-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
@@ -43,41 +44,70 @@
   .cal-cell.empty { background: #f0ebe3; cursor: default; }
   .cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; }
   .cell-date { font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-  .slot-badge { display: flex; align-items: center; gap: 4px; font-size: .68rem; font-weight: 600; padding: 2px 6px; border-radius: 2px; margin-bottom: 3px; width: fit-content; }
+  .slot-badge { display: flex; align-items: center; gap: 4px; font-size: .68rem; font-weight: 600; padding: 2px 6px; border-radius: 2px; margin-bottom: 3px; width: fit-content; max-width: 100%; overflow: hidden; }
+  .slot-badge span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .slot-badge.lunch-open { background: var(--lunch); color: var(--lunch-accent); }
   .slot-badge.after-open { background: var(--after); color: var(--after-accent); }
+  .slot-badge.custom-open { background: var(--custom); color: var(--custom-accent); }
 
   /* 패널 */
   .panel-card { background: var(--card); border: 1.5px solid var(--border); padding: 24px; margin-bottom: 20px; }
   .panel-card h3 { font-family: 'Nanum Myeongjo', serif; font-size: 1.1rem; margin-bottom: 4px; }
   .panel-sub { font-size: .8rem; color: var(--muted); margin-bottom: 20px; }
   .slot-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .slot-row:last-child { border-bottom: none; }
   .slot-label { font-size: .9rem; font-weight: 600; }
   .slot-label.lunch { color: var(--lunch-accent); }
   .slot-label.after { color: var(--after-accent); }
+  .slot-label.custom { color: var(--custom-accent); }
   .slot-time { font-size: .78rem; color: var(--muted); }
-  
-  /* 토글 스위치 */
-  .toggle { position: relative; width: 48px; height: 26px; }
+
+  /* 토글 */
+  .toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-track { position: absolute; inset: 0; background: var(--closed); border-radius: 13px; cursor: pointer; transition: .25s; }
   .toggle-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: .25s; }
   .toggle input:checked + .toggle-track { background: var(--open); }
   .toggle input:checked + .toggle-track::after { transform: translateX(22px); }
 
+  /* 커스텀 슬롯 추가 폼 */
+  .add-slot-section { margin-top: 16px; padding-top: 16px; border-top: 1.5px dashed var(--border); }
+  .add-slot-label { font-size: .78rem; font-weight: 600; color: var(--custom-accent); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .add-slot-label::before { content: '+'; font-size: 1rem; }
+  .add-slot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .add-slot-grid input { padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .82rem; outline: none; width: 100%; }
+  .add-slot-grid input:focus { border-color: var(--custom-accent); }
+  .add-slot-name { grid-column: 1 / -1; }
+  .add-slot-btn { width: 100%; padding: 9px; background: var(--custom-accent); color: #fff; border: none; cursor: pointer; font-weight: 600; font-size: .82rem; }
+  .add-slot-btn:hover { opacity: .85; }
+
+  /* 커스텀 슬롯 아이템 (토글 포함) */
+  .custom-slot-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .custom-slot-info { flex: 1; min-width: 0; margin-right: 12px; }
+  .custom-slot-name { font-size: .88rem; font-weight: 600; color: var(--custom-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .custom-slot-time { font-size: .75rem; color: var(--muted); }
+  .custom-slot-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .del-slot-btn { background: none; border: 1px solid #ddd; color: #bbb; font-size: .7rem; padding: 2px 7px; cursor: pointer; }
+  .del-slot-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   /* 예약 목록 */
-  .booking-item { padding: 12px 0; border-bottom: 1px solid var(--border); position: relative; }
+  .booking-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .booking-item:last-child { border-bottom: none; }
   .b-type { display: inline-block; padding: 1px 6px; font-size: .65rem; font-weight: 700; border-radius: 1px; margin-right: 5px; }
   .b-type.lunch { background: var(--lunch); color: var(--lunch-accent); }
   .b-type.after { background: var(--after); color: var(--after-accent); }
+  .b-type.custom { background: var(--custom); color: var(--custom-accent); }
   .b-name { font-weight: 600; font-size: .9rem; }
+  .b-slot { font-size: .75rem; color: var(--custom-accent); margin-top: 2px; }
   .b-content { font-size: .8rem; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
   .b-delete { margin-top: 8px; background: none; border: 1px solid #ddd; color: #999; font-size: .72rem; padding: 2px 8px; cursor: pointer; }
   .b-delete:hover { border-color: var(--accent); color: var(--accent); }
 
   .pw-section input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); background: var(--paper); font-size: .88rem; margin-bottom: 8px; outline: none; }
   .pw-section button { width: 100%; padding: 10px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-weight: 600; }
-  
+
+  .no-date-msg { text-align: center; color: #999; padding: 20px 0; font-size: .85rem; }
+
   @media(max-width: 768px) { .main-wrap { grid-template-columns: 1fr; } header { padding: 0 16px; } }
 </style>
 </head>
@@ -118,18 +148,32 @@
     </div>
 
     <div class="side-panel">
+      <!-- 슬롯 설정 -->
       <div class="panel-card">
         <h3 id="slot-title">날짜를 선택하세요</h3>
         <p class="panel-sub">상담 슬롯 개방/폐쇄 설정</p>
-        <div id="slot-rows"></div>
+        <div id="slot-rows"><p class="no-date-msg">날짜를 선택하세요</p></div>
+
+        <!-- 커스텀 슬롯 추가 폼 (선택 후 표시) -->
+        <div class="add-slot-section" id="add-slot-section" style="display:none">
+          <div class="add-slot-label">커스텀 슬롯 추가</div>
+          <div class="add-slot-grid">
+            <input class="add-slot-name" type="text" id="cs-name" placeholder="슬롯 이름 (예: 긴급상담)">
+            <input type="text" id="cs-start" placeholder="시작 (예: 14:00)">
+            <input type="text" id="cs-end" placeholder="종료 (예: 14:30)">
+          </div>
+          <button class="add-slot-btn" onclick="window.addCustomSlot()">+ 슬롯 추가</button>
+        </div>
       </div>
 
+      <!-- 예약 현황 -->
       <div class="panel-card">
         <h3>예약 현황</h3>
         <p class="panel-sub" id="booking-sub">선택한 날짜의 예약 목록</p>
-        <div id="booking-list"><p style="text-align:center;color:#999;padding:20px 0;">날짜를 선택하세요</p></div>
+        <div id="booking-list"><p class="no-date-msg">날짜를 선택하세요</p></div>
       </div>
 
+      <!-- 비밀번호 변경 -->
       <div class="panel-card">
         <h3>비밀번호 변경</h3>
         <div class="pw-section">
@@ -145,177 +189,274 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc } 
+import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDoc, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// 학생 페이지와 동일한 설정 사용
 const firebaseConfig = {
-    apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
-    authDomain: "my-counsel-9b532.firebaseapp.com",
-    projectId: "my-counsel-9b532",
-    storageBucket: "my-counsel-9b532.firebasestorage.app",
-    messagingSenderId: "51705550332",
-    appId: "1:51705550332:web:67766fdeb1214524190e79"
+  apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
+  authDomain: "my-counsel-9b532.firebaseapp.com",
+  projectId: "my-counsel-9b532",
+  storageBucket: "my-counsel-9b532.firebasestorage.app",
+  messagingSenderId: "51705550332",
+  appId: "1:51705550332:web:67766fdeb1214524190e79"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
+const FIXED_TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
 let slotsCache = {}, bookingsCache = {}, adminPw = 'admin1234';
 let curYear, curMonth, selectedDate = null;
 
-// ── 로그인 로직 ──
+// ── 로그인 ──
 window.doLogin = async function() {
-    const val = document.getElementById('pw-input').value;
-    const snap = await getDoc(doc(db, 'settings', 'adminInfo'));
-    if(snap.exists()) adminPw = snap.data().pw;
-    
-    if(val === adminPw) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        initApp();
-    } else {
-        document.getElementById('login-err').textContent = '비밀번호가 틀렸습니다.';
-    }
+  const val = document.getElementById('pw-input').value;
+  const snap = await getDoc(doc(db, 'settings', 'adminInfo'));
+  if (snap.exists()) adminPw = snap.data().pw;
+  if (val === adminPw) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('login-err').textContent = '비밀번호가 틀렸습니다.';
+  }
 };
 
 window.doLogout = () => location.reload();
 
-// ── 앱 초기화 및 실시간 구독 ──
+// ── 앱 초기화 ──
 function initApp() {
-    const now = new Date();
-    curYear = now.getFullYear();
-    curMonth = now.getMonth();
-    document.getElementById('header-date').textContent = now.toLocaleDateString();
+  const now = new Date();
+  curYear = now.getFullYear();
+  curMonth = now.getMonth();
+  document.getElementById('header-date').textContent = now.toLocaleDateString('ko-KR');
 
-    onSnapshot(collection(db, 'slots'), snap => {
-        slotsCache = {};
-        snap.forEach(d => slotsCache[d.id] = d.data());
-        renderCal();
-        if(selectedDate) renderSlotPanel(selectedDate);
-    });
+  onSnapshot(collection(db, 'slots'), snap => {
+    slotsCache = {};
+    snap.forEach(d => slotsCache[d.id] = d.data());
+    renderCal();
+    if (selectedDate) renderSlotPanel(selectedDate);
+  });
 
-    onSnapshot(collection(db, 'bookings'), snap => {
-        bookingsCache = {};
-        snap.forEach(d => {
-            const b = d.data(); b.id = d.id;
-            if(!bookingsCache[b.date]) bookingsCache[b.date] = [];
-            bookingsCache[b.date].push(b);
-        });
-        renderCal();
-        if(selectedDate) renderBookingPanel(selectedDate);
+  onSnapshot(collection(db, 'bookings'), snap => {
+    bookingsCache = {};
+    snap.forEach(d => {
+      const b = d.data(); b.id = d.id;
+      if (!bookingsCache[b.date]) bookingsCache[b.date] = [];
+      bookingsCache[b.date].push(b);
     });
+    renderCal();
+    if (selectedDate) renderBookingPanel(selectedDate);
+  });
 }
 
-// ── 달력 및 패널 렌더링 ──
+// ── 달력 ──
 window.changeMonth = (dir) => {
-    curMonth += dir;
-    if(curMonth > 11) { curMonth = 0; curYear++; }
-    else if(curMonth < 0) { curMonth = 11; curYear--; }
-    renderCal();
+  curMonth += dir;
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  else if (curMonth < 0) { curMonth = 11; curYear--; }
+  renderCal();
 };
 
-function fmtDate(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function fmtDate(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
 
 function renderCal() {
-    document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
-    const grid = document.getElementById('cal-grid');
-    grid.innerHTML = '';
-    const firstDay = new Date(curYear, curMonth, 1).getDay();
-    const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+  document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const lastDate = new Date(curYear, curMonth+1, 0).getDate();
 
-    for(let i=0; i<firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
-    
-    for(let d=1; d<=lastDate; d++) {
-        const key = fmtDate(curYear, curMonth, d);
-        const s = slotsCache[key] || {};
-        const isSel = key === selectedDate;
-        const cell = document.createElement('div');
-        cell.className = `cal-cell ${isSel ? 'selected' : ''}`;
-        cell.onclick = () => selectDate(key);
-        cell.innerHTML = `<div class="cell-date">${d}</div>`;
-        if(s.lunch) cell.innerHTML += `<div class="slot-badge lunch-open">점심</div>`;
-        if(s.after) cell.innerHTML += `<div class="slot-badge after-open">방과후</div>`;
-        grid.appendChild(cell);
-    }
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const key = fmtDate(curYear, curMonth, d);
+    const s = slotsCache[key] || {};
+    const cell = document.createElement('div');
+    cell.className = `cal-cell ${key === selectedDate ? 'selected' : ''}`;
+    cell.onclick = () => selectDate(key);
+    cell.innerHTML = `<div class="cell-date">${d}</div>`;
+    if (s.lunch) cell.innerHTML += `<div class="slot-badge lunch-open"><span>점심</span></div>`;
+    if (s.after)  cell.innerHTML += `<div class="slot-badge after-open"><span>방과후</span></div>`;
+    // 커스텀 슬롯 뱃지
+    const customs = s.custom || [];
+    customs.filter(c => c.open).forEach(c => {
+      cell.innerHTML += `<div class="slot-badge custom-open"><span>${c.name}</span></div>`;
+    });
+    grid.appendChild(cell);
+  }
 }
 
 function selectDate(key) {
-    selectedDate = key;
-    renderCal();
-    renderSlotPanel(key);
-    renderBookingPanel(key);
+  selectedDate = key;
+  renderCal();
+  renderSlotPanel(key);
+  renderBookingPanel(key);
+  document.getElementById('add-slot-section').style.display = 'block';
 }
 
+// ── 슬롯 패널 ──
 function renderSlotPanel(key) {
-    const s = slotsCache[key] || {lunch: false, after: false};
-    const books = bookingsCache[key] || [];
-    document.getElementById('slot-title').textContent = key;
-    const rows = document.getElementById('slot-rows');
-    rows.innerHTML = '';
+  const s = slotsCache[key] || { lunch: false, after: false, custom: [] };
+  const books = bookingsCache[key] || [];
+  document.getElementById('slot-title').textContent = key;
+  const rows = document.getElementById('slot-rows');
+  rows.innerHTML = '';
 
-    ['lunch', 'after'].forEach(type => {
-        const hasBook = books.some(b => b.type === type);
-        const row = document.createElement('div');
-        row.className = 'slot-row';
-        row.innerHTML = `
-            <div>
-                <div class="slot-label ${type}">${type === 'lunch' ? '점심 상담' : '방과후 상담'}</div>
-                <div class="slot-time">${TIMES[type]}</div>
-                ${hasBook ? '<div style="color:orange;font-size:11px">※ 예약 있음 (닫기 불가)</div>' : ''}
-            </div>
-            <label class="toggle">
-                <input type="checkbox" ${s[type] ? 'checked' : ''} ${hasBook ? 'disabled' : ''} 
-                    onchange="window.toggleSlot('${key}', '${type}', this.checked)">
-                <span class="toggle-track"></span>
-            </label>
-        `;
-        rows.appendChild(row);
-    });
+  // 고정 슬롯 (점심 / 방과후)
+  ['lunch', 'after'].forEach(type => {
+    const hasBook = books.some(b => b.type === type);
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+    row.innerHTML = `
+      <div>
+        <div class="slot-label ${type}">${type === 'lunch' ? '점심 상담' : '방과후 상담'}</div>
+        <div class="slot-time">${FIXED_TIMES[type]}</div>
+        ${hasBook ? '<div style="color:orange;font-size:11px">※ 예약 있음 (닫기 불가)</div>' : ''}
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${s[type] ? 'checked' : ''} ${hasBook ? 'disabled' : ''}
+          onchange="window.toggleSlot('${key}', '${type}', this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    `;
+    rows.appendChild(row);
+  });
+
+  // 커스텀 슬롯 목록
+  const customs = s.custom || [];
+  customs.forEach((c, idx) => {
+    const hasBook = books.some(b => b.type === 'custom' && b.customIdx === idx);
+    const row = document.createElement('div');
+    row.className = 'custom-slot-row';
+    row.innerHTML = `
+      <div class="custom-slot-info">
+        <div class="custom-slot-name">✦ ${c.name}</div>
+        <div class="custom-slot-time">${c.start} – ${c.end}</div>
+        ${hasBook ? '<div style="color:orange;font-size:11px">※ 예약 있음</div>' : ''}
+      </div>
+      <div class="custom-slot-actions">
+        ${!hasBook ? `<button class="del-slot-btn" onclick="window.deleteCustomSlot('${key}', ${idx})">삭제</button>` : ''}
+        <label class="toggle">
+          <input type="checkbox" ${c.open ? 'checked' : ''} ${hasBook ? 'disabled' : ''}
+            onchange="window.toggleCustomSlot('${key}', ${idx}, this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    `;
+    rows.appendChild(row);
+  });
 }
 
+// ── 슬롯 토글 (고정) ──
 window.toggleSlot = async (date, type, val) => {
-    const ref = doc(db, 'slots', date);
-    await setDoc(ref, { [type]: val }, { merge: true });
+  await setDoc(doc(db, 'slots', date), { [type]: val }, { merge: true });
 };
 
+// ── 커스텀 슬롯 추가 ──
+window.addCustomSlot = async () => {
+  if (!selectedDate) return;
+  const name  = document.getElementById('cs-name').value.trim();
+  const start = document.getElementById('cs-start').value.trim();
+  const end   = document.getElementById('cs-end').value.trim();
+
+  if (!name) { alert('슬롯 이름을 입력하세요.'); return; }
+  if (!start || !end) { alert('시작/종료 시간을 입력하세요.'); return; }
+
+  const ref = doc(db, 'slots', selectedDate);
+  const snap = await getDoc(ref);
+  const existing = snap.exists() ? (snap.data().custom || []) : [];
+  const newEntry = { name, start, end, open: true };
+  await setDoc(ref, { custom: [...existing, newEntry] }, { merge: true });
+
+  document.getElementById('cs-name').value = '';
+  document.getElementById('cs-start').value = '';
+  document.getElementById('cs-end').value = '';
+};
+
+// ── 커스텀 슬롯 토글 ──
+window.toggleCustomSlot = async (date, idx, val) => {
+  const ref = doc(db, 'slots', date);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const customs = snap.data().custom || [];
+  customs[idx].open = val;
+  await updateDoc(ref, { custom: customs });
+};
+
+// ── 커스텀 슬롯 삭제 ──
+window.deleteCustomSlot = async (date, idx) => {
+  if (!confirm('이 슬롯을 삭제할까요?')) return;
+  const ref = doc(db, 'slots', date);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const customs = snap.data().custom || [];
+  customs.splice(idx, 1);
+  await updateDoc(ref, { custom: customs });
+};
+
+// ── 예약 패널 ──
 function renderBookingPanel(key) {
-    const books = bookingsCache[key] || [];
-    const list = document.getElementById('booking-list');
-    document.getElementById('booking-sub').textContent = `${key} 예약 목록`;
-    list.innerHTML = books.length ? '' : '<p style="text-align:center;color:#999;padding:20px 0;">예약이 없습니다.</p>';
-    
-    books.sort((a,b) => a.type.localeCompare(b.type)).forEach(b => {
-        const item = document.createElement('div');
-        item.className = 'booking-item';
-        item.innerHTML = `
-            <span class="b-type ${b.type}">${b.type === 'lunch' ? '점심' : '방과후'}</span>
-            <span class="b-name">${b.name}</span>
-            <div class="b-content">${b.content}</div>
-            <button class="b-delete" onclick="window.deleteBooking('${b.id}')">삭제</button>
-        `;
-        list.appendChild(item);
-    });
+  const books = bookingsCache[key] || [];
+  const list = document.getElementById('booking-list');
+  document.getElementById('booking-sub').textContent = `${key} 예약 목록`;
+  list.innerHTML = '';
+
+  if (!books.length) {
+    list.innerHTML = '<p class="no-date-msg">예약이 없습니다.</p>';
+    return;
+  }
+
+  const slotData = slotsCache[key] || {};
+  const customs = slotData.custom || [];
+
+  books.sort((a, b) => {
+    const order = { lunch: 0, after: 1, custom: 2 };
+    return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+  }).forEach(b => {
+    const item = document.createElement('div');
+    item.className = 'booking-item';
+
+    let typeBadge = '';
+    let slotName = '';
+    if (b.type === 'lunch') {
+      typeBadge = '<span class="b-type lunch">점심</span>';
+    } else if (b.type === 'after') {
+      typeBadge = '<span class="b-type after">방과후</span>';
+    } else if (b.type === 'custom') {
+      typeBadge = '<span class="b-type custom">커스텀</span>';
+      const cs = customs[b.customIdx];
+      if (cs) slotName = `<div class="b-slot">✦ ${cs.name} (${cs.start}–${cs.end})</div>`;
+    }
+
+    item.innerHTML = `
+      ${typeBadge}<span class="b-name">${b.name}</span>
+      ${slotName}
+      <div class="b-content">${b.content || ''}</div>
+      <button class="b-delete" onclick="window.deleteBooking('${b.id}')">삭제</button>
+    `;
+    list.appendChild(item);
+  });
 }
 
 window.deleteBooking = async (id) => {
-    if(confirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
-        await deleteDoc(doc(db, 'bookings', id));
-    }
+  if (confirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
+    await deleteDoc(doc(db, 'bookings', id));
+  }
 };
 
+// ── 비밀번호 변경 ──
 window.changePw = async () => {
-    const cur = document.getElementById('pw-cur').value;
-    const n = document.getElementById('pw-new').value;
-    const msg = document.getElementById('pw-msg');
-    
-    if(cur !== adminPw) { msg.style.color = 'red'; msg.textContent = '현재 비밀번호가 틀립니다.'; return; }
-    if(n.length < 4) { msg.style.color = 'red'; msg.textContent = '4자 이상 입력하세요.'; return; }
-    
-    await setDoc(doc(db, 'settings', 'adminInfo'), { pw: n });
-    adminPw = n;
-    msg.style.color = 'green'; msg.textContent = '비밀번호가 변경되었습니다.';
+  const cur = document.getElementById('pw-cur').value;
+  const n   = document.getElementById('pw-new').value;
+  const msg = document.getElementById('pw-msg');
+  if (cur !== adminPw) { msg.style.color = 'red'; msg.textContent = '현재 비밀번호가 틀립니다.'; return; }
+  if (n.length < 4)    { msg.style.color = 'red'; msg.textContent = '4자 이상 입력하세요.'; return; }
+  await setDoc(doc(db, 'settings', 'adminInfo'), { pw: n });
+  adminPw = n;
+  msg.style.color = 'green'; msg.textContent = '비밀번호가 변경되었습니다.';
 };
 </script>
 </body>
