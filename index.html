@@ -1,122 +1,512 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학생 상담 예약</title>
-    <style>
-        /* (관리자 페이지와 유사한 스타일 생략/동일 적용) */
-        body { font-family: sans-serif; background: #f0fdfa; padding: 15px; margin: 0; }
-        .header-wrap { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; color: #0d9488; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 16px; }
-        .day-cell { height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; background: #f8fafc; opacity: 0.3; cursor: not-allowed; }
-        .day-cell.available { opacity: 1; cursor: pointer; background: #ccfbf1; border: 1px solid #14b8a6; color: #0f766e; font-weight: bold; }
-        /* 팝업 모달 스타일은 이전과 동일하게 유지 */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 350px; padding: 20px; border-radius: 15px; }
-        .slot-btn { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; }
-        .slot-btn.selected { background: #0d9488; color: white; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상담 신청</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --accent2: #2980b9;
+    --muted: #8c7b6e;
+    --border: #d4c9ba;
+    --card: #fffdf8;
+    --lunch: #e8f4fd;
+    --after: #fdf3e8;
+    --lunch-accent: #2980b9;
+    --after-accent: #e67e22;
+    --open: #27ae60;
+    --booked: #e74c3c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Pretendard', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--ink);
+    padding: 0 40px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.2rem; color: #fff; letter-spacing: .02em;
+  }
+  .check-btn {
+    background: none; border: 1px solid #777; color: #ccc;
+    padding: 7px 16px; cursor: pointer; font-size: .82rem;
+    font-family: 'Pretendard', sans-serif; transition: all .2s;
+  }
+  .check-btn:hover { border-color: #fff; color: #fff; }
+
+  .main-wrap {
+    max-width: 1000px; margin: 0 auto; padding: 40px 24px;
+    display: grid; grid-template-columns: 1fr 360px; gap: 32px;
+  }
+
+  /* ── 달력 ── */
+  .cal-nav {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+  }
+  .cal-nav h2 { font-family:'Nanum Myeongjo',serif; font-size:1.4rem; flex:1; }
+  .nav-btn {
+    background: none; border: 1.5px solid var(--border);
+    width:34px; height:34px; cursor:pointer; font-size:1rem; color:var(--ink);
+    transition: all .2s; display:flex; align-items:center; justify-content:center;
+  }
+  .nav-btn:hover { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  .calendar { border:1.5px solid var(--border); background:var(--card); overflow:hidden; }
+  .cal-head  { display:grid; grid-template-columns:repeat(7,1fr); background:var(--ink); }
+  .cal-head span { text-align:center; padding:10px 0; color:#ccc; font-size:.78rem; font-weight:500; letter-spacing:.06em; }
+  .cal-head span:first-child { color:#e88; }
+  .cal-head span:last-child  { color:#88e; }
+
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+  .cal-cell {
+    border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+    min-height:80px; padding:7px; position:relative; cursor:default;
+  }
+  .cal-cell:nth-child(7n){ border-right:none; }
+  .cal-cell.empty { background:#f0ebe3; }
+  .cal-cell.has-slot { cursor:pointer; }
+  .cal-cell.has-slot:hover { background:#eee8dc; }
+  .cal-cell.selected { background:#e8f0fe; outline:2px solid var(--accent2); outline-offset:-2px; }
+  .cal-cell.today { background:#fef9f0; }
+  .cal-cell.past { opacity:.55; cursor:default; }
+
+  .cell-date { font-size:.75rem; font-weight:600; color:var(--muted); margin-bottom:5px; }
+  .cal-cell.sun .cell-date { color:#c0392b; }
+  .cal-cell.sat .cell-date { color:#2980b9; }
+  .cal-cell.today .cell-date { color:var(--ink); font-weight:800; }
+
+  .slot-dot {
+    display:flex; align-items:center; gap:3px;
+    font-size:.63rem; font-weight:700; padding:2px 5px; border-radius:2px;
+    margin-bottom:2px; letter-spacing:.02em;
+  }
+  .slot-dot.lunch { background:var(--lunch); color:var(--lunch-accent); }
+  .slot-dot.after  { background:var(--after);  color:var(--after-accent); }
+
+  /* ── 오른쪽 패널 ── */
+  .panel-card {
+    background:var(--card); border:1.5px solid var(--border);
+    padding:24px; margin-bottom:20px;
+  }
+  .panel-card h3 { font-family:'Nanum Myeongjo',serif; font-size:1.05rem; margin-bottom:4px; }
+  .panel-sub { font-size:.8rem; color:var(--muted); margin-bottom:18px; }
+
+  /* 슬롯 선택 */
+  .slot-section { margin-bottom:16px; }
+  .slot-section-title {
+    font-size:.8rem; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:8px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .slot-section-title::after {
+    content:''; flex:1; height:1px; background:var(--border);
+  }
+
+  .hour-grid { display:flex; flex-wrap:wrap; gap:6px; }
+  .hour-chip {
+    padding:7px 12px; border:1.5px solid var(--border);
+    background:var(--paper); cursor:pointer; font-size:.83rem;
+    font-family:'Pretendard',sans-serif;
+    transition:all .2s; font-weight:500;
+  }
+  .hour-chip:hover:not(.taken):not(.past-hour){ border-color:var(--accent2); color:var(--accent2); }
+  .hour-chip.selected-chip { background:var(--accent2); border-color:var(--accent2); color:#fff; }
+  .hour-chip.taken { background:#f0ebe3; color:#bbb; border-color:#e0dbd3; cursor:default; text-decoration:line-through; }
+  .hour-chip.past-hour { opacity:.45; cursor:default; }
+
+  /* 신청 폼 */
+  .form-group { margin-bottom:12px; }
+  .form-group label { display:block; font-size:.78rem; font-weight:600; color:var(--muted); margin-bottom:5px; letter-spacing:.03em; }
+  .form-group input, .form-group textarea {
+    width:100%; padding:10px 12px;
+    border:1.5px solid var(--border); background:var(--paper);
+    font-family:'Pretendard',sans-serif; font-size:.9rem; color:var(--ink);
+    outline:none; transition:border-color .2s; resize:none;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color:var(--accent2); }
+
+  .submit-btn {
+    width:100%; padding:12px;
+    background:var(--accent); color:#fff; border:none; cursor:pointer;
+    font-family:'Pretendard',sans-serif; font-size:.92rem; font-weight:700;
+    letter-spacing:.04em; transition:opacity .2s; margin-top:4px;
+  }
+  .submit-btn:hover { opacity:.85; }
+  .submit-btn:disabled { opacity:.4; cursor:default; }
+
+  .form-msg { font-size:.8rem; margin-top:8px; text-align:center; }
+  .form-msg.ok  { color:var(--open); }
+  .form-msg.err { color:var(--accent); }
+
+  /* 상담 확인 모달 */
+  .overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(26,26,46,.65); z-index:100;
+    align-items:center; justify-content:center;
+  }
+  .overlay.show { display:flex; }
+  .modal {
+    background:var(--card); border:1.5px solid var(--border);
+    width:380px; max-width:calc(100vw - 32px);
+    padding:32px 28px; position:relative; animation:fadeUp .25s ease;
+  }
+  @keyframes fadeUp { from{transform:translateY(16px);opacity:0} to{transform:none;opacity:1} }
+  .modal h3 { font-family:'Nanum Myeongjo',serif; font-size:1.1rem; margin-bottom:6px; }
+  .modal .modal-sub { font-size:.8rem; color:var(--muted); margin-bottom:20px; }
+  .modal-close {
+    position:absolute; top:14px; right:16px;
+    background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--muted);
+    line-height:1; transition:color .2s;
+  }
+  .modal-close:hover { color:var(--ink); }
+
+  .check-result {
+    background:var(--paper); border:1.5px solid var(--border);
+    padding:16px; margin-top:14px; display:none;
+  }
+  .check-result.show { display:block; }
+  .result-label { font-size:.75rem; color:var(--muted); margin-bottom:3px; }
+  .result-val { font-size:.95rem; font-weight:600; margin-bottom:10px; }
+  .result-val:last-child { margin-bottom:0; }
+  .result-type { display:inline-block; padding:2px 8px; font-size:.7rem; font-weight:700; border-radius:2px; margin-left:6px; }
+  .result-type.lunch { background:var(--lunch); color:var(--lunch-accent); }
+  .result-type.after { background:var(--after); color:var(--after-accent); }
+
+  .no-slot-msg {
+    text-align:center; padding:28px; color:var(--muted); font-size:.88rem; line-height:1.7;
+  }
+
+  @media(max-width:720px){
+    .main-wrap { grid-template-columns:1fr; }
+    header { padding:0 16px; }
+    .cal-cell { min-height:56px; }
+  }
+</style>
 </head>
 <body>
-    <div class="header-wrap">
-        <button onclick="changeMonth(-1)">◀</button>
-        <h2 id="monthTitle"></h2>
-        <button onclick="changeMonth(1)">▶</button>
-    </div>
-    <div class="calendar-grid" id="calendar"></div>
 
-    <div class="modal-overlay" id="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle">날짜 선택</h3>
-            <div id="slotArea"></div>
-            <div id="formArea" style="display:none;">
-                <input type="text" id="name" placeholder="학번 및 이름" style="width:100%; padding:10px; margin-bottom:5px;">
-                <textarea id="memo" placeholder="상담 주제" style="width:100%; padding:10px;"></textarea>
-                <button onclick="submit()" style="width:100%; padding:10px; background:#0d9488; color:white; border:none; margin-top:10px;">신청하기</button>
-            </div>
-            <button onclick="closeModal()" style="width:100%; margin-top:5px; border:none; background:none; color:#666;">닫기</button>
+<header>
+  <h1>📅 학생 상담 신청</h1>
+  <button class="check-btn" onclick="openCheckModal()">📋 상담 확인</button>
+</header>
+
+<div class="main-wrap">
+  <!-- 달력 -->
+  <div>
+    <div class="cal-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+      <h2 id="cal-title"></h2>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
+    </div>
+    <div class="calendar">
+      <div class="cal-head">
+        <span>일</span><span>월</span><span>화</span><span>수</span>
+        <span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);margin-top:12px;line-height:1.7;">
+      🔵 <b>점심</b> · 🟠 <b>방과후</b> 표시된 날만 상담 신청이 가능합니다.<br>
+      날짜를 클릭해 오른쪽에서 시간을 선택하고 신청해주세요.
+    </p>
+  </div>
+
+  <!-- 신청 폼 -->
+  <div id="right-panel">
+    <div class="panel-card" id="no-select-card">
+      <div class="no-slot-msg">
+        📌 달력에서 상담이 열린 날짜를<br>클릭하면 신청할 수 있습니다.
+      </div>
+    </div>
+    <div class="panel-card" id="form-card" style="display:none">
+      <h3 id="form-date-title"></h3>
+      <p class="panel-sub">시간을 선택하고 아래 정보를 입력해주세요.</p>
+
+      <div id="slot-area"></div>
+
+      <div id="form-area" style="display:none; margin-top:16px;">
+        <div class="form-group">
+          <label>이름</label>
+          <input type="text" id="f-name" placeholder="이름을 입력하세요">
         </div>
+        <div class="form-group">
+          <label>상담 내용</label>
+          <textarea id="f-content" rows="3" placeholder="상담하고 싶은 내용을 간단히 적어주세요."></textarea>
+        </div>
+        <div class="form-group">
+          <label>비밀번호 <span style="font-weight:300;font-size:.72rem">(예약 확인·취소 시 사용)</span></label>
+          <input type="password" id="f-pw" placeholder="숫자 또는 문자 4자 이상">
+        </div>
+        <button class="submit-btn" onclick="submitBooking()">상담 신청하기</button>
+        <div class="form-msg" id="form-msg"></div>
+      </div>
     </div>
+  </div>
+</div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1PGyMAfi4ijJ9qZFGhBtJimTGWwRm0qtOuMv6sGsaQTazeGaNQE7clMNcI0VDlAJyOg/exec";
-        let activeSlots = [];
-        let currentDate = new Date();
-        let selDate = "", selSlot = "";
+<!-- 상담 확인 모달 -->
+<div class="overlay" id="check-overlay" onclick="closeCheckModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCheckModalDirect()">✕</button>
+    <h3>상담 확인</h3>
+    <p class="modal-sub">이름과 비밀번호를 입력하면 신청된 상담 일정을 알려드립니다.</p>
+    <div class="form-group">
+      <label>이름</label>
+      <input type="text" id="check-name" placeholder="이름">
+    </div>
+    <div class="form-group">
+      <label>비밀번호</label>
+      <input type="password" id="check-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doCheck()">
+    </div>
+    <button class="submit-btn" onclick="doCheck()">확인하기</button>
+    <div class="check-result" id="check-result"></div>
+  </div>
+</div>
 
-        async function loadData() {
-            // URL 끝에 무작위 값을 붙여 브라우저 캐시를 무시하고 최신 데이터를 강제 로드
-            const res = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
-            activeSlots = await res.json();
-            render();
-        }
+<script>
+const STORAGE_SLOTS = 'counsel_slots';
+const STORAGE_BOOKS = 'counsel_bookings';
 
-        function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            render();
-        }
+function getSlots(){ return JSON.parse(localStorage.getItem(STORAGE_SLOTS)||'{}'); }
+function getBookings(){ return JSON.parse(localStorage.getItem(STORAGE_BOOKS)||'[]'); }
+function saveBookings(b){ localStorage.setItem(STORAGE_BOOKS, JSON.stringify(b)); }
 
-        function render() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
-            const container = document.getElementById('calendar');
-            container.innerHTML = "";
+// 슬롯 시간 정의
+const SLOT_DEF = {
+  lunch: { label:'점심 상담', hours:[12,13], display:{ 12:'12시', 13:'13시' } },
+  after: { label:'방과후 상담', hours:[16,17,18], display:{ 16:'16시', 17:'17시', 18:'18시' } }
+};
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+let curYear, curMonth, selDate=null, selType=null, selHour=null;
 
-            for(let i=0; i<firstDay; i++) container.appendChild(document.createElement('div'));
+const now = new Date();
+curYear = now.getFullYear();
+curMonth = now.getMonth();
 
-            for(let d=1; d<=lastDate; d++) {
-                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                cell.innerText = d;
+renderCal();
 
-                const daySlots = activeSlots.filter(s => s.date === dateStr);
-                if(daySlots.length > 0) {
-                    cell.classList.add('available');
-                    cell.onclick = () => openModal(dateStr, daySlots);
-                }
-                container.appendChild(cell);
-            }
-        }
+function todayStr(){ return fmtDate(now.getFullYear(), now.getMonth(), now.getDate()); }
+function fmtDate(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
 
-        function openModal(date, slots) {
-            selDate = date;
-            document.getElementById('modalTitle').innerText = date;
-            const area = document.getElementById('slotArea');
-            area.innerHTML = "";
-            slots.forEach(s => {
-                const b = document.createElement('button');
-                b.className = 'slot-btn';
-                b.innerText = s.slot;
-                b.onclick = () => {
-                    selSlot = s.slot;
-                    document.getElementById('formArea').style.display = 'block';
-                    document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
-                    b.classList.add('selected');
-                };
-                area.appendChild(b);
-            });
-            document.getElementById('modal').style.display = 'flex';
-        }
+function changeMonth(d){
+  curMonth += d;
+  if(curMonth>11){ curMonth=0; curYear++; }
+  if(curMonth<0) { curMonth=11; curYear--; }
+  renderCal();
+}
 
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function renderCal(){
+  document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
+  const slots = getSlots();
+  const today = todayStr();
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
 
-        async function submit() {
-            const name = document.getElementById('name').value;
-            if(!name) return alert("이름을 써주세요!");
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({date: selDate, slot: selSlot, name, memo: document.getElementById('memo').value})
-            });
-            alert("완료!");
-            location.reload();
-        }
-        loadData();
-    </script>
+  for(let i=0;i<firstDay;i++){
+    const e=document.createElement('div'); e.className='cal-cell empty'; grid.appendChild(e);
+  }
+  for(let d=1;d<=lastDate;d++){
+    const key=fmtDate(curYear,curMonth,d);
+    const dow=new Date(curYear,curMonth,d).getDay();
+    const s=slots[key]||{};
+    const hasSlot=s.lunch||s.after;
+    const isPast = key < today;
+    const cell=document.createElement('div');
+    cell.className='cal-cell'
+      +(dow===0?' sun':dow===6?' sat':'')
+      +(key===today?' today':'')
+      +(key===selDate?' selected':'')
+      +(isPast?' past':'')
+      +(hasSlot&&!isPast?' has-slot':'');
+    if(hasSlot&&!isPast) cell.onclick=()=>selectDate(key,s);
+
+    const dateEl=document.createElement('div');
+    dateEl.className='cell-date'; dateEl.textContent=d; cell.appendChild(dateEl);
+    if(s.lunch){const b=document.createElement('div');b.className='slot-dot lunch';b.textContent='점심';cell.appendChild(b);}
+    if(s.after){const b=document.createElement('div');b.className='slot-dot after';b.textContent='방과후';cell.appendChild(b);}
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(key, slotInfo){
+  selDate=key; selType=null; selHour=null;
+  renderCal();
+  showFormPanel(key, slotInfo);
+}
+
+function showFormPanel(key, slotInfo){
+  const [y,m,d]=key.split('-');
+  const dow=['일','월','화','수','목','금','토'][new Date(+y,+m-1,+d).getDay()];
+  document.getElementById('no-select-card').style.display='none';
+  const fc=document.getElementById('form-card'); fc.style.display='block';
+  document.getElementById('form-date-title').textContent=`${+y}년 ${+m}월 ${+d}일 (${dow})`;
+
+  const books=getBookings().filter(b=>b.date===key);
+  const slotArea=document.getElementById('slot-area');
+  slotArea.innerHTML='';
+
+  ['lunch','after'].forEach(type=>{
+    if(!slotInfo[type]) return;
+    const def=SLOT_DEF[type];
+    const sec=document.createElement('div'); sec.className='slot-section';
+    const title=document.createElement('div');
+    title.className='slot-section-title';
+    title.innerHTML=`<span style="color:var(--${type}-accent)">${def.label}</span>`;
+    sec.appendChild(title);
+
+    const hgrid=document.createElement('div'); hgrid.className='hour-grid';
+    def.hours.forEach(h=>{
+      const taken=books.some(b=>b.type===type&&b.hour===h);
+      const isPastHour=isPastTime(key,h);
+      const chip=document.createElement('div');
+      chip.className='hour-chip'+(taken?' taken':isPastHour?' past-hour':'');
+      chip.textContent=def.display[h];
+      chip.dataset.type=type; chip.dataset.hour=h;
+      if(!taken&&!isPastHour){
+        chip.onclick=()=>selectSlot(type,h,chip);
+      }
+      hgrid.appendChild(chip);
+    });
+    sec.appendChild(hgrid);
+    slotArea.appendChild(sec);
+  });
+
+  document.getElementById('form-area').style.display='none';
+  clearForm();
+}
+
+function isPastTime(dateKey, hour){
+  const now=new Date();
+  const d=new Date(dateKey+'T'+String(hour).padStart(2,'0')+':00:00');
+  return d <= now;
+}
+
+function selectSlot(type, hour, chipEl){
+  selType=type; selHour=hour;
+  document.querySelectorAll('.hour-chip').forEach(c=>c.classList.remove('selected-chip'));
+  chipEl.classList.add('selected-chip');
+  document.getElementById('form-area').style.display='block';
+  document.getElementById('form-msg').textContent='';
+  document.getElementById('form-msg').className='form-msg';
+}
+
+function clearForm(){
+  ['f-name','f-content','f-pw'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('form-msg').textContent='';
+}
+
+function submitBooking(){
+  const name=document.getElementById('f-name').value.trim();
+  const content=document.getElementById('f-content').value.trim();
+  const pw=document.getElementById('f-pw').value;
+  const msg=document.getElementById('form-msg');
+
+  if(!selType||!selHour){ showMsg(msg,'시간을 선택해주세요.','err'); return; }
+  if(!name){ showMsg(msg,'이름을 입력해주세요.','err'); return; }
+  if(!content){ showMsg(msg,'상담 내용을 입력해주세요.','err'); return; }
+  if(pw.length<4){ showMsg(msg,'비밀번호는 4자 이상이어야 합니다.','err'); return; }
+
+  const books=getBookings();
+  if(books.some(b=>b.date===selDate&&b.type===selType&&b.hour===selHour)){
+    showMsg(msg,'이미 예약된 시간입니다. 다른 시간을 선택해주세요.','err'); return;
+  }
+
+  const entry={
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    date:selDate, type:selType, hour:selHour,
+    name, content,
+    pw: simpleHash(pw)
+  };
+  books.push(entry);
+  saveBookings(books);
+  showMsg(msg,'✅ 상담이 신청되었습니다!','ok');
+
+  // 리프레시
+  const slots=getSlots();
+  setTimeout(()=>{
+    renderCal();
+    showFormPanel(selDate, slots[selDate]||{});
+    selType=null; selHour=null;
+  }, 1500);
+}
+
+function simpleHash(str){
+  // 간단한 해시 (보안보다 식별 목적)
+  let h=0;
+  for(let i=0;i<str.length;i++) h=(Math.imul(31,h)+str.charCodeAt(i))|0;
+  return h.toString(36);
+}
+
+function showMsg(el, text, cls){
+  el.textContent=text; el.className='form-msg '+cls;
+}
+
+// ── 상담 확인 모달 ────────────────────────────────────
+function openCheckModal(){
+  document.getElementById('check-overlay').classList.add('show');
+  document.getElementById('check-name').value='';
+  document.getElementById('check-pw').value='';
+  document.getElementById('check-result').innerHTML='';
+  document.getElementById('check-result').classList.remove('show');
+}
+function closeCheckModal(e){ if(e.target===document.getElementById('check-overlay')) closeCheckModalDirect(); }
+function closeCheckModalDirect(){ document.getElementById('check-overlay').classList.remove('show'); }
+
+function doCheck(){
+  const name=document.getElementById('check-name').value.trim();
+  const pw=document.getElementById('check-pw').value;
+  const res=document.getElementById('check-result');
+
+  if(!name||!pw){ res.innerHTML='<p style="color:var(--accent);font-size:.83rem">이름과 비밀번호를 모두 입력해주세요.</p>'; res.classList.add('show'); return; }
+
+  const hashed=simpleHash(pw);
+  const books=getBookings().filter(b=>b.name===name&&b.pw===hashed);
+
+  if(!books.length){
+    res.innerHTML='<p style="color:var(--accent);font-size:.83rem">일치하는 상담 예약이 없습니다.<br>이름 또는 비밀번호를 확인해주세요.</p>';
+    res.classList.add('show'); return;
+  }
+
+  // 날짜 정렬
+  books.sort((a,b)=>a.date.localeCompare(b.date)||a.hour-b.hour);
+  const items=books.map(b=>{
+    const [y,m,d]=b.date.split('-');
+    const dow=['일','월','화','수','목','금','토'][new Date(+y,+m-1,+d).getDay()];
+    const typeLabel=b.type==='lunch'?'점심 상담':'방과후 상담';
+    return `
+      <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+        <div class="result-label">날짜</div>
+        <div class="result-val">${+y}년 ${+m}월 ${+d}일 (${dow}) <span class="result-type ${b.type}">${typeLabel}</span></div>
+        <div class="result-label">시간</div>
+        <div class="result-val">${b.hour}시</div>
+      </div>
+    `;
+  }).join('');
+
+  res.innerHTML=`<p style="font-size:.8rem;color:var(--muted);margin-bottom:8px"><b>${escHtml(name)}</b>님의 상담 예약 (${books.length}건)</p>${items}`;
+  res.classList.add('show');
+}
+
+function escHtml(str){ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
 </body>
 </html>
