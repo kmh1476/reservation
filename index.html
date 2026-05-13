@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상담 예약 시스템 | 학생용</title>
+    <style>
+        :root {
+            --primary: #0d9488;
+            --primary-light: #f0fdfa;
+            --secondary: #14b8a6;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--primary-light);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 480px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        h1 { font-size: 1.5rem; color: var(--primary); text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 0.9rem; margin-bottom: 25px; }
+
+        .section-title { font-weight: 700; font-size: 1rem; margin: 20px 0 10px; display: block; }
+
+        /* 날짜 및 시간 슬롯 버튼 스타일 */
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .btn {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .btn:hover { border-color: var(--primary); background: var(--primary-light); }
+        .btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* 입력 필드 스타일 */
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        #loading { text-align: center; color: var(--primary); font-weight: bold; padding: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🗓️ 상담 예약하기</h1>
+    <p class="subtitle">선생님과 상담하고 싶은 날짜를 선택하세요.</p>
+
+    <div id="loading">날짜를 불러오는 중입니다...</div>
+
+    <form id="bookingForm" style="display: none;">
+        <span class="section-title">1. 상담 날짜 선택</span>
+        <div id="dateGrid" class="grid"></div>
+
+        <div id="slotSection" style="display: none;">
+            <span class="section-title">2. 시간대 선택</span>
+            <div class="grid">
+                <div class="btn slot-btn" onclick="selectSlot('점심시간', this)">점심시간</div>
+                <div class="btn slot-btn" onclick="selectSlot('방과 후', this)">방과 후</div>
+            </div>
+        </div>
+
+        <div id="infoSection" style="display: none;">
+            <span class="section-title">3. 학생 정보 입력</span>
+            <input type="text" id="studentName" placeholder="학번과 이름 (예: 30101 홍길동)" required>
+            
+            <span class="section-title">4. 상담 내용 (간략히)</span>
+            <textarea id="memo" rows="3" placeholder="예: 물리 성적 고민, 진로 상담 등" required></textarea>
+            
+            <button type="submit" id="submitBtn" class="submit-btn">예약 신청 완료</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // [중요] 선생님의 구글 앱스 스크립트 웹 앱 URL을 여기에 붙여넣으세요!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjXHkOnIv8zptV6cT234uXbjocTATqbTEWOB9loEIzsQ9kpTT9cpwuhBHNlSk2tW3aRw/exec";
+
+    let selectedDate = "";
+    let selectedSlot = "";
+
+    // 페이지 로드 시 활성화된 날짜 가져오기
+    window.onload = async () => {
+        try {
+            const res = await fetch(SCRIPT_URL);
+            const activeDates = await res.json();
+            const dateGrid = document.getElementById('dateGrid');
+            
+            if (activeDates.length === 0) {
+                document.getElementById('loading').innerText = "현재 예약 가능한 날짜가 없습니다.";
+                return;
+            }
+
+            activeDates.forEach(date => {
+                const btn = document.createElement('div');
+                btn.className = 'btn';
+                btn.innerText = date;
+                btn.onclick = () => selectDate(date, btn);
+                dateGrid.appendChild(btn);
+            });
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('bookingForm').style.display = 'block';
+        } catch (e) {
+            document.getElementById('loading').innerText = "데이터를 불러오는 데 실패했습니다.";
+        }
+    };
+
+    function selectDate(date, el) {
+        document.querySelectorAll('#dateGrid .btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        selectedDate = date;
+        document.getElementById('slotSection').style.display = 'block';
+    }
+
+    function selectSlot(slot, el) {
+        document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        selectedSlot = slot;
+        document.getElementById('infoSection').style.display = 'block';
+    }
+
+    // 폼 제출 로직
+    document.getElementById('bookingForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "신청 중...";
+
+        const payload = {
+            date: selectedDate,
+            slot: selectedSlot,
+            name: document.getElementById('studentName').value,
+            memo: document.getElementById('memo').value
+        };
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            alert("✅ 예약이 성공적으로 접수되었습니다!");
+            location.reload(); // 새로고침하여 초기화
+        } catch (error) {
+            alert("❌ 오류가 발생했습니다. 다시 시도해 주세요.");
+            btn.disabled = false;
+            btn.innerText = "예약 신청 완료";
+        }
+    };
+</script>
+
+</body>
+</html>
