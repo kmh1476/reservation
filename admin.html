@@ -1,98 +1,618 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>상담 관리자 모드</title>
-    <style>
-        body { font-family: sans-serif; background: #f8fafc; padding: 20px; }
-        .header-wrap { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 20px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .day-header { padding: 10px; text-align: center; background: #f1f5f9; font-weight: bold; }
-        .day-cell { height: 100px; border: 0.5px solid #e2e8f0; padding: 5px; }
-        .slot-btn { width: 100%; padding: 5px; margin-top: 3px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: white; }
-        /* 활성화 색상 명확하게 */
-        .active-lunch { background: #14b8a6 !important; color: white !important; border-color: #0d9488 !important; }
-        .active-after { background: #3b82f6 !important; color: white !important; border-color: #2563eb !important; }
-        #loadingMsg { text-align: center; color: #666; margin-bottom: 10px; font-weight: bold; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상담 관리자 페이지</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --accent2: #2980b9;
+    --muted: #8c7b6e;
+    --border: #d4c9ba;
+    --card: #fffdf8;
+    --lunch: #e8f4fd;
+    --after: #fdf3e8;
+    --lunch-accent: #2980b9;
+    --after-accent: #e67e22;
+    --open: #27ae60;
+    --closed: #e0d8cc;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Pretendard', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── 로그인 ── */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: var(--ink);
+  }
+  .login-box {
+    background: var(--card);
+    border: 2px solid var(--border);
+    padding: 48px 40px;
+    width: 360px;
+    text-align: center;
+  }
+  .login-box h1 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .login-box p { color: var(--muted); font-size: .85rem; margin-bottom: 32px; }
+  .login-box input {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    background: var(--paper);
+    font-family: 'Pretendard', sans-serif;
+    font-size: .95rem;
+    color: var(--ink);
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .login-box input:focus { border-color: var(--accent); }
+  .login-box button {
+    width: 100%; padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none; cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    font-size: .95rem; font-weight: 600;
+    letter-spacing: .05em;
+    transition: opacity .2s;
+  }
+  .login-box button:hover { opacity: .85; }
+  .login-err { color: var(--accent); font-size: .82rem; margin-top: 8px; }
+
+  /* ── 메인 레이아웃 ── */
+  #app { display: none; }
+
+  header {
+    background: var(--ink);
+    color: #fff;
+    padding: 0 40px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.25rem; letter-spacing: .02em; }
+  header .meta { font-size: .8rem; color: #aaa; }
+  .logout-btn {
+    background: none; border: 1px solid #555; color: #ccc;
+    padding: 6px 14px; cursor: pointer; font-size: .8rem;
+    font-family: 'Pretendard', sans-serif;
+    transition: all .2s;
+  }
+  .logout-btn:hover { border-color: #fff; color: #fff; }
+
+  .main-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 32px;
+  }
+
+  /* ── 달력 ── */
+  .cal-section {}
+  .cal-nav {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px;
+  }
+  .cal-nav h2 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.5rem; flex: 1;
+  }
+  .nav-btn {
+    background: none; border: 1.5px solid var(--border);
+    width: 36px; height: 36px; cursor: pointer;
+    font-size: 1rem; color: var(--ink);
+    transition: all .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .calendar {
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    overflow: hidden;
+  }
+  .cal-head {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    background: var(--ink);
+  }
+  .cal-head span {
+    text-align: center; padding: 10px 0;
+    color: #ccc; font-size: .78rem; font-weight: 500; letter-spacing: .06em;
+  }
+  .cal-head span:first-child { color: #e88; }
+  .cal-head span:last-child  { color: #88e; }
+
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+  }
+  .cal-cell {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-height: 90px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+  }
+  .cal-cell:nth-child(7n) { border-right: none; }
+  .cal-cell.empty { background: #f0ebe3; cursor: default; }
+  .cal-cell:not(.empty):hover { background: #eee8dc; }
+  .cal-cell.today { background: #fef9f0; }
+  .cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; }
+
+  .cell-date {
+    font-size: .78rem; font-weight: 600; margin-bottom: 6px;
+    color: var(--muted);
+  }
+  .cal-cell.sun .cell-date { color: #c0392b; }
+  .cal-cell.sat .cell-date { color: #2980b9; }
+  .cal-cell.today .cell-date { color: var(--ink); font-weight: 800; }
+
+  .slot-badge {
+    display: flex; align-items: center; gap: 4px;
+    font-size: .68rem; font-weight: 600;
+    padding: 2px 6px; border-radius: 2px;
+    margin-bottom: 3px; width: fit-content;
+    letter-spacing: .03em;
+  }
+  .slot-badge.lunch-open  { background: var(--lunch); color: var(--lunch-accent); }
+  .slot-badge.after-open  { background: var(--after);  color: var(--after-accent); }
+  .slot-badge.closed-badge { background: var(--closed); color: #999; }
+
+  /* ── 사이드 패널 ── */
+  .side-panel {}
+  .panel-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .panel-card h3 {
+    font-family: 'Nanum Myeongjo', serif;
+    font-size: 1.1rem; margin-bottom: 4px;
+  }
+  .panel-card .panel-sub { font-size: .8rem; color: var(--muted); margin-bottom: 20px; }
+
+  .slot-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .slot-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .slot-info {}
+  .slot-label {
+    font-size: .9rem; font-weight: 600; margin-bottom: 2px;
+  }
+  .slot-label.lunch { color: var(--lunch-accent); }
+  .slot-label.after { color: var(--after-accent); }
+  .slot-time { font-size: .78rem; color: var(--muted); }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle-label { font-size: .78rem; color: var(--muted); }
+
+  /* toggle */
+  .toggle { position: relative; width: 48px; height: 26px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--closed); border-radius: 13px;
+    cursor: pointer; transition: background .25s;
+  }
+  .toggle-track::after {
+    content: '';
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; transition: transform .25s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle input:checked + .toggle-track { background: var(--open); }
+  .toggle input:checked + .toggle-track::after { transform: translateX(22px); }
+
+  /* 예약 목록 */
+  .booking-list { max-height: 320px; overflow-y: auto; }
+  .booking-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .booking-item:last-child { border-bottom: none; }
+  .booking-item .b-time {
+    font-size: .72rem; color: var(--muted); margin-bottom: 3px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .b-type {
+    display: inline-block; padding: 1px 6px; border-radius: 1px;
+    font-size: .65rem; font-weight: 700; letter-spacing: .04em;
+  }
+  .b-type.lunch { background: var(--lunch); color: var(--lunch-accent); }
+  .b-type.after { background: var(--after); color: var(--after-accent); }
+  .booking-item .b-name { font-weight: 600; font-size: .9rem; margin-bottom: 2px; }
+  .booking-item .b-content { font-size: .8rem; color: var(--muted); line-height: 1.4; }
+  .booking-item .b-delete {
+    margin-top: 6px; background: none; border: 1px solid #ddd;
+    color: #999; font-size: .72rem; padding: 2px 8px; cursor: pointer;
+    font-family: 'Pretendard', sans-serif;
+    transition: all .2s;
+  }
+  .booking-item .b-delete:hover { border-color: var(--accent); color: var(--accent); }
+
+  .empty-msg { text-align: center; color: var(--muted); font-size: .85rem; padding: 24px 0; }
+
+  /* 비밀번호 변경 */
+  .pw-section { margin-top: 4px; }
+  .pw-section input {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    background: var(--paper);
+    font-family: 'Pretendard', sans-serif;
+    font-size: .88rem; color: var(--ink);
+    margin-bottom: 8px; outline: none;
+    transition: border-color .2s;
+  }
+  .pw-section input:focus { border-color: var(--accent2); }
+  .pw-section button {
+    width: 100%; padding: 10px;
+    background: var(--ink); color: #fff; border: none; cursor: pointer;
+    font-family: 'Pretendard', sans-serif; font-size: .85rem; font-weight: 600;
+    transition: opacity .2s;
+  }
+  .pw-section button:hover { opacity: .8; }
+  .pw-msg { font-size: .78rem; margin-top: 6px; }
+
+  /* 안내 */
+  .notice {
+    background: var(--card); border: 1.5px solid var(--border);
+    padding: 14px 18px;
+    font-size: .8rem; color: var(--muted); line-height: 1.8;
+  }
+  .notice strong { color: var(--ink); }
+
+  /* 반응형 */
+  @media(max-width: 768px) {
+    .main-wrap { grid-template-columns: 1fr; }
+    header { padding: 0 16px; }
+    .cal-cell { min-height: 60px; padding: 4px; }
+  }
+</style>
 </head>
 <body>
-    <div id="loadingMsg">데이터를 불러오는 중...</div>
-    <div class="header-wrap">
-        <button onclick="changeMonth(-1)">◀</button>
-        <h2 id="monthTitle"></h2>
-        <button onclick="changeMonth(1)">▶</button>
+
+<!-- 로그인 -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>관리자 로그인</h1>
+    <p>담임 교사 전용 상담 관리 페이지입니다.</p>
+    <input type="password" id="pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app">
+  <header>
+    <h1>📋 상담 관리자</h1>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="meta" id="header-date"></span>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
     </div>
-    <div class="calendar-grid" id="calendar">
-        <div class="day-header">일</div><div class="day-header">월</div><div class="day-header">화</div><div class="day-header">수</div><div class="day-header">목</div><div class="day-header">금</div><div class="day-header">토</div>
+  </header>
+
+  <div class="main-wrap">
+    <!-- 달력 -->
+    <div class="cal-section">
+      <div class="cal-nav">
+        <button class="nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+        <h2 id="cal-title"></h2>
+        <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
+      </div>
+      <div class="calendar">
+        <div class="cal-head">
+          <span>일</span><span>월</span><span>화</span><span>수</span>
+          <span>목</span><span>금</span><span>토</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="notice" style="margin-top:16px">
+        <strong>사용법</strong> — 날짜를 클릭하면 오른쪽 패널에서 점심·방과후 상담을 열거나 닫을 수 있습니다.<br>
+        열린 슬롯만 학생 페이지에 표시되며, 이미 예약된 슬롯은 닫을 수 없습니다.
+      </div>
     </div>
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1PGyMAfi4ijJ9qZFGhBtJimTGWwRm0qtOuMv6sGsaQTazeGaNQE7clMNcI0VDlAJyOg/exec";
-        let activeSlots = [];
-        let currentDate = new Date();
+    <!-- 사이드 -->
+    <div class="side-panel">
+      <!-- 슬롯 토글 -->
+      <div class="panel-card" id="slot-panel">
+        <h3 id="slot-title">날짜를 선택하세요</h3>
+        <p class="panel-sub" id="slot-sub">달력에서 날짜를 클릭하면 상담 슬롯을 설정할 수 있습니다.</p>
+        <div id="slot-rows"></div>
+      </div>
 
-        async function loadData() {
-            document.getElementById('loadingMsg').innerText = "데이터 로딩 중...";
-            try {
-                const res = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
-                activeSlots = await res.json();
-                document.getElementById('loadingMsg').innerText = "✅ 로드 완료";
-                setTimeout(() => document.getElementById('loadingMsg').innerText = "", 2000);
-                render();
-            } catch(e) {
-                document.getElementById('loadingMsg').innerText = "❌ 로드 실패! 새로고침 해주세요.";
-            }
-        }
+      <!-- 예약 목록 -->
+      <div class="panel-card">
+        <h3>예약 현황</h3>
+        <p class="panel-sub" id="booking-sub">선택한 날짜의 예약 목록</p>
+        <div class="booking-list" id="booking-list">
+          <p class="empty-msg">날짜를 선택하세요</p>
+        </div>
+      </div>
 
-        function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            render();
-        }
+      <!-- 비밀번호 변경 -->
+      <div class="panel-card">
+        <h3>관리자 비밀번호 변경</h3>
+        <p class="panel-sub">현재 비밀번호 확인 후 변경합니다.</p>
+        <div class="pw-section">
+          <input type="password" id="pw-cur" placeholder="현재 비밀번호">
+          <input type="password" id="pw-new" placeholder="새 비밀번호">
+          <input type="password" id="pw-con" placeholder="새 비밀번호 확인">
+          <button onclick="changePw()">비밀번호 변경</button>
+          <div class="pw-msg" id="pw-msg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-        async function toggle(date, slot, btn) {
-            // 버튼 상태 즉시 변경 (UI 반응성)
-            const isActive = btn.classList.toggle(slot === '점심' ? 'active-lunch' : 'active-after');
-            btn.innerText = isActive ? `✓ ${slot}` : slot;
+<script>
+// ── 기본 설정 ──────────────────────────────────────
+const DEFAULT_PW = 'admin1234';
+const STORAGE_PW  = 'counsel_admin_pw';
+const STORAGE_SLOTS = 'counsel_slots';    // { "2025-06-13": {lunch: true, after: false} }
+const STORAGE_BOOKS = 'counsel_bookings'; // [ {date, type, hour, name, content, pw} ]
 
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({action: 'toggle', date, slot})
-            });
-            // 내부 데이터 동기화
-            if(isActive) activeSlots.push({date, slot});
-            else activeSlots = activeSlots.filter(s => !(s.date === date && s.slot === slot));
-        }
+const LUNCH_LABEL = '점심 상담';
+const AFTER_LABEL = '방과후 상담';
+const LUNCH_TIME  = '12:30 – 13:20';
+const AFTER_TIME  = '16:00 – 17:00';
 
-        function render() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            document.getElementById('monthTitle').innerText = `${year}년 ${month + 1}월`;
-            const container = document.getElementById('calendar');
-            while(container.children.length > 7) container.lastChild.remove();
+function getAdminPw(){ return localStorage.getItem(STORAGE_PW) || DEFAULT_PW; }
+function getSlots(){ return JSON.parse(localStorage.getItem(STORAGE_SLOTS)||'{}'); }
+function saveSlots(s){ localStorage.setItem(STORAGE_SLOTS, JSON.stringify(s)); }
+function getBookings(){ return JSON.parse(localStorage.getItem(STORAGE_BOOKS)||'[]'); }
+function saveBookings(b){ localStorage.setItem(STORAGE_BOOKS, JSON.stringify(b)); }
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+// ── 로그인 ──────────────────────────────────────────
+let loggedIn = false;
 
-            for(let i=0; i<firstDay; i++) container.appendChild(document.createElement('div'));
+function doLogin(){
+  const v = document.getElementById('pw-input').value;
+  if(v === getAdminPw()){
+    loggedIn = true;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('login-err').textContent = '비밀번호가 올바르지 않습니다.';
+  }
+}
+function doLogout(){
+  loggedIn = false;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-err').textContent = '';
+}
 
-            for(let d=1; d<=lastDate; d++) {
-                const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                
-                const hasLunch = activeSlots.some(s => s.date === dStr && s.slot === "점심");
-                const hasAfter = activeSlots.some(s => s.date === dStr && s.slot === "방과후");
+// ── 달력 ────────────────────────────────────────────
+let curYear, curMonth, selectedDate = null;
 
-                cell.innerHTML = `
-                    <div style="font-weight:bold">${d}</div>
-                    <button class="slot-btn ${hasLunch?'active-lunch':''}" onclick="toggle('${dStr}','점심',this)">${hasLunch?'✓ 점심':'점심'}</button>
-                    <button class="slot-btn ${hasAfter?'active-after':''}" onclick="toggle('${dStr}','방과후',this)">${hasAfter?'✓ 방과후':'방과후'}</button>
-                `;
-                container.appendChild(cell);
-            }
-        }
-        loadData();
-    </script>
+function initApp(){
+  const now = new Date();
+  curYear = now.getFullYear();
+  curMonth = now.getMonth();
+  document.getElementById('header-date').textContent =
+    now.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  renderCal();
+}
+
+function changeMonth(d){
+  curMonth += d;
+  if(curMonth > 11){ curMonth = 0; curYear++; }
+  if(curMonth < 0) { curMonth = 11; curYear--; }
+  renderCal();
+}
+
+function fmtDate(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+function renderCal(){
+  const DAYS = ['일','월','화','수','목','금','토'];
+  document.getElementById('cal-title').textContent =
+    `${curYear}년 ${curMonth+1}월`;
+
+  const slots = getSlots();
+  const bookings = getBookings();
+  const today = fmtDate(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  for(let i=0; i<firstDay; i++){
+    const e = document.createElement('div');
+    e.className = 'cal-cell empty'; grid.appendChild(e);
+  }
+
+  for(let d=1; d<=lastDate; d++){
+    const key = fmtDate(curYear, curMonth, d);
+    const dow = new Date(curYear, curMonth, d).getDay();
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' +
+      (dow===0?' sun': dow===6?' sat':'') +
+      (key===today?' today':'') +
+      (key===selectedDate?' selected':'');
+    cell.onclick = () => selectDate(key);
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'cell-date';
+    dateEl.textContent = d;
+    cell.appendChild(dateEl);
+
+    const s = slots[key] || {};
+    if(s.lunch){
+      const b = document.createElement('div');
+      b.className = 'slot-badge lunch-open';
+      b.textContent = '점심';
+      cell.appendChild(b);
+    }
+    if(s.after){
+      const b = document.createElement('div');
+      b.className = 'slot-badge after-open';
+      b.textContent = '방과후';
+      cell.appendChild(b);
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(key){
+  selectedDate = key;
+  renderCal();
+  renderSlotPanel(key);
+  renderBookingPanel(key);
+}
+
+// ── 슬롯 패널 ────────────────────────────────────────
+function renderSlotPanel(key){
+  const [y,m,d] = key.split('-');
+  const dow = ['일','월','화','수','목','금','토'][new Date(+y,+m-1,+d).getDay()];
+  document.getElementById('slot-title').textContent = `${y}년 ${+m}월 ${+d}일 (${dow})`;
+  document.getElementById('slot-sub').textContent = '상담 슬롯 개방/폐쇄를 설정하세요.';
+
+  const slots = getSlots();
+  const s = slots[key] || {lunch:false, after:false};
+  const bookings = getBookings().filter(b=>b.date===key);
+  const lunchBooked = bookings.some(b=>b.type==='lunch');
+  const afterBooked = bookings.some(b=>b.type==='after');
+
+  const rows = document.getElementById('slot-rows');
+  rows.innerHTML = '';
+
+  rows.appendChild(makeSlotRow('lunch', LUNCH_LABEL, LUNCH_TIME, s.lunch, lunchBooked, key));
+  rows.appendChild(makeSlotRow('after', AFTER_LABEL, AFTER_TIME, s.after, afterBooked, key));
+}
+
+function makeSlotRow(type, label, time, isOpen, hasBooking, key){
+  const row = document.createElement('div');
+  row.className = 'slot-row';
+
+  const info = document.createElement('div');
+  info.className = 'slot-info';
+  info.innerHTML = `<div class="slot-label ${type}">${label}</div><div class="slot-time">${time}</div>`;
+  if(hasBooking && isOpen){
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:.72rem;color:#e67e22;margin-top:3px;';
+    note.textContent = '※ 예약 있음 — 닫기 불가';
+    info.appendChild(note);
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'toggle-wrap';
+  const lbl = document.createElement('span');
+  lbl.className = 'toggle-label';
+  lbl.textContent = isOpen ? '열림' : '닫힘';
+
+  const toggleWrap = document.createElement('label');
+  toggleWrap.className = 'toggle';
+  const inp = document.createElement('input');
+  inp.type = 'checkbox';
+  inp.checked = isOpen;
+  if(hasBooking && isOpen) inp.disabled = true;
+  inp.onchange = () => toggleSlot(key, type, inp.checked, lbl);
+  const track = document.createElement('span');
+  track.className = 'toggle-track';
+  toggleWrap.appendChild(inp);
+  toggleWrap.appendChild(track);
+
+  wrap.appendChild(lbl);
+  wrap.appendChild(toggleWrap);
+  row.appendChild(info);
+  row.appendChild(wrap);
+  return row;
+}
+
+function toggleSlot(key, type, val, lblEl){
+  const slots = getSlots();
+  if(!slots[key]) slots[key] = {lunch:false, after:false};
+  slots[key][type] = val;
+  saveSlots(slots);
+  lblEl.textContent = val ? '열림' : '닫힘';
+  renderCal();
+}
+
+// ── 예약 패널 ────────────────────────────────────────
+function renderBookingPanel(key){
+  const [y,m,d] = key.split('-');
+  document.getElementById('booking-sub').textContent =
+    `${+y}년 ${+m}월 ${+d}일 예약 목록`;
+  const bookings = getBookings().filter(b=>b.date===key);
+  const list = document.getElementById('booking-list');
+  list.innerHTML = '';
+  if(!bookings.length){
+    list.innerHTML = '<p class="empty-msg">예약이 없습니다.</p>';
+    return;
+  }
+  bookings.forEach((b,i) => {
+    const item = document.createElement('div');
+    item.className = 'booking-item';
+    const typeLabel = b.type==='lunch' ? '점심' : '방과후';
+    const typeClass = b.type;
+    item.innerHTML = `
+      <div class="b-time">
+        <span class="b-type ${typeClass}">${typeLabel}</span>
+        ${b.hour}시
+      </div>
+      <div class="b-name">${escHtml(b.name)}</div>
+      <div class="b-content">${escHtml(b.content)}</div>
+      <button class="b-delete" onclick="deleteBooking('${b.id}')">삭제</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+function deleteBooking(id){
+  if(!confirm('예약을 삭제하시겠습니까?')) return;
+  const books = getBookings().filter(b=>b.id!==id);
+  saveBookings(books);
+  if(selectedDate) renderBookingPanel(selectedDate);
+}
+
+// ── 비밀번호 변경 ─────────────────────────────────────
+function changePw(){
+  const cur = document.getElementById('pw-cur').value;
+  const nw  = document.getElementById('pw-new').value;
+  const con = document.getElementById('pw-con').value;
+  const msg = document.getElementById('pw-msg');
+  if(cur !== getAdminPw()){ msg.style.color='#c0392b'; msg.textContent='현재 비밀번호가 틀렸습니다.'; return; }
+  if(nw.length < 4){ msg.style.color='#c0392b'; msg.textContent='새 비밀번호는 4자 이상이어야 합니다.'; return; }
+  if(nw !== con){ msg.style.color='#c0392b'; msg.textContent='새 비밀번호가 일치하지 않습니다.'; return; }
+  localStorage.setItem(STORAGE_PW, nw);
+  msg.style.color='#27ae60'; msg.textContent='비밀번호가 변경되었습니다.';
+  document.getElementById('pw-cur').value='';
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-con').value='';
+}
+
+function escHtml(str){ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
 </body>
 </html>
