@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>상담 신청 시스템 with 흠쌤</title>
+<title>상담 신청 with 흠쌤</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -12,184 +12,97 @@
     --lunch: #e8f4fd; --after: #fdf3e8;
     --lunch-accent: #2980b9; --after-accent: #e67e22;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { 
-    background: var(--paper); 
-    color: var(--ink); 
-    font-family: 'Pretendard', sans-serif; 
-    line-height: 1.6;
-  }
+  body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; min-height: 100vh; }
 
-  /* Header */
-  header { 
-    background: var(--ink); 
-    color: #fff; 
-    padding: 0 40px; 
-    height: 70px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.4rem; letter-spacing: -0.5px; }
-  .check-btn { 
-    background: rgba(255,255,255,0.1); 
-    border: 1px solid rgba(255,255,255,0.3); 
-    color: #eee; 
-    padding: 8px 18px; 
-    cursor: pointer; 
-    font-size: 0.85rem; 
-    transition: all 0.3s;
-  }
-  .check-btn:hover { background: #fff; color: var(--ink); }
+  header { background: var(--ink); padding: 0 20px; height: 60px; display: flex; align-items: center; justify-content: space-between; color: #fff; }
+  header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.1rem; }
+  .check-btn { background: none; border: 1px solid #777; color: #ccc; padding: 6px 12px; cursor: pointer; font-size: .8rem; border-radius: 4px; }
 
-  /* Layout */
-  .main-wrap { 
-    max-width: 1100px; 
-    margin: 40px auto; 
-    padding: 0 20px; 
-    display: grid; 
-    grid-template-columns: 1fr 380px; 
-    gap: 40px; 
-  }
+  .main-wrap { max-width: 1000px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
 
-  /* Calendar Section */
-  .cal-container { background: var(--card); border: 1.5px solid var(--border); padding: 30px; }
-  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-  .cal-nav h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.6rem; color: var(--ink); }
-  .nav-btn { 
-    background: none; border: 1px solid var(--border); 
-    width: 36px; height: 36px; cursor: pointer; color: var(--muted);
-    transition: all 0.2s;
-  }
-  .nav-btn:hover { background: var(--ink); color: #fff; }
-
-  .calendar { width: 100%; border-collapse: collapse; }
-  .cal-head { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 2px solid var(--ink); margin-bottom: 10px; }
-  .cal-head span { text-align: center; padding: 10px 0; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--border); border: 1px solid var(--border); }
+  /* 모바일 대응 달력 그리드 */
+  .calendar { border: 1.5px solid var(--border); background: var(--card); overflow: hidden; }
+  .cal-head { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); color: #ccc; text-align: center; font-size: .8rem; padding: 10px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--border); gap: 1px; }
   
   .cal-cell { 
-    background: #fff; min-height: 90px; padding: 10px; 
-    transition: all 0.2s; position: relative;
+    background: var(--card); 
+    aspect-ratio: 1 / 1.1; /* 세로가 너무 늘어지지 않게 비율 고정 */
+    padding: 6px; 
+    cursor: default; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start;
   }
-  .cal-cell.empty { background: #fafafa; }
   .cal-cell.has-slot { cursor: pointer; }
-  .cal-cell.has-slot:hover { background: #f0f7ff; }
-  .cal-cell.selected { background: #e8f0fe !important; box-shadow: inset 0 0 0 2px var(--accent2); }
-  
-  .cell-date { font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-  .slot-dot { 
-    display: block; font-size: 0.7rem; font-weight: 700; 
-    padding: 3px 6px; border-radius: 3px; margin-top: 4px;
-    text-align: center;
-  }
+  .cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; z-index: 1; }
+  .cell-date { font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+
+  /* 상담 종류 점 배지 */
+  .slot-dot { display: block; width: 100%; font-size: .65rem; padding: 2px 4px; border-radius: 2px; margin-top: 2px; text-align: center; font-weight: 700; }
   .slot-dot.lunch { background: var(--lunch); color: var(--lunch-accent); }
   .slot-dot.after { background: var(--after); color: var(--after-accent); }
 
-  /* Right Panel */
-  .panel-card { 
-    background: var(--card); border: 1.5px solid var(--border); 
-    padding: 30px; position: sticky; top: 40px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  }
-  .panel-card h3 { font-family: 'Nanum Myeongjo', serif; font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  /* 우측 패널 및 카드 */
+  .panel-card { background: var(--card); border: 1.5px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+  .slot-card { border: 1.5px solid var(--border); padding: 12px; margin-bottom: 10px; cursor: pointer; background: #fff; border-radius: 6px; transition: 0.2s; }
+  .slot-card.selected-card { border-color: var(--accent2); background: #f0f6ff; box-shadow: 0 2px 8px rgba(41,128,185,0.1); }
+  .slot-card.taken { opacity: 0.4; cursor: not-allowed; background: #eee; }
 
-  .slot-card { 
-    border: 1.5px solid var(--border); padding: 15px; margin-bottom: 12px; 
-    cursor: pointer; transition: all 0.2s; position: relative;
-  }
-  .slot-card:hover:not(.taken) { border-color: var(--accent2); transform: translateY(-2px); }
-  .slot-card.selected-card { border-color: var(--accent2); background: #f0f6ff; }
-  .slot-card.taken { opacity: 0.5; cursor: not-allowed; background: #eee; }
-  .slot-card b { display: block; font-size: 1rem; margin-bottom: 4px; }
-  .slot-card small { color: var(--muted); }
+  /* 입력 폼 */
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: .75rem; margin-bottom: 4px; color: var(--muted); font-weight: 600; }
+  .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); font-family: inherit; border-radius: 4px; outline: none; }
+  .submit-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; font-weight: 700; cursor: pointer; border-radius: 4px; font-size: 1rem; }
 
-  /* Form Elements */
-  .form-area { margin-top: 25px; animation: fadeIn 0.4s; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
-  .form-group input, .form-group textarea { 
-    width: 100%; padding: 12px; border: 1.5px solid var(--border); 
-    background: var(--paper); font-family: inherit; font-size: 0.9rem;
-    outline: none; transition: border-color 0.2s;
-  }
-  .form-group input:focus { border-color: var(--accent2); }
-  
-  .submit-btn { 
-    width: 100%; padding: 15px; background: var(--accent); color: #fff; 
-    border: none; font-weight: 700; cursor: pointer; transition: background 0.3s;
-    margin-top: 10px;
-  }
-  .submit-btn:hover { background: #a02e22; }
-  .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
-
-  /* Modal Style */
-  .overlay { 
-    display: none; position: fixed; inset: 0; 
-    background: rgba(26, 26, 46, 0.8); z-index: 1000; 
-    align-items: center; justify-content: center; backdrop-filter: blur(4px);
-  }
+  /* 모달 */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .overlay.show { display: flex; }
-  .modal { 
-    background: var(--card); padding: 40px; width: 400px; 
-    border: 1.5px solid var(--border); position: relative;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  }
-  .check-item { 
-    padding: 15px 0; border-bottom: 1px solid var(--border); 
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .cancel-btn { 
-    padding: 6px 12px; border: 1px solid var(--accent); color: var(--accent); 
-    background: none; cursor: pointer; font-size: 0.75rem; font-weight: 700;
-  }
-  .cancel-btn:hover { background: var(--accent); color: #fff; }
+  .modal { background: #fff; padding: 28px; width: 100%; max-width: 360px; border-radius: 8px; }
+  .cancel-btn { width: 100%; padding: 10px; margin-top: 12px; border: 1px solid #e74c3c; color: #e74c3c; background: none; cursor: pointer; font-weight: 600; border-radius: 4px; }
+  .cancel-btn:hover { background: #e74c3c; color: #fff; }
 
-  @media (max-width: 850px) {
-    .main-wrap { grid-template-columns: 1fr; }
-    header { padding: 0 20px; }
+  /* 모바일 레이아웃 조정 */
+  @media (max-width: 768px) {
+    .main-wrap { grid-template-columns: 1fr; padding: 15px; }
+    .cal-cell { padding: 3px; }
+    .slot-dot { font-size: 0.58rem; padding: 1px; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>📅 학생 상담 신청 시스템 with 흠쌤</h1>
-  <button class="check-btn" onclick="document.getElementById('check-overlay').classList.add('show')">📋 예약 확인 및 취소</button>
+  <h1>📅 학생 상담 신청 with 흠쌤</h1>
+  <button class="check-btn" onclick="document.getElementById('check-overlay').classList.add('show')">📋 확인/취소</button>
 </header>
 
 <div class="main-wrap">
-  <div class="cal-container">
-    <div class="cal-nav">
-      <button class="nav-btn" onclick="window.changeMonth(-1)">←</button>
-      <h2 id="cal-title">2026년 5월</h2>
-      <button class="nav-btn" onclick="window.changeMonth(1)">→</button>
+  <div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+      <button onclick="window.changeMonth(-1)" style="padding:5px 10px; cursor:pointer;">←</button>
+      <h3 id="cal-title" style="font-family:'Nanum Myeongjo',serif;"></h3>
+      <button onclick="window.changeMonth(1)" style="padding:5px 10px; cursor:pointer;">→</button>
     </div>
-    <div class="cal-head">
-      <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
+    <div class="calendar">
+      <div class="cal-head"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
   </div>
 
-  <div id="right-side">
-    <div class="panel-card" id="form-card" style="display:none">
-      <h3 id="form-date-title">날짜를 선택해 주세요</h3>
-      <div id="slot-area"></div>
-      
-      <div id="form-area" class="form-area" style="display:none">
-        <div class="form-group"><label>성함</label><input type="text" id="f-name" placeholder="이름을 입력하세요"></div>
-        <div class="form-group"><label>상담 희망 내용</label><textarea id="f-content" rows="3" placeholder="간략한 상담 내용을 적어주세요"></textarea></div>
-        <div class="form-group"><label>비밀번호 (취소 시 필요)</label><input type="password" id="f-pw" placeholder="4자리 이상 입력"></div>
-        <button class="submit-btn" id="submit-btn" onclick="window.submitBooking()">신청 완료하기</button>
-      </div>
+  <div id="right-panel">
+    <div class="panel-card" id="no-select-card" style="text-align:center; color:var(--muted); padding:40px 20px;">
+      📌 달력에서 상담 가능한 날짜를 선택해 주세요.
     </div>
-    <div class="panel-card" id="empty-card">
-      <div style="text-align:center; color:var(--muted); padding:40px 0;">
-        <p>왼쪽 달력에서<br>상담 가능한 날짜를 선택해 주세요.</p>
+    <div class="panel-card" id="form-card" style="display:none">
+      <h3 id="form-date-title" style="margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:10px;"></h3>
+      <div id="slot-area"></div>
+      <div id="form-area" style="display:none; margin-top:20px; border-top:2px dashed var(--border); padding-top:20px;">
+        <div class="form-group"><label>신청자 이름</label><input type="text" id="f-name" placeholder="이름을 입력하세요"></div>
+        <div class="form-group"><label>상담하고 싶은 내용</label><textarea id="f-content" rows="3" placeholder="내용을 간략히 적어주세요"></textarea></div>
+        <div class="form-group"><label>비밀번호 (4자 이상 - 확인/취소용)</label><input type="password" id="f-pw"></div>
+        <button class="submit-btn" id="submit-btn" onclick="window.submitBooking()">상담 신청하기</button>
       </div>
     </div>
   </div>
@@ -197,11 +110,11 @@
 
 <div class="overlay" id="check-overlay" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
-    <h3 style="font-family:'Nanum Myeongjo'; margin-bottom:20px;">내 예약 확인</h3>
+    <h3 style="margin-bottom:15px;">내 예약 확인 및 취소</h3>
     <div class="form-group"><label>이름</label><input type="text" id="check-name"></div>
     <div class="form-group"><label>비밀번호</label><input type="password" id="check-pw"></div>
-    <button class="submit-btn" onclick="window.doCheck()">확인하기</button>
-    <div id="check-result" style="margin-top:20px; max-height:200px; overflow-y:auto;"></div>
+    <button class="submit-btn" onclick="window.doCheck()">조회하기</button>
+    <div id="check-result" style="margin-top:20px; border-top:1px solid #eee; padding-top:15px; display:none"></div>
   </div>
 </div>
 
@@ -209,6 +122,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// Firebase 설정 (선생님의 설정값 유지)
 const firebaseConfig = {
     apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
     authDomain: "my-counsel-9b532.firebaseapp.com",
@@ -223,27 +137,43 @@ const db = getFirestore(app);
 const SLOT_DEF = { lunch: { label:'점심 상담', time:'12:40 – 13:00' }, after: { label:'방과후 상담', time:'15:10 – 15:30' } };
 let curYear, curMonth, selDate = null, selType = null, slotsCache = {}, bookingsCache = {};
 
+// 초기화 데이터 불러오기
 async function init() {
     const now = new Date(); curYear = now.getFullYear(); curMonth = now.getMonth();
-    onSnapshot(collection(db, 'slots'), snap => { slotsCache = {}; snap.forEach(d => slotsCache[d.id] = d.data()); renderCal(); if(selDate) renderRight(selDate); });
+    onSnapshot(collection(db, 'slots'), snap => { 
+        slotsCache = {}; snap.forEach(d => slotsCache[d.id] = d.data()); 
+        renderCal(); if(selDate) renderRight(selDate); 
+    });
     onSnapshot(collection(db, 'bookings'), snap => {
-        bookingsCache = {}; snap.forEach(d => { const b = { id: d.id, ...d.data() }; if(!bookingsCache[b.date]) bookingsCache[b.date] = []; bookingsCache[b.date].push(b); });
+        bookingsCache = {}; 
+        snap.forEach(d => { 
+            const b = { id: d.id, ...d.data() }; 
+            if(!bookingsCache[b.date]) bookingsCache[b.date] = []; 
+            bookingsCache[b.date].push(b); 
+        });
         renderCal(); if(selDate) renderRight(selDate);
     });
 }
 
+// 달력 그리기
 function renderCal() {
     document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
     const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
     const firstDay = new Date(curYear, curMonth, 1).getDay();
     const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+    const today = new Date().toISOString().split('T')[0];
+
     for(let i=0; i<firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
     for(let d=1; d<=lastDate; d++) {
         const key = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const s = slotsCache[key] || {};
         const cell = document.createElement('div');
-        cell.className = `cal-cell ${key === selDate ? 'selected' : ''} ${s.lunch||s.after ? 'has-slot' : ''}`;
-        if(s.lunch||s.after) cell.onclick = () => { selDate = key; selType = null; renderCal(); renderRight(key); };
+        const isPast = key < today;
+        
+        cell.className = `cal-cell ${key === selDate ? 'selected' : ''} ${(s.lunch||s.after) && !isPast ? 'has-slot' : ''}`;
+        if((s.lunch||s.after) && !isPast) {
+            cell.onclick = () => { selDate = key; selType = null; renderCal(); renderRight(key); };
+        }
         cell.innerHTML = `<div class="cell-date">${d}</div>`;
         if(s.lunch) cell.innerHTML += `<span class="slot-dot lunch">점심</span>`;
         if(s.after) cell.innerHTML += `<span class="slot-dot after">방과후</span>`;
@@ -251,10 +181,12 @@ function renderCal() {
     }
 }
 
+// 우측 신청 패널 렌더링
 function renderRight(key) {
-    document.getElementById('empty-card').style.display = 'none';
+    document.getElementById('no-select-card').style.display = 'none';
     document.getElementById('form-card').style.display = 'block';
-    document.getElementById('form-date-title').textContent = key;
+    document.getElementById('form-date-title').textContent = `📅 ${key} 상담 신청`;
+    
     const slotInfo = slotsCache[key] || {};
     const dayBooks = bookingsCache[key] || [];
     const area = document.getElementById('slot-area'); area.innerHTML = '';
@@ -264,53 +196,72 @@ function renderRight(key) {
         const taken = dayBooks.some(b => b.type === type);
         const card = document.createElement('div');
         card.className = `slot-card ${selType === type ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
-        card.innerHTML = `<b>${SLOT_DEF[type].label}</b><small>${SLOT_DEF[type].time}</small><br><span style="font-size:0.75rem; color:${taken?'#e74c3c':'#27ae60'}">${taken?'이미 마감되었습니다':'신청이 가능합니다'}</span>`;
-        if(!taken) card.onclick = () => { selType = type; renderRight(key); document.getElementById('form-area').style.display='block'; };
+        card.innerHTML = `<strong>${SLOT_DEF[type].label}</strong><br><small>${SLOT_DEF[type].time}</small> <span style="float:right; font-size:0.75rem;">${taken?'(마감)':'(신청가능)'}</span>`;
+        
+        if(!taken) {
+            card.onclick = () => { selType = type; renderRight(key); document.getElementById('form-area').style.display='block'; };
+        }
         area.appendChild(card);
     });
 }
 
+// 상담 신청 함수
 window.submitBooking = async () => {
     const btn = document.getElementById('submit-btn');
     const name = document.getElementById('f-name').value.trim();
     const content = document.getElementById('f-content').value.trim();
     const pw = document.getElementById('f-pw').value;
-    if(!selType || !name || pw.length < 4) { alert('성함과 비밀번호(4자 이상)를 정확히 입력해 주세요.'); return; }
     
-    btn.disabled = true; btn.textContent = '신청 처리 중...';
+    if(!selType || !name || pw.length < 4) { 
+        alert('이름과 비밀번호(4자 이상)를 정확히 입력해주세요.'); 
+        return; 
+    }
+    
+    btn.disabled = true; btn.textContent = '처리 중...';
     try {
         await addDoc(collection(db, 'bookings'), { date: selDate, type: selType, name, content, pw: simpleHash(pw), createdAt: Date.now() });
         alert('예약 완료되었습니다.');
         location.reload();
     } catch(e) {
-        alert('오류가 발생했습니다.');
-        btn.disabled = false; btn.textContent = '신청 완료하기';
+        alert('신청 중 오류가 발생했습니다.');
+        btn.disabled = false; btn.textContent = '상담 신청하기';
     }
 };
 
+// 예약 조회 및 취소
 window.doCheck = () => {
-    const name = document.getElementById('check-name').value;
+    const name = document.getElementById('check-name').value.trim();
     const pw = simpleHash(document.getElementById('check-pw').value);
     const res = document.getElementById('check-result');
     const found = [];
+    
     Object.values(bookingsCache).forEach(arr => arr.forEach(b => { if(b.name===name && b.pw===pw) found.push(b); }));
-    if(!found.length) alert('일치하는 예약 정보를 찾을 수 없습니다.');
-    else {
+    
+    if(!found.length) {
+        alert('일치하는 예약 정보가 없습니다.');
+    } else {
+        res.style.display = 'block';
         res.innerHTML = found.map(b => `
-          <div class="check-item">
-            <div>
-              <div style="font-weight:700; font-size:0.9rem;">${b.date}</div>
-              <div style="font-size:0.8rem; color:var(--muted);">${SLOT_DEF[b.type].label}</div>
+            <div style="background:#f9f9f9; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid var(--accent2);">
+                <div style="font-size:0.85rem; font-weight:700;">${b.date}</div>
+                <div style="font-size:0.75rem; color:var(--muted);">${SLOT_DEF[b.type].label}</div>
+                <button class="cancel-btn" onclick="window.cancelB('${b.id}')">신청 취소하기</button>
             </div>
-            <button class="cancel-btn" onclick="window.cancelB('${b.id}')">취소하기</button>
-          </div>
         `).join('');
     }
 };
 
-window.cancelB = async (id) => { if(confirm('정말로 상담 신청을 취소하시겠습니까?')) { await deleteDoc(doc(db, 'bookings', id)); alert('취소되었습니다.'); location.reload(); } };
+window.cancelB = async (id) => {
+    if(confirm('정말 이 상담 예약을 취소하시겠습니까?')) {
+        await deleteDoc(doc(db, 'bookings', id));
+        alert('정상적으로 취소되었습니다.');
+        location.reload();
+    }
+};
+
 window.changeMonth = (dir) => { curMonth += dir; if(curMonth>11){curMonth=0;curYear++;}else if(curMonth<0){curMonth=11;curYear--;} renderCal(); };
 function simpleHash(str) { let h = 0; for(let i=0; i<str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; return h.toString(36); }
+
 init();
 </script>
 </body>
