@@ -9,8 +9,8 @@
   :root {
     --ink: #1a1a2e; --paper: #f5f0e8; --accent: #c0392b; --accent2: #2980b9;
     --muted: #8c7b6e; --border: #d4c9ba; --card: #fffdf8;
-    --lunch: #e8f4fd; --after: #fdf3e8;
-    --lunch-accent: #2980b9; --after-accent: #e67e22;
+    --lunch: #e8f4fd; --after: #fdf3e8; --custom: #f0ede8;
+    --lunch-accent: #2980b9; --after-accent: #e67e22; --custom-accent: #6c4f8e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; min-height: 100vh; }
@@ -21,49 +21,48 @@
 
   .main-wrap { max-width: 1000px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
 
-  /* 모바일 대응 달력 그리드 */
   .calendar { border: 1.5px solid var(--border); background: var(--card); overflow: hidden; }
   .cal-head { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); color: #ccc; text-align: center; font-size: .8rem; padding: 10px 0; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--border); gap: 1px; }
-  
-  .cal-cell { 
-    background: var(--card); 
-    aspect-ratio: 1 / 1.1; /* 세로가 너무 늘어지지 않게 비율 고정 */
-    padding: 6px; 
-    cursor: default; 
-    display: flex; 
-    flex-direction: column; 
+
+  .cal-cell {
+    background: var(--card);
+    aspect-ratio: 1 / 1.1;
+    padding: 6px;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
     align-items: flex-start;
   }
   .cal-cell.has-slot { cursor: pointer; }
   .cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; z-index: 1; }
   .cell-date { font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 
-  /* 상담 종류 점 배지 */
-  .slot-dot { display: block; width: 100%; font-size: .65rem; padding: 2px 4px; border-radius: 2px; margin-top: 2px; text-align: center; font-weight: 700; }
-  .slot-dot.lunch { background: var(--lunch); color: var(--lunch-accent); }
-  .slot-dot.after { background: var(--after); color: var(--after-accent); }
+  .slot-dot { display: block; width: 100%; font-size: .65rem; padding: 2px 4px; border-radius: 2px; margin-top: 2px; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slot-dot.lunch  { background: var(--lunch);  color: var(--lunch-accent); }
+  .slot-dot.after  { background: var(--after);  color: var(--after-accent); }
+  .slot-dot.custom { background: var(--custom); color: var(--custom-accent); }
 
-  /* 우측 패널 및 카드 */
   .panel-card { background: var(--card); border: 1.5px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 8px; }
   .slot-card { border: 1.5px solid var(--border); padding: 12px; margin-bottom: 10px; cursor: pointer; background: #fff; border-radius: 6px; transition: 0.2s; }
   .slot-card.selected-card { border-color: var(--accent2); background: #f0f6ff; box-shadow: 0 2px 8px rgba(41,128,185,0.1); }
   .slot-card.taken { opacity: 0.4; cursor: not-allowed; background: #eee; }
+  .slot-card .tag { display: inline-block; font-size: .65rem; font-weight: 700; padding: 1px 6px; border-radius: 2px; margin-bottom: 4px; }
+  .slot-card .tag.lunch  { background: var(--lunch);  color: var(--lunch-accent); }
+  .slot-card .tag.after  { background: var(--after);  color: var(--after-accent); }
+  .slot-card .tag.custom { background: var(--custom); color: var(--custom-accent); }
 
-  /* 입력 폼 */
   .form-group { margin-bottom: 12px; }
   .form-group label { display: block; font-size: .75rem; margin-bottom: 4px; color: var(--muted); font-weight: 600; }
   .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); font-family: inherit; border-radius: 4px; outline: none; }
   .submit-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; font-weight: 700; cursor: pointer; border-radius: 4px; font-size: 1rem; }
 
-  /* 모달 */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .overlay.show { display: flex; }
   .modal { background: #fff; padding: 28px; width: 100%; max-width: 360px; border-radius: 8px; }
   .cancel-btn { width: 100%; padding: 10px; margin-top: 12px; border: 1px solid #e74c3c; color: #e74c3c; background: none; cursor: pointer; font-weight: 600; border-radius: 4px; }
   .cancel-btn:hover { background: #e74c3c; color: #fff; }
 
-  /* 모바일 레이아웃 조정 */
   @media (max-width: 768px) {
     .main-wrap { grid-template-columns: 1fr; padding: 15px; }
     .cal-cell { padding: 3px; }
@@ -81,9 +80,9 @@
 <div class="main-wrap">
   <div>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-      <button onclick="window.changeMonth(-1)" style="padding:5px 10px; cursor:pointer;">←</button>
+      <button id="prev-btn" style="padding:5px 10px; cursor:pointer;">←</button>
       <h3 id="cal-title" style="font-family:'Nanum Myeongjo',serif;"></h3>
-      <button onclick="window.changeMonth(1)" style="padding:5px 10px; cursor:pointer;">→</button>
+      <button id="next-btn" style="padding:5px 10px; cursor:pointer;">→</button>
     </div>
     <div class="calendar">
       <div class="cal-head"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
@@ -102,7 +101,7 @@
         <div class="form-group"><label>신청자 이름</label><input type="text" id="f-name" placeholder="이름을 입력하세요"></div>
         <div class="form-group"><label>상담하고 싶은 내용</label><textarea id="f-content" rows="3" placeholder="내용을 간략히 적어주세요"></textarea></div>
         <div class="form-group"><label>비밀번호 (4자 이상 - 확인/취소용)</label><input type="password" id="f-pw"></div>
-        <button class="submit-btn" id="submit-btn" onclick="window.submitBooking()">상담 신청하기</button>
+        <button class="submit-btn" id="submit-btn">상담 신청하기</button>
       </div>
     </div>
   </div>
@@ -113,154 +112,254 @@
     <h3 style="margin-bottom:15px;">내 예약 확인 및 취소</h3>
     <div class="form-group"><label>이름</label><input type="text" id="check-name"></div>
     <div class="form-group"><label>비밀번호</label><input type="password" id="check-pw"></div>
-    <button class="submit-btn" onclick="window.doCheck()">조회하기</button>
+    <button class="submit-btn" id="check-btn">조회하기</button>
     <div id="check-result" style="margin-top:20px; border-top:1px solid #eee; padding-top:15px; display:none"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase 설정 (선생님의 설정값 유지)
 const firebaseConfig = {
-    apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
-    authDomain: "my-counsel-9b532.firebaseapp.com",
-    projectId: "my-counsel-9b532",
-    storageBucket: "my-counsel-9b532.firebasestorage.app",
-    messagingSenderId: "51705550332",
-    appId: "1:51705550332:web:67766fdeb1214524190e79"
+  apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
+  authDomain: "my-counsel-9b532.firebaseapp.com",
+  projectId: "my-counsel-9b532",
+  storageBucket: "my-counsel-9b532.firebasestorage.app",
+  messagingSenderId: "51705550332",
+  appId: "1:51705550332:web:67766fdeb1214524190e79"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const SLOT_DEF = { lunch: { label:'점심 상담', time:'12:40 – 13:00' }, after: { label:'방과후 상담', time:'15:10 – 15:30' } };
-let curYear, curMonth, selDate = null, selType = null, slotsCache = {}, bookingsCache = {};
 
-// 초기화 데이터 불러오기
-async function init() {
-    const now = new Date(); curYear = now.getFullYear(); curMonth = now.getMonth();
-    onSnapshot(collection(db, 'slots'), snap => { 
-        slotsCache = {}; snap.forEach(d => slotsCache[d.id] = d.data()); 
-        renderCal(); if(selDate) renderRight(selDate); 
+const FIXED_DEF = {
+  lunch: { label: '점심 상담', time: '12:40 – 13:00' },
+  after: { label: '방과후 상담', time: '15:10 – 15:30' }
+};
+
+let curYear, curMonth, selDate = null;
+// selSlot = { type: 'lunch'|'after'|'custom', customIdx: number|null }
+let selSlot = null;
+let slotsCache = {}, bookingsCache = {};
+
+// ── 이벤트 리스너 ──
+document.getElementById('prev-btn').addEventListener('click', () => changeMonth(-1));
+document.getElementById('next-btn').addEventListener('click', () => changeMonth(1));
+document.getElementById('submit-btn').addEventListener('click', submitBooking);
+document.getElementById('check-btn').addEventListener('click', doCheck);
+
+// ── 초기화 ──
+function init() {
+  const now = new Date();
+  curYear = now.getFullYear();
+  curMonth = now.getMonth();
+
+  onSnapshot(collection(db, 'slots'), snap => {
+    slotsCache = {};
+    snap.forEach(d => slotsCache[d.id] = d.data());
+    renderCal();
+    if (selDate) renderRight(selDate);
+  });
+
+  onSnapshot(collection(db, 'bookings'), snap => {
+    bookingsCache = {};
+    snap.forEach(d => {
+      const b = { id: d.id, ...d.data() };
+      if (!bookingsCache[b.date]) bookingsCache[b.date] = [];
+      bookingsCache[b.date].push(b);
     });
-    onSnapshot(collection(db, 'bookings'), snap => {
-        bookingsCache = {}; 
-        snap.forEach(d => { 
-            const b = { id: d.id, ...d.data() }; 
-            if(!bookingsCache[b.date]) bookingsCache[b.date] = []; 
-            bookingsCache[b.date].push(b); 
-        });
-        renderCal(); if(selDate) renderRight(selDate);
-    });
+    renderCal();
+    if (selDate) renderRight(selDate);
+  });
 }
 
-// 달력 그리기
+// ── 달력 ──
+function changeMonth(dir) {
+  curMonth += dir;
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  else if (curMonth < 0) { curMonth = 11; curYear--; }
+  renderCal();
+}
+
 function renderCal() {
-    document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
-    const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
-    const firstDay = new Date(curYear, curMonth, 1).getDay();
-    const lastDate = new Date(curYear, curMonth+1, 0).getDate();
-    const today = new Date().toISOString().split('T')[0];
+  document.getElementById('cal-title').textContent = `${curYear}년 ${curMonth+1}월`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const firstDay = new Date(curYear, curMonth, 1).getDay();
+  const lastDate = new Date(curYear, curMonth+1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
 
-    for(let i=0; i<firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
-    for(let d=1; d<=lastDate; d++) {
-        const key = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const s = slotsCache[key] || {};
-        const cell = document.createElement('div');
-        const isPast = key < today;
-        
-        cell.className = `cal-cell ${key === selDate ? 'selected' : ''} ${(s.lunch||s.after) && !isPast ? 'has-slot' : ''}`;
-        if((s.lunch||s.after) && !isPast) {
-            cell.onclick = () => { selDate = key; selType = null; renderCal(); renderRight(key); };
-        }
-        cell.innerHTML = `<div class="cell-date">${d}</div>`;
-        if(s.lunch) cell.innerHTML += `<span class="slot-dot lunch">점심</span>`;
-        if(s.after) cell.innerHTML += `<span class="slot-dot after">방과후</span>`;
-        grid.appendChild(cell);
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const key = `${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const s = slotsCache[key] || {};
+    const customs = (s.custom || []).filter(c => c.open);
+    const hasAny = (s.lunch || s.after || customs.length > 0) && key >= today;
+
+    const cell = document.createElement('div');
+    cell.className = `cal-cell ${key === selDate ? 'selected' : ''} ${hasAny ? 'has-slot' : ''}`;
+    if (hasAny) {
+      cell.onclick = () => { selDate = key; selSlot = null; renderCal(); renderRight(key); };
     }
-}
-
-// 우측 신청 패널 렌더링
-function renderRight(key) {
-    document.getElementById('no-select-card').style.display = 'none';
-    document.getElementById('form-card').style.display = 'block';
-    document.getElementById('form-date-title').textContent = `📅 ${key} 상담 신청`;
-    
-    const slotInfo = slotsCache[key] || {};
-    const dayBooks = bookingsCache[key] || [];
-    const area = document.getElementById('slot-area'); area.innerHTML = '';
-    
-    ['lunch','after'].forEach(type => {
-        if(!slotInfo[type]) return;
-        const taken = dayBooks.some(b => b.type === type);
-        const card = document.createElement('div');
-        card.className = `slot-card ${selType === type ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
-        card.innerHTML = `<strong>${SLOT_DEF[type].label}</strong><br><small>${SLOT_DEF[type].time}</small> <span style="float:right; font-size:0.75rem;">${taken?'(마감)':'(신청가능)'}</span>`;
-        
-        if(!taken) {
-            card.onclick = () => { selType = type; renderRight(key); document.getElementById('form-area').style.display='block'; };
-        }
-        area.appendChild(card);
+    cell.innerHTML = `<div class="cell-date">${d}</div>`;
+    if (s.lunch) cell.innerHTML += `<span class="slot-dot lunch">점심</span>`;
+    if (s.after)  cell.innerHTML += `<span class="slot-dot after">방과후</span>`;
+    customs.forEach(c => {
+      cell.innerHTML += `<span class="slot-dot custom">${c.name}</span>`;
     });
+    grid.appendChild(cell);
+  }
 }
 
-// 상담 신청 함수
-window.submitBooking = async () => {
-    const btn = document.getElementById('submit-btn');
-    const name = document.getElementById('f-name').value.trim();
-    const content = document.getElementById('f-content').value.trim();
-    const pw = document.getElementById('f-pw').value;
-    
-    if(!selType || !name || pw.length < 4) { 
-        alert('이름과 비밀번호(4자 이상)를 정확히 입력해주세요.'); 
-        return; 
-    }
-    
-    btn.disabled = true; btn.textContent = '처리 중...';
-    try {
-        await addDoc(collection(db, 'bookings'), { date: selDate, type: selType, name, content, pw: simpleHash(pw), createdAt: Date.now() });
-        alert('예약 완료되었습니다.');
-        location.reload();
-    } catch(e) {
-        alert('신청 중 오류가 발생했습니다.');
-        btn.disabled = false; btn.textContent = '상담 신청하기';
-    }
-};
+// ── 우측 패널 ──
+function renderRight(key) {
+  document.getElementById('no-select-card').style.display = 'none';
+  document.getElementById('form-card').style.display = 'block';
+  document.getElementById('form-date-title').textContent = `📅 ${key} 상담 신청`;
 
-// 예약 조회 및 취소
-window.doCheck = () => {
-    const name = document.getElementById('check-name').value.trim();
-    const pw = simpleHash(document.getElementById('check-pw').value);
-    const res = document.getElementById('check-result');
-    const found = [];
-    
-    Object.values(bookingsCache).forEach(arr => arr.forEach(b => { if(b.name===name && b.pw===pw) found.push(b); }));
-    
-    if(!found.length) {
-        alert('일치하는 예약 정보가 없습니다.');
-    } else {
-        res.style.display = 'block';
-        res.innerHTML = found.map(b => `
-            <div style="background:#f9f9f9; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid var(--accent2);">
-                <div style="font-size:0.85rem; font-weight:700;">${b.date}</div>
-                <div style="font-size:0.75rem; color:var(--muted);">${SLOT_DEF[b.type].label}</div>
-                <button class="cancel-btn" onclick="window.cancelB('${b.id}')">신청 취소하기</button>
-            </div>
-        `).join('');
-    }
-};
+  const slotInfo = slotsCache[key] || {};
+  const dayBooks = bookingsCache[key] || [];
+  const area = document.getElementById('slot-area');
+  area.innerHTML = '';
 
-window.cancelB = async (id) => {
-    if(confirm('정말 이 상담 예약을 취소하시겠습니까?')) {
-        await deleteDoc(doc(db, 'bookings', id));
-        alert('정상적으로 취소되었습니다.');
-        location.reload();
+  // 고정 슬롯
+  ['lunch', 'after'].forEach(type => {
+    if (!slotInfo[type]) return;
+    const taken = dayBooks.some(b => b.type === type);
+    const isSel = selSlot && selSlot.type === type;
+    const card = document.createElement('div');
+    card.className = `slot-card ${isSel ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
+    card.innerHTML = `
+      <span class="tag ${type}">${FIXED_DEF[type].label}</span><br>
+      <small style="color:var(--muted)">${FIXED_DEF[type].time}</small>
+      <span style="float:right; font-size:0.75rem;">${taken ? '(마감)' : '(신청가능)'}</span>
+    `;
+    if (!taken) {
+      card.onclick = () => {
+        selSlot = { type, customIdx: null };
+        renderRight(key);
+        document.getElementById('form-area').style.display = 'block';
+      };
     }
-};
+    area.appendChild(card);
+  });
 
-window.changeMonth = (dir) => { curMonth += dir; if(curMonth>11){curMonth=0;curYear++;}else if(curMonth<0){curMonth=11;curYear--;} renderCal(); };
-function simpleHash(str) { let h = 0; for(let i=0; i<str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; return h.toString(36); }
+  // 커스텀 슬롯
+  const customs = slotInfo.custom || [];
+  customs.forEach((c, idx) => {
+    if (!c.open) return;
+    const taken = dayBooks.some(b => b.type === 'custom' && b.customIdx === idx);
+    const isSel = selSlot && selSlot.type === 'custom' && selSlot.customIdx === idx;
+    const card = document.createElement('div');
+    card.className = `slot-card ${isSel ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
+    card.innerHTML = `
+      <span class="tag custom">✦ ${c.name}</span><br>
+      <small style="color:var(--muted)">${c.start} – ${c.end}</small>
+      <span style="float:right; font-size:0.75rem;">${taken ? '(마감)' : '(신청가능)'}</span>
+    `;
+    if (!taken) {
+      card.onclick = () => {
+        selSlot = { type: 'custom', customIdx: idx };
+        renderRight(key);
+        document.getElementById('form-area').style.display = 'block';
+      };
+    }
+    area.appendChild(card);
+  });
+
+  // 아무 슬롯도 없으면 안내
+  if (!area.children.length) {
+    area.innerHTML = '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:20px 0">신청 가능한 슬롯이 없습니다.</p>';
+  }
+}
+
+// ── 예약 제출 ──
+async function submitBooking() {
+  const btn = document.getElementById('submit-btn');
+  const name = document.getElementById('f-name').value.trim();
+  const content = document.getElementById('f-content').value.trim();
+  const pw = document.getElementById('f-pw').value;
+
+  if (!selSlot || !name || pw.length < 4) {
+    alert('슬롯을 선택하고, 이름과 비밀번호(4자 이상)를 입력해주세요.');
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = '처리 중...';
+  try {
+    await addDoc(collection(db, 'bookings'), {
+      date: selDate,
+      type: selSlot.type,
+      customIdx: selSlot.customIdx ?? null,
+      name, content,
+      pw: simpleHash(pw),
+      createdAt: Date.now()
+    });
+    alert('예약이 완료되었습니다!');
+    location.reload();
+  } catch(e) {
+    alert('신청 중 오류가 발생했습니다.');
+    btn.disabled = false; btn.textContent = '상담 신청하기';
+  }
+}
+
+// ── 예약 조회/취소 ──
+function doCheck() {
+  const name = document.getElementById('check-name').value.trim();
+  const pw = simpleHash(document.getElementById('check-pw').value);
+  const res = document.getElementById('check-result');
+  const found = [];
+
+  Object.values(bookingsCache).forEach(arr =>
+    arr.forEach(b => { if (b.name === name && b.pw === pw) found.push(b); })
+  );
+
+  if (!found.length) {
+    alert('일치하는 예약 정보가 없습니다.');
+    return;
+  }
+
+  res.style.display = 'block';
+  res.innerHTML = found.map(b => {
+    // 슬롯 표시 라벨 만들기
+    let slotLabel = '';
+    if (b.type === 'lunch' || b.type === 'after') {
+      slotLabel = FIXED_DEF[b.type].label;
+    } else if (b.type === 'custom') {
+      const cs = (slotsCache[b.date]?.custom || [])[b.customIdx];
+      slotLabel = cs ? `✦ ${cs.name} (${cs.start}–${cs.end})` : '커스텀 상담';
+    }
+    return `
+      <div style="background:#f9f9f9; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid var(--accent2);">
+        <div style="font-size:0.85rem; font-weight:700;">${b.date}</div>
+        <div style="font-size:0.75rem; color:var(--muted);">${slotLabel}</div>
+        <button class="cancel-btn" data-id="${b.id}">신청 취소하기</button>
+      </div>
+    `;
+  }).join('');
+
+  // 취소 버튼 이벤트 리스너
+  res.querySelectorAll('.cancel-btn').forEach(btn => {
+    btn.addEventListener('click', () => cancelBooking(btn.dataset.id));
+  });
+}
+
+async function cancelBooking(id) {
+  if (confirm('정말 이 상담 예약을 취소하시겠습니까?')) {
+    await deleteDoc(doc(db, 'bookings', id));
+    alert('정상적으로 취소되었습니다.');
+    location.reload();
+  }
+}
+
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return h.toString(36);
+}
 
 init();
 </script>
