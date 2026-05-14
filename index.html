@@ -27,7 +27,7 @@
 
   .cal-cell {
     background: var(--card);
-    aspect-ratio: 1 / 1.1;
+    min-height: 72px;
     padding: 6px;
     cursor: default;
     display: flex;
@@ -38,10 +38,18 @@
   .cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; z-index: 1; }
   .cell-date { font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 
+  /* 데스크탑: 텍스트 뱃지 */
   .slot-dot { display: block; width: 100%; font-size: .65rem; padding: 2px 4px; border-radius: 2px; margin-top: 2px; text-align: center; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .slot-dot.lunch  { background: var(--lunch);  color: var(--lunch-accent); }
   .slot-dot.after  { background: var(--after);  color: var(--after-accent); }
   .slot-dot.custom { background: var(--custom); color: var(--custom-accent); }
+
+  /* 모바일: 원형 dot */
+  .dot-row { display: none; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+  .mini-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .mini-dot.lunch  { background: var(--lunch-accent); }
+  .mini-dot.after  { background: var(--after-accent); }
+  .mini-dot.custom { background: var(--custom-accent); }
 
   .panel-card { background: var(--card); border: 1.5px solid var(--border); padding: 20px; margin-bottom: 20px; border-radius: 8px; }
   .slot-card { border: 1.5px solid var(--border); padding: 12px; margin-bottom: 10px; cursor: pointer; background: #fff; border-radius: 6px; transition: 0.2s; }
@@ -63,10 +71,13 @@
   .cancel-btn { width: 100%; padding: 10px; margin-top: 12px; border: 1px solid #e74c3c; color: #e74c3c; background: none; cursor: pointer; font-weight: 600; border-radius: 4px; }
   .cancel-btn:hover { background: #e74c3c; color: #fff; }
 
-  @media (max-width: 768px) {
-    .main-wrap { grid-template-columns: 1fr; padding: 15px; }
-    .cal-cell { padding: 3px; }
-    .slot-dot { font-size: 0.58rem; padding: 1px; }
+  @media (max-width: 600px) {
+    .main-wrap { grid-template-columns: 1fr; padding: 10px; }
+    .cal-cell { min-height: 44px; padding: 4px 3px; }
+    .cell-date { font-size: .8rem; }
+    .slot-dot { display: none; }           /* 텍스트 뱃지 숨김 */
+    .dot-row  { display: flex; }           /* 원형 dot 표시 */
+    .panel-card { padding: 14px; }
   }
 </style>
 </head>
@@ -210,6 +221,14 @@ function renderCal() {
     customs.forEach(c => {
       cell.innerHTML += `<span class="slot-dot custom">${c.name}</span>`;
     });
+    // 모바일용 dot row
+    if (hasAny) {
+      let dots = '';
+      if (s.lunch) dots += `<span class="mini-dot lunch"></span>`;
+      if (s.after)  dots += `<span class="mini-dot after"></span>`;
+      customs.forEach(() => { dots += `<span class="mini-dot custom"></span>`; });
+      cell.innerHTML += `<div class="dot-row">${dots}</div>`;
+    }
     grid.appendChild(cell);
   }
 }
