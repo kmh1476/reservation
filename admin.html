@@ -108,6 +108,26 @@
 
   .no-date-msg { text-align: center; color: #999; padding: 20px 0; font-size: .85rem; }
 
+  /* 오늘 상담 알림 모달 */
+  .today-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .today-overlay.show { display: flex; }
+  .today-modal { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 380px; overflow: hidden; }
+  .today-modal-header { background: var(--ink); color: #fff; padding: 18px 22px; display: flex; align-items: center; gap: 10px; }
+  .today-modal-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.1rem; }
+  .today-modal-body { padding: 20px 22px; }
+  .today-date-label { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
+  .today-booking-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .today-booking-item:last-child { border-bottom: none; }
+  .today-slot-tag { font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+  .today-slot-tag.lunch  { background: var(--lunch);  color: var(--lunch-accent); }
+  .today-slot-tag.after  { background: var(--after);  color: var(--after-accent); }
+  .today-slot-tag.custom { background: var(--custom); color: var(--custom-accent); }
+  .today-booking-name { font-weight: 600; font-size: .9rem; }
+  .today-booking-time { font-size: .75rem; color: var(--muted); }
+  .today-modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+  .today-close-btn { flex: 1; padding: 10px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-weight: 600; font-size: .88rem; }
+  .today-goto-btn  { flex: 1; padding: 10px; background: none; border: 1.5px solid var(--accent2); color: var(--accent2); cursor: pointer; font-weight: 600; font-size: .88rem; }
+
   @media(max-width: 768px) { .main-wrap { grid-template-columns: 1fr; } header { padding: 0 16px; } }
 </style>
 </head>
@@ -187,6 +207,24 @@
   </div>
 </div>
 
+<!-- 오늘 상담 알림 모달 -->
+<div class="today-overlay" id="today-overlay">
+  <div class="today-modal">
+    <div class="today-modal-header">
+      <span style="font-size:1.4rem">🔔</span>
+      <h2>오늘 상담이 있어요!</h2>
+    </div>
+    <div class="today-modal-body">
+      <div class="today-date-label" id="today-date-label"></div>
+      <div id="today-booking-list"></div>
+    </div>
+    <div class="today-modal-footer">
+      <button class="today-goto-btn" id="today-goto-btn">오늘 날짜로 이동</button>
+      <button class="today-close-btn" onclick="document.getElementById('today-overlay').classList.remove('show')">확인</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDoc, updateDoc }
@@ -207,6 +245,57 @@ const db = getFirestore(app);
 const FIXED_TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
 let slotsCache = {}, bookingsCache = {}, adminPw = 'admin1234';
 let curYear, curMonth, selectedDate = null;
+let _slotsReady = false, _bookingsReady = false, _alertShown = false;
+
+function maybeShowTodayAlert() {
+  if (!_slotsReady || !_bookingsReady || _alertShown) return;
+  _alertShown = true;
+
+  const today = new Date().toISOString().split('T')[0];
+  const books = bookingsCache[today] || [];
+  if (!books.length) return;
+
+  const slotData = slotsCache[today] || {};
+  const customs  = slotData.custom || [];
+  const FIXED_LABEL = { lunch: '점심 상담', after: '방과후 상담' };
+
+  document.getElementById('today-date-label').textContent = `📅 ${today}`;
+
+  const listEl = document.getElementById('today-booking-list');
+  listEl.innerHTML = '';
+  books.sort((a, b) => {
+    const order = { lunch: 0, after: 1, custom: 2 };
+    return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+  }).forEach(b => {
+    let tagClass = b.type;
+    let tagLabel = FIXED_LABEL[b.type] || '커스텀';
+    let timeStr  = FIXED_TIMES[b.type] || '';
+    if (b.type === 'custom') {
+      const cs = customs[b.customIdx];
+      if (cs) { tagLabel = cs.name; timeStr = `${cs.start} – ${cs.end}`; }
+    }
+    const item = document.createElement('div');
+    item.className = 'today-booking-item';
+    item.innerHTML = `
+      <span class="today-slot-tag ${tagClass}">${tagLabel}</span>
+      <div>
+        <div class="today-booking-name">${b.name}</div>
+        <div class="today-booking-time">${timeStr}</div>
+      </div>
+    `;
+    listEl.appendChild(item);
+  });
+
+  document.getElementById('today-overlay').classList.add('show');
+  document.getElementById('today-goto-btn').onclick = () => {
+    document.getElementById('today-overlay').classList.remove('show');
+    selectDate(today);
+    // 달력을 오늘 달로 이동
+    const [y, m] = today.split('-').map(Number);
+    curYear = y; curMonth = m - 1;
+    renderCal();
+  };
+}
 
 // ── 로그인 ──
 window.doLogin = async function() {
@@ -234,8 +323,10 @@ function initApp() {
   onSnapshot(collection(db, 'slots'), snap => {
     slotsCache = {};
     snap.forEach(d => slotsCache[d.id] = d.data());
+    _slotsReady = true;
     renderCal();
     if (selectedDate) renderSlotPanel(selectedDate);
+    maybeShowTodayAlert();
   });
 
   onSnapshot(collection(db, 'bookings'), snap => {
@@ -245,8 +336,10 @@ function initApp() {
       if (!bookingsCache[b.date]) bookingsCache[b.date] = [];
       bookingsCache[b.date].push(b);
     });
+    _bookingsReady = true;
     renderCal();
     if (selectedDate) renderBookingPanel(selectedDate);
+    maybeShowTodayAlert();
   });
 }
 
