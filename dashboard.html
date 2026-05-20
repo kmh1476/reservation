@@ -15,14 +15,15 @@
   --sidebar-w: 220px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+html, body { height: 100%; width: 100%; overflow-x: hidden; } /* 가로 스크롤 원천 차단 */
+body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; overflow-y: auto; }
 
 /* ── 상단 헤더 ── */
 .topbar {
   background: var(--ink); color: #fff;
   min-height: 54px; display: flex; align-items: center; justify-content: space-between;
   padding: 8px 16px; flex-shrink: 0; z-index: 10; flex-wrap: wrap; gap: 8px;
+  width: 100%; overflow: hidden;
 }
 .topbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-width: 200px; }
 .topbar-title { font-family: 'Nanum Myeongjo', serif; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
@@ -43,7 +44,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 /* ── 탭 네비 ── */
 .tab-nav {
   background: var(--ink); display: flex; align-items: flex-end;
-  padding: 0 16px; gap: 2px; flex-shrink: 0; border-bottom: 2px solid #333;
+  padding: 0 16px; gap: 2px; flex-shrink: 0; border-bottom: 2px solid #333; width: 100%;
 }
 .tab-btn {
   padding: 10px 16px 8px; font-size: .82rem; font-weight: 600; cursor: pointer;
@@ -54,18 +55,27 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tab-btn:hover:not(.active) { background: #383860; color: #ccc; }
 
 /* ── 탭 컨텐츠 ── */
-.tab-content { display: none; flex: 1; overflow: hidden; }
-.tab-content.active { display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tab-content { display: none; flex: 1; width: 100%; }
+.tab-content.active { display: flex; flex-direction: column; }
 
-/* ── 대시보드 래퍼 ── */
-.dash-wrap { padding: 16px; display: grid; grid-template-columns: 1fr 280px; gap: 16px; width: 100%; margin: 0 auto; }
-.panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; }
+/* ── 대시보드 메인 영역 ── */
+.dash-container { width: 100%; } /* 감싸는 부모 추가 */
+.dash-wrap { 
+  padding: 16px; 
+  display: grid; 
+  grid-template-columns: 1fr 280px; 
+  gap: 16px; 
+  width: 100%; 
+  max-width: 1200px; 
+  margin: 0 auto; 
+}
+.panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; width: 100%; }
 .panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
 
 /* 알림 배너 */
 .alert-banner {
   grid-column: 1 / -1; background: #fff8f0; border: 1.5px solid #f0c080; border-radius: 8px;
-  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%;
 }
 .alert-banner.none { background: #f0faf4; border-color: #a8dbb8; }
 .alert-ico { font-size: 1.4rem; flex-shrink: 0; }
@@ -106,7 +116,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .memo-input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .85rem; font-family: inherit; outline: none; border-radius: 4px; min-width: 0; }
 .memo-add-btn { padding: 8px 14px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .8rem; font-weight: 600; border-radius: 4px; white-space: nowrap; }
 .memo-items { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
-.memo-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); }
+.memo-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); width: 100%; }
 .memo-cb { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; accent-color: var(--open); }
 .memo-text { flex: 1; font-size: .84rem; word-break: break-all; }
 .memo-text.done { text-decoration: line-through; color: var(--muted); }
@@ -141,24 +151,28 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 
 .counsel-frame { width: 100%; flex: 1; border: none; }
 
-/* 📱📱 스마트폰 전용 반응형 쫀쫀 레이아웃 보수 📱📱 */
+/* 📱📱 스마트폰 전용 초강력 압축 반응형 레이아웃 📱📱 */
 @media(max-width: 800px) {
-  body { overflow-y: auto; }
-  .tab-content { overflow: visible; }
-  .tab-content.active { overflow: visible; }
+  html, body { overflow-x: hidden !important; }
   
-  /* 모바일에서 양옆으로 너무 길어지지 않게 가로폭 최대 480px 제한 및 가운데 정렬 */
+  /* 메인 콘텐츠 가로폭을 부모 기준으로 강제 제한 후 완벽 중앙 정렬 */
   .dash-wrap { 
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr !important; 
     grid-template-rows: auto; 
     padding: 12px; 
     gap: 12px;
-    max-width: 480px; 
+    max-width: 460px !important; 
+    width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box;
   }
-  .panel { grid-column: auto !important; grid-row: auto !important; padding: 14px; }
+  .panel { grid-column: auto !important; grid-row: auto !important; padding: 12px; width: 100% !important; box-sizing: border-box; }
   
-  .topbar { padding: 8px 12px; }
-  .topbar-right { width: 100%; justify-content: space-between; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
+  /* 상단 탑바 요소들이 가로를 터뜨리지 않도록 수정 */
+  .topbar { padding: 8px 12px; height: auto; min-height: unset; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .topbar-left { width: 100%; justify-content: space-between; }
+  .topbar-right { width: 100%; justify-content: space-between; margin-top: 2px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-left: 0; }
+  .period-indicator { padding: 3px 8px; }
 }
 </style>
 </head>
@@ -188,55 +202,56 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 </div>
 
 <div class="tab-content active" id="tab-dashboard">
-  <div class="dash-wrap">
+  <div class="dash-container"> <div class="dash-wrap">
 
-    <div class="alert-banner none" id="alert-banner">
-      <div class="alert-ico" id="alert-ico">✅</div>
-      <div class="alert-text">
-        <div class="alert-title none" id="alert-title">오늘 예정된 상담이 없어요</div>
-        <div class="alert-list none" id="alert-list">편안한 하루 되세요 😊</div>
+      <div class="alert-banner none" id="alert-banner">
+        <div class="alert-ico" id="alert-ico">✅</div>
+        <div class="alert-text">
+          <div class="alert-title none" id="alert-title">오늘 예정된 상담이 없어요</div>
+          <div class="alert-list none" id="alert-list">편안한 하루 되세요 😊</div>
+        </div>
+        <button class="alert-open-btn" onclick="switchTab('counsel')">상담 관리 열기</button>
       </div>
-      <button class="alert-open-btn" onclick="switchTab('counsel')">상담 관리 열기</button>
+
+      <div class="panel">
+        <div class="panel-title">📅 주간 시간표</div>
+        <div class="tt-responsive-wrapper">
+          <table class="tt-table" id="tt-table">
+            <thead>
+              <tr>
+                <th>교시</th>
+                <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
+              </tr>
+            </thead>
+            <tbody id="tt-body"></tbody>
+          </table>
+        </div>
+        <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">🍱 오늘의 급식</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="meal-school" id="meal-school">조회 중...</div>
+        </div>
+        <div class="meal-tab-row">
+          <button class="meal-tab active" onclick="showMeal('lunch', this)">중식</button>
+          <button class="meal-tab" onclick="showMeal('dinner', this)">석식</button>
+        </div>
+        <div id="meal-lunch-content"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
+        <div id="meal-dinner-content" style="display:none"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">📝 업무 메모</div>
+        <div class="memo-input-row">
+          <input class="memo-input" id="memo-input" placeholder="할 일을 입력하고 Enter" onkeydown="if(event.key==='Enter')addMemo()">
+          <button class="memo-add-btn" onclick="addMemo()">추가</button>
+        </div>
+        <div class="memo-items" id="memo-items"></div>
+      </div>
+
     </div>
-
-    <div class="panel">
-      <div class="panel-title">📅 주간 시간표</div>
-      <div class="tt-responsive-wrapper">
-        <table class="tt-table" id="tt-table">
-          <thead>
-            <tr>
-              <th>교시</th>
-              <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
-            </tr>
-          </thead>
-          <tbody id="tt-body"></tbody>
-        </table>
-      </div>
-      <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">🍱 오늘의 급식</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div class="meal-school" id="meal-school">조회 중...</div>
-      </div>
-      <div class="meal-tab-row">
-        <button class="meal-tab active" onclick="showMeal('lunch', this)">중식</button>
-        <button class="meal-tab" onclick="showMeal('dinner', this)">석식</button>
-      </div>
-      <div id="meal-lunch-content"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
-      <div id="meal-dinner-content" style="display:none"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">📝 업무 메모</div>
-      <div class="memo-input-row">
-        <input class="memo-input" id="memo-input" placeholder="할 일을 입력하고 Enter" onkeydown="if(event.key==='Enter')addMemo()">
-        <button class="memo-add-btn" onclick="addMemo()">추가</button>
-      </div>
-      <div class="memo-items" id="memo-items"></div>
-    </div>
-
   </div>
 </div>
 
@@ -503,7 +518,7 @@ window.closeDDayModal = function() {
 window.addDDay = async function() {
   const titleInput = document.getElementById('dday-title-input'); const dateInput = document.getElementById('dday-date-input');
   const title = titleInput.value.trim(); const targetDate = dateInput.value;
-  if (!title || !targetDate) { alert('일정 이름과 날짜를 모두 입력해주세요!'); return; }
+  if (!title || !targetDate) { alert('일정 이름 and 날짜를 모두 입력해주세요!'); return; }
   try {
     await addDoc(collection(db, 'ddays'), { title: title, targetDate: targetDate });
     titleInput.value = ''; dateInput.value = '';
