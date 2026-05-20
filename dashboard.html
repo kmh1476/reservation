@@ -15,7 +15,7 @@
   --sidebar-w: 220px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; width: 100%; overflow-x: hidden; } /* 가로 스크롤 원천 차단 */
+html, body { height: 100%; width: 100%; overflow-x: hidden !important; } 
 body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; overflow-y: auto; }
 
 /* ── 상단 헤더 ── */
@@ -23,7 +23,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   background: var(--ink); color: #fff;
   min-height: 54px; display: flex; align-items: center; justify-content: space-between;
   padding: 8px 16px; flex-shrink: 0; z-index: 10; flex-wrap: wrap; gap: 8px;
-  width: 100%; overflow: hidden;
+  width: 100%;
 }
 .topbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-width: 200px; }
 .topbar-title { font-family: 'Nanum Myeongjo', serif; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
@@ -59,7 +59,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tab-content.active { display: flex; flex-direction: column; }
 
 /* ── 대시보드 메인 영역 ── */
-.dash-container { width: 100%; } /* 감싸는 부모 추가 */
+.dash-container { width: 100%; overflow-x: hidden; }
 .dash-wrap { 
   padding: 16px; 
   display: grid; 
@@ -69,26 +69,26 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   max-width: 1200px; 
   margin: 0 auto; 
 }
-.panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; width: 100%; }
+.panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; width: 100%; min-width: 0; }
 .panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
 
 /* 알림 배너 */
 .alert-banner {
   grid-column: 1 / -1; background: #fff8f0; border: 1.5px solid #f0c080; border-radius: 8px;
-  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%;
+  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; min-width: 0;
 }
 .alert-banner.none { background: #f0faf4; border-color: #a8dbb8; }
 .alert-ico { font-size: 1.4rem; flex-shrink: 0; }
-.alert-text { flex: 1; min-width: 180px; }
+.alert-text { flex: 1; min-width: 0; }
 .alert-title { font-weight: 600; font-size: .9rem; color: #a85c00; margin-bottom: 3px; }
 .alert-title.none { color: #1a6b3a; }
 .alert-list { font-size: .8rem; color: #c07030; word-break: break-all; }
 .alert-list.none { color: #2e8b57; }
 .alert-open-btn { padding: 6px 12px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .78rem; font-weight: 600; border-radius: 4px; flex-shrink: 0; margin-left: auto; }
 
-/* 시간표 반응형 가로 스크롤 상자 */
-.tt-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 4px; }
-.tt-table { width: 100%; border-collapse: collapse; font-size: .78rem; table-layout: fixed; min-width: 440px; }
+/* 시간표 래퍼 */
+.tt-responsive-wrapper { width: 100%; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.tt-table { width: 100%; border-collapse: collapse; font-size: .78rem; table-layout: fixed; }
 .tt-table th { background: var(--ink); color: #ccc; padding: 6px 2px; text-align: center; font-weight: 500; font-size: .7rem; overflow: hidden; white-space: nowrap; }
 .tt-table th:first-child { width: 48px; }
 .tt-table th.today-col { color: #7ab8f5; }
@@ -98,7 +98,6 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tt-table td.period { color: var(--muted); font-size: .68rem; background: var(--paper); width: 48px; font-weight: 600; }
 .tt-table td.empty { color: #ccc; }
 .tt-edit-btn { margin-top: 10px; width: 100%; padding: 8px; background: none; border: 1.5px dashed var(--border); color: var(--muted); cursor: pointer; font-size: .78rem; border-radius: 4px; }
-.tt-edit-btn:hover { border-color: var(--accent2); color: var(--accent2); }
 
 /* 급식 */
 .meal-tab-row { display: flex; gap: 6px; margin-bottom: 12px; }
@@ -151,28 +150,63 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 
 .counsel-frame { width: 100%; flex: 1; border: none; }
 
-/* 📱📱 스마트폰 전용 초강력 압축 반응형 레이아웃 📱📱 */
-@media(max-width: 800px) {
-  html, body { overflow-x: hidden !important; }
-  
-  /* 메인 콘텐츠 가로폭을 부모 기준으로 강제 제한 후 완벽 중앙 정렬 */
+/* 📱📱 미디어쿼리가 안 먹혀도 강제로 적용되도록 강력 처방한 모바일 구간 (500px 이하) 📱📱 */
+@media screen and (max-width: 500px) {
   .dash-wrap { 
     grid-template-columns: 1fr !important; 
-    grid-template-rows: auto; 
-    padding: 12px; 
-    gap: 12px;
-    max-width: 460px !important; 
+    padding: 8px !important; 
+    gap: 8px !important;
+    max-width: 100% !important;
     width: 100% !important;
-    margin: 0 auto !important;
-    box-sizing: border-box;
   }
-  .panel { grid-column: auto !important; grid-row: auto !important; padding: 12px; width: 100% !important; box-sizing: border-box; }
+  .panel { padding: 8px !important; width: 100% !important; }
+  .panel-title { font-size: 0.8rem !important; margin-bottom: 6px !important; }
+
+  /* [핵심] 시간표 글자 크기, 여백을 한계까지 줄이고 강제 자동 줄바꿈 처리 */
+  .tt-table { min-width: unset !important; width: 100% !important; table-layout: fixed !important; font-size: 0.6rem !important; }
+  .tt-table th { padding: 3px 0 !important; font-size: 0.58rem !important; }
+  .tt-table th:first-child { width: 32px !important; }
+  .tt-table td { 
+    padding: 5px 0 !important; 
+    font-size: 0.6rem !important; 
+    overflow: hidden !important;
+    text-overflow: clip !important;
+    white-space: normal !important; /* 한 줄로 뻗지 않고 칸 안에서 줄바꿈되도록 변경 */
+    word-break: break-all !important; 
+    line-height: 1.1 !important; 
+  }
+  .tt-table td.period { width: 32px !important; font-size: 0.55rem !important; }
+  .tt-edit-btn { margin-top: 5px !important; padding: 5px !important; font-size: 0.68rem !important; }
+
+  /* 알림 배너 뚱뚱해짐 방지 */
+  .alert-banner { padding: 8px 10px !important; gap: 6px !important; }
+  .alert-ico { font-size: 1.1rem !important; }
+  .alert-title { font-size: 0.8rem !important; }
+  .alert-list { font-size: 0.72rem !important; }
+  .alert-open-btn { padding: 4px 8px !important; font-size: 0.7rem !important; }
+
+  /* 급식 미니어처 */
+  .meal-school { font-size: 0.68rem !important; }
+  .meal-tab-row { margin-bottom: 6px !important; gap: 3px !important; }
+  .meal-tab { padding: 3px !important; font-size: 0.68rem !important; }
+  .meal-list li { font-size: 0.72rem !important; padding: 3px 0 !important; }
   
-  /* 상단 탑바 요소들이 가로를 터뜨리지 않도록 수정 */
-  .topbar { padding: 8px 12px; height: auto; min-height: unset; flex-direction: column; align-items: flex-start; gap: 6px; }
-  .topbar-left { width: 100%; justify-content: space-between; }
-  .topbar-right { width: 100%; justify-content: space-between; margin-top: 2px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-left: 0; }
-  .period-indicator { padding: 3px 8px; }
+  /* 업무 메모 미니어처 */
+  .memo-input-row { margin-bottom: 6px !important; gap: 3px !important; }
+  .memo-input { padding: 5px 6px !important; font-size: 0.72rem !important; }
+  .memo-add-btn { padding: 5px 8px !important; font-size: 0.7rem !important; }
+  .memo-item { padding: 5px 6px !important; gap: 5px !important; }
+  .memo-cb { width: 13px; height: 13px; }
+  .memo-text { font-size: 0.72rem !important; }
+  .memo-del { font-size: 0.8rem !important; }
+  
+  /* 헤더 컴팩트 */
+  .topbar { padding: 6px 8px !important; gap: 2px !important; }
+  .topbar-title { font-size: 0.85rem !important; }
+  .topbar-title span { font-size: 0.65rem !important; }
+  .topbar-clock { font-size: 0.8rem !important; }
+  .period-indicator { padding: 1px 4px !important; font-size: 0.65rem !important; }
+  .topbar-right { padding-top: 4px !important; width: 100% !important; justify-content: space-between !important; }
 }
 </style>
 </head>
@@ -202,7 +236,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 </div>
 
 <div class="tab-content active" id="tab-dashboard">
-  <div class="dash-container"> <div class="dash-wrap">
+  <div class="dash-container">
+    <div class="dash-wrap">
 
       <div class="alert-banner none" id="alert-banner">
         <div class="alert-ico" id="alert-ico">✅</div>
@@ -390,7 +425,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('cli
 
 function defaultTimetable() { const tt = {}; for (let p = 1; p <= PERIODS; p++) { tt[p] = {}; DAYS.forEach(d => tt[p][d] = ''); } return tt; }
 
-// 시간표 파이어베이스 동기화
 onSnapshot(doc(db, 'timetable', 'weekly'), docSnap => {
   if (docSnap.exists()) { timetable = docSnap.data(); } else { timetable = defaultTimetable(); }
   renderTimetable(); updateClock();
@@ -465,7 +499,6 @@ window.showMeal = function(type, btn) {
 };
 fetchNeisMeal();
 
-// ── 업무 메모 파이어베이스 연동 ──
 window.renderMemos = function() {
   const container = document.getElementById('memo-items'); container.innerHTML = '';
   if (!memos || !memos.length) { container.innerHTML = '<div class="memo-empty">할 일을 추가해보세요</div>'; return; }
@@ -494,7 +527,6 @@ onSnapshot(doc(db, 'memos', 'list'), docSnap => {
   renderMemos();
 });
 
-// ── Firebase 상담 알림 ──
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function updateAlertBanner() {
   const today = todayStr(); const books = bookingsCache[today] || []; const slotData = slotsCache[today] || {}; const customs = slotData.custom || []; const FIXED_LABEL = { lunch: '점심', after: '방과후' };
@@ -509,7 +541,6 @@ function maybeUpdate() { if (_slotsReady && _bookingsReady) updateAlertBanner();
 onSnapshot(collection(db, 'slots'), snap => { slotsCache = {}; snap.forEach(d => slotsCache[d.id] = d.data()); _slotsReady = true; maybeUpdate(); });
 onSnapshot(collection(db, 'bookings'), snap => { bookingsCache = {}; snap.forEach(d => { const b = d.data(); b.id = d.id; if (!bookingsCache[b.date]) bookingsCache[b.date] = []; bookingsCache[b.date].push(b); }); _bookingsReady = true; maybeUpdate(); });
 
-// ── 디데이 제어 ──
 window.openDDayModal = function() { document.getElementById('dday-modal').classList.add('show'); };
 window.closeDDayModal = function() {
   document.getElementById('dday-modal').classList.remove('show');
