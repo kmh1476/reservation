@@ -57,8 +57,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tab-content { display: none; flex: 1; overflow: hidden; }
 .tab-content.active { display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-/* ── 대시보드 ── */
-.dash-wrap { padding: 16px; display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+/* ── 대시보드 래퍼 ── */
+.dash-wrap { padding: 16px; display: grid; grid-template-columns: 1fr 280px; gap: 16px; width: 100%; margin: 0 auto; }
 .panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; }
 .panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
 
@@ -141,13 +141,20 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 
 .counsel-frame { width: 100%; flex: 1; border: none; }
 
-/* 📱📱 스마트폰 및 태블릿 모바일 전용 반응형 레이아웃 보수 📱📱 */
+/* 📱📱 스마트폰 전용 반응형 쫀쫀 레이아웃 보수 📱📱 */
 @media(max-width: 800px) {
   body { overflow-y: auto; }
   .tab-content { overflow: visible; }
   .tab-content.active { overflow: visible; }
   
-  .dash-wrap { grid-template-columns: 1fr; grid-template-rows: auto; padding: 12px; gap: 12px; }
+  /* 모바일에서 양옆으로 너무 길어지지 않게 가로폭 최대 480px 제한 및 가운데 정렬 */
+  .dash-wrap { 
+    grid-template-columns: 1fr; 
+    grid-template-rows: auto; 
+    padding: 12px; 
+    gap: 12px;
+    max-width: 480px; 
+  }
   .panel { grid-column: auto !important; grid-row: auto !important; padding: 14px; }
   
   .topbar { padding: 8px 12px; }
@@ -368,7 +375,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('cli
 
 function defaultTimetable() { const tt = {}; for (let p = 1; p <= PERIODS; p++) { tt[p] = {}; DAYS.forEach(d => tt[p][d] = ''); } return tt; }
 
-// 시간표 파이어베이스 실시간 스트리밍 연동 복구
+// 시간표 파이어베이스 동기화
 onSnapshot(doc(db, 'timetable', 'weekly'), docSnap => {
   if (docSnap.exists()) { timetable = docSnap.data(); } else { timetable = defaultTimetable(); }
   renderTimetable(); updateClock();
@@ -443,7 +450,7 @@ window.showMeal = function(type, btn) {
 };
 fetchNeisMeal();
 
-// ── 업무 메모 파이어베이스 실시간 연동 복구 ──
+// ── 업무 메모 파이어베이스 연동 ──
 window.renderMemos = function() {
   const container = document.getElementById('memo-items'); container.innerHTML = '';
   if (!memos || !memos.length) { container.innerHTML = '<div class="memo-empty">할 일을 추가해보세요</div>'; return; }
