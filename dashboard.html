@@ -115,11 +115,18 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .memo-input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .85rem; font-family: inherit; outline: none; border-radius: 4px; min-width: 0; }
 .memo-add-btn { padding: 8px 14px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .8rem; font-weight: 600; border-radius: 4px; white-space: nowrap; }
 .memo-items { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
-.memo-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); width: 100%; }
-.memo-cb { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; accent-color: var(--open); }
+.memo-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); width: 100%; transition: box-shadow .15s; }
+.memo-item.dragging { opacity: .5; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+.memo-item.drag-over { border-color: var(--accent2); background: #e8f0fe; }
+.memo-drag { color: #ccc; cursor: grab; font-size: 1rem; flex-shrink: 0; padding: 0 2px; user-select: none; }
+.memo-drag:active { cursor: grabbing; }
+.memo-cb { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; accent-color: var(--open); }
 .memo-text { flex: 1; font-size: .84rem; word-break: break-all; }
 .memo-text.done { text-decoration: line-through; color: var(--muted); }
-.memo-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1rem; padding: 0 2px; }
+.memo-edit-input { flex: 1; font-size: .84rem; padding: 2px 6px; border: 1.5px solid var(--accent2); background: #fff; font-family: inherit; outline: none; border-radius: 3px; }
+.memo-edit-btn { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: .75rem; padding: 0 3px; flex-shrink: 0; }
+.memo-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .9rem; padding: 0 2px; flex-shrink: 0; }
+.memo-del:hover { color: var(--accent); }
 .memo-empty { color: var(--muted); font-size: .82rem; text-align: center; padding: 16px 0; }
 
 /* 디데이 배지 스타일 */
@@ -208,6 +215,49 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   .period-indicator { padding: 1px 4px !important; font-size: 0.65rem !important; }
   .topbar-right { padding-top: 4px !important; width: 100% !important; justify-content: space-between !important; }
 }
+
+/* 학사일정 미니 달력 */
+.mini-cal { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.mini-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.mini-cal-title { font-size: .82rem; font-weight: 700; color: var(--ink); }
+.mini-cal-nav-btn { background: none; border: 1px solid var(--border); color: var(--muted); width: 22px; height: 22px; cursor: pointer; font-size: .75rem; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+.mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.mini-cal-head { font-size: .62rem; text-align: center; color: var(--muted); padding: 2px 0; font-weight: 600; }
+.mini-cal-cell { min-height: 28px; border-radius: 3px; padding: 2px; cursor: default; position: relative; display: flex; flex-direction: column; align-items: center; }
+.mini-cal-cell.has-event { cursor: pointer; }
+.mini-cal-cell.has-event:hover { background: #e8f0fe; }
+.mini-cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; }
+.mini-cal-cell { cursor: pointer; }
+.mini-cal-cell.today .mini-day { background: var(--ink); color: #fff; border-radius: 50%; }
+.mini-cal-cell.empty { }
+.mini-day { font-size: .7rem; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: 500; color: var(--ink); flex-shrink: 0; }
+.mini-cal-cell.sun .mini-day { color: #e74c3c; }
+.mini-cal-cell.sat .mini-day { color: #2980b9; }
+.mini-event-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 1px; }
+.mini-event-dot.holiday { background: #e74c3c; }
+.mini-event-dot.school { background: #27ae60; }
+.mini-schedule-list { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; max-height: 100px; overflow-y: auto; }
+.mini-schedule-item { font-size: .75rem; padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: flex-start; }
+.mini-schedule-item:last-child { border-bottom: none; }
+.mini-schedule-date { color: var(--muted); flex-shrink: 0; font-size: .7rem; }
+.mini-schedule-name { color: var(--ink); flex: 1; }
+.mini-schedule-name.holiday { color: #e74c3c; font-weight: 600; }
+.mini-schedule-empty { color: var(--muted); font-size: .75rem; text-align: center; padding: 10px 0; }
+.mini-cal-loading { color: var(--muted); font-size: .75rem; text-align: center; padding: 10px 0; }
+.mini-cal-cell.has-memo { position: relative; }
+.mini-cal-cell.has-memo::after { content: ''; position: absolute; bottom: 2px; right: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--after-accent); }
+.mini-note-area { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+.mini-note-header { font-size: .72rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.mini-note-back { font-size: .7rem; color: var(--accent2); cursor: pointer; font-weight: 400; }
+.mini-note-input-row { display: flex; gap: 4px; margin-bottom: 6px; }
+.mini-note-input { flex: 1; padding: 5px 7px; border: 1.5px solid var(--border); background: var(--paper); font-size: .75rem; font-family: inherit; outline: none; border-radius: 3px; }
+.mini-note-input:focus { border-color: var(--accent2); }
+.mini-note-add-btn { padding: 5px 8px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .72rem; font-weight: 600; border-radius: 3px; white-space: nowrap; }
+.mini-note-item { font-size: .75rem; padding: 4px 6px; background: var(--paper); border-radius: 3px; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.mini-note-text { flex: 1; }
+.mini-note-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .8rem; padding: 0; }
+.mini-note-del:hover { color: var(--accent); }
+.mini-note-empty { color: var(--muted); font-size: .75rem; padding: 4px 0; }
 </style>
 </head>
 <body>
@@ -248,22 +298,35 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
         <button class="alert-open-btn" onclick="switchTab('counsel')">상담 관리 열기</button>
       </div>
 
-      <div class="panel">
-        <div class="panel-title">📅 주간 시간표</div>
-        <div class="tt-responsive-wrapper">
-          <table class="tt-table" id="tt-table">
-            <thead>
-              <tr>
-                <th>교시</th>
-                <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
-              </tr>
-            </thead>
-            <tbody id="tt-body"></tbody>
-          </table>
+      <!-- 왼쪽 컬럼: 시간표 + 메모 -->
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="panel">
+          <div class="panel-title">📅 주간 시간표</div>
+          <div class="tt-responsive-wrapper">
+            <table class="tt-table" id="tt-table">
+              <thead>
+                <tr>
+                  <th>교시</th>
+                  <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
+                </tr>
+              </thead>
+              <tbody id="tt-body"></tbody>
+            </table>
+          </div>
+          <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
         </div>
-        <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
+
+        <div class="panel">
+          <div class="panel-title">📝 업무 메모</div>
+          <div class="memo-input-row">
+            <input class="memo-input" id="memo-input" placeholder="할 일을 입력하고 Enter" onkeydown="if(event.key==='Enter')addMemo()">
+            <button class="memo-add-btn" onclick="addMemo()">추가</button>
+          </div>
+          <div class="memo-items" id="memo-items"></div>
+        </div>
       </div>
 
+      <!-- 오른쪽 컬럼: 급식 + 학사달력 -->
       <div class="panel">
         <div class="panel-title">🍱 오늘의 급식</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -275,15 +338,26 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
         </div>
         <div id="meal-lunch-content"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
         <div id="meal-dinner-content" style="display:none"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
-      </div>
 
-      <div class="panel">
-        <div class="panel-title">📝 업무 메모</div>
-        <div class="memo-input-row">
-          <input class="memo-input" id="memo-input" placeholder="할 일을 입력하고 Enter" onkeydown="if(event.key==='Enter')addMemo()">
-          <button class="memo-add-btn" onclick="addMemo()">추가</button>
+        <!-- 학사일정 달력 -->
+        <div class="mini-cal">
+          <div class="mini-cal-nav">
+            <button class="mini-cal-nav-btn" onclick="miniCalMove(-1)">←</button>
+            <div class="mini-cal-title" id="mini-cal-title">로딩중...</div>
+            <button class="mini-cal-nav-btn" onclick="miniCalMove(1)">→</button>
+          </div>
+          <div class="mini-cal-grid" id="mini-cal-head">
+            <div class="mini-cal-head" style="color:#e74c3c">일</div>
+            <div class="mini-cal-head">월</div><div class="mini-cal-head">화</div>
+            <div class="mini-cal-head">수</div><div class="mini-cal-head">목</div>
+            <div class="mini-cal-head">금</div>
+            <div class="mini-cal-head" style="color:#2980b9">토</div>
+          </div>
+          <div class="mini-cal-grid" id="mini-cal-grid"></div>
+          <div class="mini-schedule-list" id="mini-schedule-list">
+            <div class="mini-cal-loading">학사일정 불러오는 중...</div>
+          </div>
         </div>
-        <div class="memo-items" id="memo-items"></div>
       </div>
 
     </div>
@@ -325,7 +399,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
@@ -500,14 +574,77 @@ window.showMeal = function(type, btn) {
 fetchNeisMeal();
 
 window.renderMemos = function() {
-  const container = document.getElementById('memo-items'); container.innerHTML = '';
-  if (!memos || !memos.length) { container.innerHTML = '<div class="memo-empty">할 일을 추가해보세요</div>'; return; }
+  const container = document.getElementById('memo-items');
+  container.innerHTML = '';
+  if (!memos || !memos.length) {
+    container.innerHTML = '<div class="memo-empty">할 일을 추가해보세요</div>';
+    return;
+  }
   memos.forEach((m, i) => {
-    const div = document.createElement('div'); div.className = 'memo-item';
-    div.innerHTML = `<input type="checkbox" class="memo-cb" ${m.done ? 'checked' : ''} onchange="toggleMemo(${i})"><span class="memo-text ${m.done ? 'done' : ''}">${m.text}</span><button class="memo-del" onclick="deleteMemo(${i})">✕</button>`;
+    const div = document.createElement('div');
+    div.className = 'memo-item';
+    div.draggable = true;
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <span class="memo-drag" title="드래그해서 순서 변경">⠿</span>
+      <input type="checkbox" class="memo-cb" ${m.done ? 'checked' : ''} onchange="toggleMemo(${i})">
+      <span class="memo-text ${m.done ? 'done' : ''}" id="memo-text-${i}">${m.text}</span>
+      <button class="memo-edit-btn" onclick="startEditMemo(${i})" title="수정">✏️</button>
+      <button class="memo-del" onclick="deleteMemo(${i})">✕</button>
+    `;
+    // 드래그 이벤트
+    div.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', i);
+      setTimeout(() => div.classList.add('dragging'), 0);
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', async e => {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      const toIdx = parseInt(div.dataset.idx);
+      if (fromIdx === toIdx) return;
+      const updated = [...memos];
+      const [moved] = updated.splice(fromIdx, 1);
+      updated.splice(toIdx, 0, moved);
+      await syncMemosToFirebase(updated);
+    });
     container.appendChild(div);
   });
-}
+};
+
+window.startEditMemo = function(i) {
+  const textEl = document.getElementById('memo-text-' + i);
+  if (!textEl) return;
+  const currentText = memos[i].text;
+  const item = textEl.closest('.memo-item');
+  // 텍스트 → 인풋으로 교체
+  textEl.style.display = 'none';
+  const input = document.createElement('input');
+  input.className = 'memo-edit-input';
+  input.value = currentText;
+  item.insertBefore(input, textEl.nextSibling);
+  input.focus();
+  input.select();
+
+  const save = async () => {
+    const newText = input.value.trim();
+    if (newText && newText !== currentText) {
+      const updated = [...memos];
+      updated[i].text = newText;
+      await syncMemosToFirebase(updated);
+    } else {
+      renderMemos();
+    }
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') save();
+    if (e.key === 'Escape') renderMemos();
+  });
+  input.addEventListener('blur', save);
+};
 async function syncMemosToFirebase(newMemos) {
   try { await setDoc(doc(db, 'memos', 'list'), { list: newMemos }); } catch (error) { console.error("메모 파이어베이스 동기화 실패:", error); }
 }
@@ -609,6 +746,234 @@ onSnapshot(collection(db, 'ddays'), snap => {
     manageList.innerHTML = '<div style="color: var(--muted); font-size: 0.82rem; text-align: center; padding: 16px 0;">등록된 디데이가 없습니다.</div>';
   }
 });
+// ── 학사일정 달력 ──
+let miniCalYear, miniCalMonth;
+let scheduleCache = {};
+let calNotes = {};        // { 'YYYYMMDD': ['메모1','메모2'] } — Firebase 실시간 동기화
+let currentViewDate = null;
+
+// Firebase 실시간 동기화
+onSnapshot(doc(db, 'cal_notes', 'data'), snap => {
+  calNotes = snap.exists() ? (snap.data().notes || {}) : {};
+  renderMiniCalDots();
+  // 상세보기 중이면 메모 목록도 갱신
+  if (currentViewDate) {
+    const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+    const evts = (scheduleCache[key] || []).filter(e => e.date === currentViewDate);
+    showScheduleForDate(currentViewDate, evts, true);
+  }
+});
+
+async function saveCalNotes() {
+  await setDoc(doc(db, 'cal_notes', 'data'), { notes: calNotes });
+}
+
+(function initMiniCal() {
+  const now = new Date();
+  miniCalYear = now.getFullYear();
+  miniCalMonth = now.getMonth() + 1;
+  fetchSchoolSchedule(miniCalYear, miniCalMonth);
+})();
+
+window.miniCalMove = function(dir) {
+  miniCalMonth += dir;
+  if (miniCalMonth > 12) { miniCalMonth = 1; miniCalYear++; }
+  if (miniCalMonth < 1)  { miniCalMonth = 12; miniCalYear--; }
+  currentViewDate = null;
+  renderMiniCal();
+  const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+  if (!scheduleCache[key]) fetchSchoolSchedule(miniCalYear, miniCalMonth);
+};
+
+async function fetchSchoolSchedule(year, month) {
+  const key = `${year}-${String(month).padStart(2,'0')}`;
+  const ym = `${year}${String(month).padStart(2,'0')}`;
+  const url = `https://open.neis.go.kr/hub/SchoolSchedule?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&AA_YMD=${ym}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const rows = data?.SchoolSchedule?.[1]?.row || [];
+    scheduleCache[key] = rows.map(r => ({
+      date: r.AA_YMD,
+      name: r.EVENT_NM,
+      isHoliday: r.EVENT_NM.includes('방학') || r.EVENT_NM.includes('휴업') || r.EVENT_NM.includes('공휴일')
+    }));
+  } catch(e) {
+    scheduleCache[key] = [];
+  }
+  renderMiniCal();
+}
+
+window.renderMiniCal = function renderMiniCal() {
+  const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+  const events = scheduleCache[key] || null;
+  document.getElementById('mini-cal-title').textContent = `${miniCalYear}년 ${miniCalMonth}월`;
+
+  const grid = document.getElementById('mini-cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(miniCalYear, miniCalMonth - 1, 1).getDay();
+  const lastDate = new Date(miniCalYear, miniCalMonth, 0).getDate();
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'mini-cal-cell empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(d).padStart(2,'0')}`;
+    const dayOfWeek = new Date(miniCalYear, miniCalMonth - 1, d).getDay();
+    const dayEvents = events ? events.filter(e => e.date === dateStr) : [];
+    const hasNote = (calNotes[dateStr] || []).length > 0;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === currentViewDate;
+
+    const cell = document.createElement('div');
+    let cls = 'mini-cal-cell';
+    if (isToday) cls += ' today';
+    if (dayOfWeek === 0) cls += ' sun';
+    if (dayOfWeek === 6) cls += ' sat';
+    if (dayEvents.length) cls += ' has-event';
+    if (hasNote) cls += ' has-memo';
+    if (isSelected) cls += ' selected';
+    cell.className = cls;
+
+    let inner = `<div class="mini-day">${d}</div>`;
+    dayEvents.slice(0, 1).forEach(ev => {
+      inner += `<div class="mini-event-dot ${ev.isHoliday ? 'holiday' : 'school'}"></div>`;
+    });
+    cell.innerHTML = inner;
+    cell.onclick = () => showScheduleForDate(dateStr, dayEvents);
+    grid.appendChild(cell);
+  }
+
+  if (currentViewDate) {
+    const evts = events ? events.filter(e => e.date === currentViewDate) : [];
+    showScheduleForDate(currentViewDate, evts, true);
+  } else {
+    renderScheduleList(events, key);
+  }
+}
+
+window.renderScheduleList = function renderScheduleList(events, key) {
+  const list = document.getElementById('mini-schedule-list');
+  if (!events) { list.innerHTML = '<div class="mini-cal-loading">불러오는 중...</div>'; return; }
+
+  const now = new Date();
+  const todayNum = parseInt(`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`);
+  const upcoming = events.filter(e => parseInt(e.date) >= todayNum).slice(0, 8);
+
+  let html = '';
+  if (upcoming.length) {
+    const frag = document.createDocumentFragment();
+    upcoming.forEach(e => {
+      const d = e.date;
+      const dateLabel = `${parseInt(d.slice(4,6))}/${parseInt(d.slice(6,8))}`;
+      const div = document.createElement('div');
+      div.className = 'mini-schedule-item';
+      div.style.cursor = 'pointer';
+      div.innerHTML = `<span class="mini-schedule-date">${dateLabel}</span><span class="mini-schedule-name ${e.isHoliday ? 'holiday' : ''}">${e.name}</span>`;
+      div.onclick = () => {
+        const key2 = `${d.slice(0,4)}-${d.slice(4,6)}`;
+        const evts = (scheduleCache[key2] || []).filter(x => x.date === d);
+        showScheduleForDate(d, evts);
+      };
+      frag.appendChild(div);
+    });
+    list.innerHTML = '';
+    list.appendChild(frag);
+    return;
+  } else {
+    html = '<div class="mini-schedule-empty">이번 달 남은 학사일정이 없습니다.</div>';
+  }
+}
+
+window.showScheduleForDate = function showScheduleForDate(dateStr, dayEvents, skipRerender) {
+  currentViewDate = dateStr;
+  if (!skipRerender) renderMiniCal();  // 달력 셀 선택 표시 갱신
+
+  const d = dateStr;
+  const dateLabel = `${parseInt(d.slice(0,4))}년 ${parseInt(d.slice(4,6))}월 ${parseInt(d.slice(6,8))}일`;
+  const notes = calNotes[dateStr] || [];
+  const curKey = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+
+  const list = document.getElementById('mini-schedule-list');
+  list.innerHTML = `
+    <div class="mini-note-header">
+      <span>📅 ${dateLabel}</span>
+      <span class="mini-note-back" id="mini-back-btn">← 목록으로</span>
+    </div>
+    ${dayEvents.length
+      ? dayEvents.map(e => `<div class="mini-schedule-item"><span class="mini-schedule-name ${e.isHoliday ? 'holiday' : ''}">${e.name}</span></div>`).join('')
+      : '<div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">학사일정 없음</div>'
+    }
+    <div class="mini-note-area">
+      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:5px">📌 메모</div>
+      <div class="mini-note-input-row">
+        <input class="mini-note-input" id="mini-note-input-${dateStr}" placeholder="메모 입력 후 Enter">
+        <button class="mini-note-add-btn">추가</button>
+      </div>
+      <div id="mini-notes-${dateStr}">
+        ${notes.length
+          ? notes.map((n,i) => `<div class="mini-note-item"><span class="mini-note-text">${n}</span><button class="mini-note-del" data-idx="${i}">✕</button></div>`).join('')
+          : '<div class="mini-note-empty">메모가 없습니다.</div>'
+        }
+      </div>
+    </div>
+  `;
+  // 목록으로 버튼 이벤트 — innerHTML onclick은 module scope에서 안 됨
+  const backBtn = document.getElementById('mini-back-btn');
+  if (backBtn) {
+    backBtn.onclick = () => {
+      currentViewDate = null;
+      renderMiniCal();
+    };
+  }
+  // addCalNote, delCalNote 버튼도 이벤트 재바인딩
+  const addBtn = list.querySelector('.mini-note-add-btn');
+  if (addBtn) addBtn.onclick = () => addCalNote(dateStr);
+  const noteInput = list.querySelector('.mini-note-input');
+  if (noteInput) noteInput.addEventListener('keydown', e => { if (e.key === 'Enter') addCalNote(dateStr); });
+  list.querySelectorAll('.mini-note-del').forEach((btn, i) => {
+    btn.onclick = () => delCalNote(dateStr, i);
+  });
+}
+
+window.addCalNote = async function(dateStr) {
+  const input = document.getElementById('mini-note-input-' + dateStr);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  if (!calNotes[dateStr]) calNotes[dateStr] = [];
+  calNotes[dateStr].push(text);
+  input.value = '';
+  await saveCalNotes(); // Firebase 저장 (onSnapshot이 자동으로 UI 갱신)
+};
+
+window.delCalNote = async function(dateStr, idx) {
+  if (!calNotes[dateStr]) return;
+  calNotes[dateStr].splice(idx, 1);
+  if (!calNotes[dateStr].length) delete calNotes[dateStr];
+  await saveCalNotes(); // Firebase 저장
+};
+
+function renderMiniCalDots() {
+  // 메모 dot만 갱신 (달력 전체 재렌더 없이)
+  document.querySelectorAll('.mini-cal-cell').forEach(cell => {
+    const d = cell.querySelector('.mini-day');
+    if (!d) return;
+    const dayNum = parseInt(d.textContent);
+    if (isNaN(dayNum)) return;
+    const dateStr = `${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(dayNum).padStart(2,'0')}`;
+    const hasNote = (calNotes[dateStr] || []).length > 0;
+    cell.classList.toggle('has-memo', hasNote);
+  });
+}
+
+
 </script>
 </body>
 </html>
