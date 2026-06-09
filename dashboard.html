@@ -5,41 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>흠쌤의 교무실</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --ink: #1a1a2e; --paper: #f5f0e8; --accent: #c0392b; --accent2: #2980b9;
   --muted: #8c7b6e; --border: #d4c9ba; --card: #fffdf8;
-  --lunch: #e8f4fd; --after: #fdf3e8; --custom: #f0ede8;
-  --lunch-accent: #2980b9; --after-accent: #e67e22; --custom-accent: #6c4f8e;
   --open: #27ae60; --closed: #e0d8cc;
-  --sidebar-w: 220px;
+  --after-accent: #e67e22;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; width: 100%; overflow-x: hidden !important; } 
+html, body { height: 100%; width: 100%; overflow-x: hidden !important; }
 body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; overflow-y: auto; }
 
 /* ── 상단 헤더 ── */
 .topbar {
   background: var(--ink); color: #fff;
   min-height: 54px; display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 16px; flex-shrink: 0; z-index: 10; flex-wrap: wrap; gap: 8px;
-  width: 100%;
+  padding: 8px 16px; flex-shrink: 0; z-index: 10; flex-wrap: wrap; gap: 8px; width: 100%;
 }
 .topbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-width: 200px; }
 .topbar-title { font-family: 'Nanum Myeongjo', serif; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .topbar-title span { opacity: .5; font-size: .8rem; font-weight: 400; }
-
 .topbar-right { display: flex; align-items: center; gap: 12px; font-size: .78rem; color: #aaa; margin-left: auto; }
 .topbar-clock { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; color: #fff; white-space: nowrap; }
 
-/* 현재 교시 표시 위젯 */
 .period-indicator {
-  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
   padding: 4px 10px; border-radius: 4px; color: #fff; font-size: 0.78rem; font-weight: 500;
   display: flex; align-items: center; gap: 6px; white-space: nowrap;
 }
 .period-indicator .p-highlight { color: #f1c40f; font-weight: 700; }
 .period-indicator .p-timer { color: #2ecc71; font-size: 0.72rem; }
+
+.dday-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 3px 6px; border-radius: 4px; color: #fff;
+  display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); white-space: nowrap;
+}
+.dday-clr-0 { background-color: #c0392b; }
+.dday-clr-1 { background-color: #2980b9; }
+.dday-clr-2 { background-color: #27ae60; }
+.dday-clr-3 { background-color: #8e44ad; }
 
 /* ── 탭 네비 ── */
 .tab-nav {
@@ -58,94 +63,204 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tab-content { display: none; flex: 1; width: 100%; }
 .tab-content.active { display: flex; flex-direction: column; }
 
-/* ── 대시보드 메인 영역 ── */
-.dash-container { width: 100%; overflow-x: hidden; }
-.dash-wrap { 
-  padding: 16px; 
-  display: grid; 
-  grid-template-columns: 1fr 280px; 
-  gap: 16px; 
-  width: 100%; 
-  max-width: 1200px; 
-  margin: 0 auto; 
-}
-.panel { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 16px; height: fit-content; width: 100%; min-width: 0; }
-.panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; }
-
-/* 알림 배너 */
+/* ── 알림 배너 ── */
 .alert-banner {
-  grid-column: 1 / -1; background: #fff8f0; border: 1.5px solid #f0c080; border-radius: 8px;
-  padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; min-width: 0;
+  margin: 12px 16px 0; background: #fff8f0; border: 1.5px solid #f0c080; border-radius: 8px;
+  padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 .alert-banner.none { background: #f0faf4; border-color: #a8dbb8; }
-.alert-ico { font-size: 1.4rem; flex-shrink: 0; }
+.alert-ico { font-size: 1.2rem; flex-shrink: 0; }
 .alert-text { flex: 1; min-width: 0; }
-.alert-title { font-weight: 600; font-size: .9rem; color: #a85c00; margin-bottom: 3px; }
+.alert-title { font-weight: 600; font-size: .85rem; color: #a85c00; margin-bottom: 2px; }
 .alert-title.none { color: #1a6b3a; }
-.alert-list { font-size: .8rem; color: #c07030; word-break: break-all; }
+.alert-list { font-size: .78rem; color: #c07030; }
 .alert-list.none { color: #2e8b57; }
-.alert-open-btn { padding: 6px 12px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .78rem; font-weight: 600; border-radius: 4px; flex-shrink: 0; margin-left: auto; }
+.alert-open-btn { padding: 5px 10px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .75rem; font-weight: 600; border-radius: 4px; flex-shrink: 0; }
 
-/* 시간표 래퍼 */
-.tt-responsive-wrapper { width: 100%; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-.tt-table { width: 100%; border-collapse: collapse; font-size: .78rem; table-layout: fixed; }
-.tt-table th { background: var(--ink); color: #ccc; padding: 6px 2px; text-align: center; font-weight: 500; font-size: .7rem; overflow: hidden; white-space: nowrap; }
-.tt-table th:first-child { width: 48px; }
-.tt-table th.today-col { color: #7ab8f5; }
-.tt-table td { padding: 8px 2px; text-align: center; border-bottom: 1px solid var(--border); color: var(--ink); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.tt-table td.today-col { background: #e8f0fe; color: #1a5cb5; font-weight: 600; }
-.tt-table td.current-period-row { background: #ffeaa7 !important; color: #d35400 !important; font-weight: 700; }
-.tt-table td.period { color: var(--muted); font-size: .68rem; background: var(--paper); width: 48px; font-weight: 600; }
-.tt-table td.empty { color: #ccc; }
-.tt-edit-btn { margin-top: 10px; width: 100%; padding: 8px; background: none; border: 1.5px dashed var(--border); color: var(--muted); cursor: pointer; font-size: .78rem; border-radius: 4px; }
+/* ── 메인 그리드 ── */
+.dash-wrap {
+  padding: 12px 16px 16px;
+  display: grid;
+  grid-template-columns: 260px 1fr 200px;
+  grid-template-rows: auto;
+  gap: 12px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
 
-/* 급식 */
-.meal-tab-row { display: flex; gap: 6px; margin-bottom: 12px; }
-.meal-tab { flex: 1; padding: 6px; border: 1.5px solid var(--border); background: none; cursor: pointer; font-size: .75rem; font-weight: 600; color: var(--muted); border-radius: 3px; text-align: center; }
-.meal-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
-.meal-list { list-style: none; }
-.meal-list li { font-size: .82rem; padding: 6px 0; border-bottom: 1px solid var(--border); color: var(--ink); display: flex; align-items: center; gap: 6px; }
-.meal-list li:last-child { border-bottom: none; }
-.meal-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--after-accent); flex-shrink: 0; }
-.meal-loading { color: var(--muted); font-size: .82rem; text-align: center; padding: 20px 0; }
-.meal-school { font-size: .75rem; color: var(--muted); }
+/* ── 학생 기록 관리 레이아웃 ── */
+.student-wrap {
+  padding: 12px 16px 16px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.student-items { display: flex; flex-direction: column; gap: 6px; max-height: 650px; overflow-y: auto; padding-right: 4px; }
+.student-item {
+  display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; transition: .15s;
+}
+.student-item:hover { background: #f0ede6; border-color: var(--ink); }
+.student-item.active { background: #e8f0fe; border-color: var(--accent2); color: #1a5cb5; font-weight: 600; }
+.record-input-form { background: var(--card); border: 1.5px solid var(--ink); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 4px 4px 0 rgba(26,26,46,0.08); }
+.record-items { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; max-height: 400px; overflow-y: auto; }
+.record-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 6px; padding: 12px; position: relative; }
+.record-meta { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; border-bottom: 1px dashed var(--border); padding-bottom: 4px; }
+.record-badge { background: var(--ink); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+.record-content-text { font-size: 0.85rem; line-height: 1.4; word-break: break-all; white-space: pre-wrap; color: #2c3e50; }
 
-/* 메모 */
+/* 패널 공통 */
+.panel {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 14px; height: fit-content; min-width: 0;
+}
+.panel-title {
+  font-family: 'Nanum Myeongjo', serif; font-size: 0.9rem; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700;
+}
+
+/* 📝 메모 패널 */
+.memo-panel {
+  grid-column: 1; grid-row: 1;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 rgba(26,26,46,0.12);
+}
+.memo-panel .panel-title { font-size: 1rem; }
+
 .memo-input-row { display: flex; gap: 6px; margin-bottom: 10px; }
-.memo-input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .85rem; font-family: inherit; outline: none; border-radius: 4px; min-width: 0; }
-.memo-add-btn { padding: 8px 14px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .8rem; font-weight: 600; border-radius: 4px; white-space: nowrap; }
-.memo-items { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
-.memo-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); width: 100%; transition: box-shadow .15s; }
+.memo-input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .82rem; font-family: inherit; outline: none; border-radius: 4px; min-width: 0; }
+.memo-input:focus { border-color: var(--ink); }
+.memo-add-btn { padding: 8px 12px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .78rem; font-weight: 600; border-radius: 4px; white-space: nowrap; }
+
+.memo-items { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
+.memo-item { display: flex; align-items: center; gap: 7px; padding: 7px 9px; background: var(--paper); border-radius: 4px; border: 1px solid var(--border); transition: box-shadow .15s; }
 .memo-item.dragging { opacity: .5; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
 .memo-item.drag-over { border-color: var(--accent2); background: #e8f0fe; }
 .memo-drag { color: #ccc; cursor: grab; font-size: 1rem; flex-shrink: 0; padding: 0 2px; user-select: none; }
 .memo-drag:active { cursor: grabbing; }
 .memo-cb { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; accent-color: var(--open); }
-.memo-text { flex: 1; font-size: .84rem; word-break: break-all; }
+.memo-text { flex: 1; font-size: .82rem; word-break: break-all; line-height: 1.3; }
 .memo-text.done { text-decoration: line-through; color: var(--muted); }
-.memo-edit-input { flex: 1; font-size: .84rem; padding: 2px 6px; border: 1.5px solid var(--accent2); background: #fff; font-family: inherit; outline: none; border-radius: 3px; }
-.memo-edit-btn { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: .75rem; padding: 0 3px; flex-shrink: 0; }
-.memo-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .9rem; padding: 0 2px; flex-shrink: 0; }
+.memo-edit-input { flex: 1; font-size: .82rem; padding: 2px 6px; border: 1.5px solid var(--accent2); background: #fff; font-family: inherit; outline: none; border-radius: 3px; }
+.memo-edit-btn { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: .72rem; padding: 0 2px; flex-shrink: 0; }
+.memo-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .85rem; padding: 0 2px; flex-shrink: 0; }
 .memo-del:hover { color: var(--accent); }
-.memo-empty { color: var(--muted); font-size: .82rem; text-align: center; padding: 16px 0; }
+.memo-empty { color: var(--muted); font-size: .8rem; text-align: center; padding: 20px 0; }
 
-/* 디데이 배지 스타일 */
-.dday-badge {
-  font-size: 0.7rem; font-weight: 600; padding: 3px 6px; border-radius: 4px; color: #fff;
-  display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); white-space: nowrap;
+/* 📅 시간표 */
+.tt-panel { grid-column: 1; grid-row: 2; }
+.tt-table { width: 100%; border-collapse: collapse; font-size: .65rem; table-layout: fixed; }
+.tt-table th { background: var(--ink); color: #ccc; padding: 4px 1px; text-align: center; font-weight: 500; font-size: .6rem; }
+.tt-table th:first-child { width: 36px; }
+.tt-table th.today-col { color: #7ab8f5; }
+.tt-table td { padding: 5px 1px; text-align: center; border-bottom: 1px solid var(--border); font-size: .62rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tt-table td.today-col { background: #e8f0fe; color: #1a5cb5; font-weight: 600; }
+.tt-table td.current-period-row { background: #ffeaa7 !important; color: #d35400 !important; font-weight: 700; }
+.tt-table td.period { color: var(--muted); font-size: .58rem; background: var(--paper); width: 36px; font-weight: 600; }
+.tt-table td.empty { color: #ccc; }
+.tt-edit-btn { margin-top: 8px; width: 100%; padding: 6px; background: none; border: 1.5px dashed var(--border); color: var(--muted); cursor: pointer; font-size: .72rem; border-radius: 4px; }
+
+/* 📅 달력 */
+.cal-panel { grid-column: 2; grid-row: 1 / 3; border: 2px solid var(--border); }
+.cal-panel .panel-title { font-size: 1rem; }
+
+.mini-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mini-cal-title { font-size: .95rem; font-weight: 700; color: var(--ink); }
+.mini-cal-nav-btn {
+  background: none; border: 1.5px solid var(--border); color: var(--muted);
+  width: 26px; height: 26px; cursor: pointer; font-size: .8rem; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center; transition: .15s;
 }
-.dday-clr-0 { background-color: #c0392b; }
-.dday-clr-1 { background-color: #2980b9; }
-.dday-clr-2 { background-color: #27ae60; }
-.dday-clr-3 { background-color: #8e44ad; }
+.mini-cal-nav-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-/* 모달 구조 */
+.mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.mini-cal-head { font-size: .7rem; text-align: center; color: var(--muted); padding: 4px 0; font-weight: 600; }
+
+.mini-cal-cell {
+  min-height: 54px; border-radius: 5px; padding: 3px 4px;
+  cursor: pointer; position: relative;
+  display: flex; flex-direction: column; align-items: flex-start;
+  border: 1px solid transparent; transition: background .12s;
+}
+.mini-cal-cell:hover { background: #f0ede6; }
+.mini-cal-cell.selected { background: #e8f0fe; border-color: var(--accent2); }
+.mini-cal-cell.today .mini-day {
+  background: var(--ink); color: #fff; border-radius: 50%;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+}
+.mini-cal-cell.empty { cursor: default; }
+.mini-cal-cell.empty:hover { background: none; }
+
+.mini-day { font-size: .75rem; font-weight: 600; color: var(--ink); min-width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+.mini-cal-cell.sun .mini-day { color: #e74c3c; }
+.mini-cal-cell.sat .mini-day { color: #2980b9; }
+
+.cal-event-tag {
+  font-size: .55rem; line-height: 1.2; padding: 1px 4px;
+  border-radius: 3px; color: #fff; margin-top: 2px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600;
+}
+.cal-event-tag.holiday { background: #e74c3c; }
+.cal-event-tag.school   { background: #27ae60; }
+.cal-event-tag.note     { background: var(--after-accent); }
+
+.mini-cal-cell.has-memo::after {
+  content: ''; position: absolute; bottom: 3px; right: 3px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--after-accent);
+}
+
+.cal-detail-area { margin-top: 12px; border-top: 1.5px solid var(--border); padding-top: 10px; min-height: 60px; }
+.cal-detail-empty { color: var(--muted); font-size: .78rem; text-align: center; padding: 12px 0; }
+.cal-detail-date { font-size: .82rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.cal-evt-list { margin-bottom: 8px; }
+.cal-evt-item { font-size: .78rem; padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: center; }
+.cal-evt-item:last-child { border-bottom: none; }
+.cal-evt-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.cal-evt-dot.holiday { background: #e74c3c; }
+.cal-evt-dot.school   { background: #27ae60; }
+
+.mini-note-input-row { display: flex; gap: 4px; margin-bottom: 6px; }
+.mini-note-input { flex: 1; padding: 6px 8px; border: 1.5px solid var(--border); background: var(--paper); font-size: .78rem; font-family: inherit; outline: none; border-radius: 3px; }
+.mini-note-input:focus { border-color: var(--accent2); }
+.mini-note-add-btn { padding: 6px 10px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .75rem; font-weight: 600; border-radius: 3px; white-space: nowrap; }
+.mini-note-item { font-size: .78rem; padding: 4px 8px; background: var(--paper); border-radius: 3px; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.mini-note-text { flex: 1; }
+.mini-note-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .8rem; }
+.mini-note-del:hover { color: var(--accent); }
+.mini-note-empty { color: var(--muted); font-size: .75rem; padding: 2px 0; }
+
+.month-evt-list { max-height: 130px; overflow-y: auto; }
+.month-evt-item { font-size: .75rem; padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.month-evt-item:hover { color: var(--accent2); }
+.month-evt-item:last-child { border-bottom: none; }
+.month-evt-date { color: var(--muted); flex-shrink: 0; font-size: .7rem; width: 36px; }
+.month-evt-name { flex: 1; }
+.month-evt-name.holiday { color: #e74c3c; font-weight: 600; }
+
+/* 🍱 급식 패널 */
+.meal-panel { grid-column: 3; grid-row: 1; }
+.meal-tab-row { display: flex; gap: 4px; margin-bottom: 10px; }
+.meal-tab { flex: 1; padding: 5px; border: 1.5px solid var(--border); background: none; cursor: pointer; font-size: .72rem; font-weight: 600; color: var(--muted); border-radius: 3px; text-align: center; }
+.meal-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.meal-list { list-style: none; }
+.meal-list li { font-size: .78rem; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+.meal-list li:last-child { border-bottom: none; }
+.meal-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--after-accent); flex-shrink: 0; }
+.meal-loading { color: var(--muted); font-size: .78rem; text-align: center; padding: 16px 0; }
+.meal-school { font-size: .7rem; color: var(--muted); margin-bottom: 8px; }
+
+/* ── 모달 ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 12px; }
 .modal-overlay.show { display: flex; }
 .modal-box { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; border-radius: 6px; }
 .modal-header { background: var(--ink); color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
 .modal-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; }
-.modal-close { background: none; border: none; color: #aaa; font-size: 1.3rem; cursor: pointer; padding: 2px 4px; }
+.modal-close { background: none; border: none; color: #aaa; font-size: 1.3rem; cursor: pointer; }
 .modal-body { padding: 16px; }
 
 .tt-edit-wrapper { width: 100%; overflow-x: auto; margin-bottom: 10px; }
@@ -157,110 +272,196 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 
 .counsel-frame { width: 100%; flex: 1; border: none; }
 
-/* 📱📱 미디어쿼리가 안 먹혀도 강제로 적용되도록 강력 처방한 모바일 구간 (500px 이하) 📱📱 */
-@media screen and (max-width: 500px) {
-  .dash-wrap { 
-    grid-template-columns: 1fr !important; 
-    padding: 8px !important; 
-    gap: 8px !important;
-    max-width: 100% !important;
-    width: 100% !important;
-  }
-  .panel { padding: 8px !important; width: 100% !important; }
-  .panel-title { font-size: 0.8rem !important; margin-bottom: 6px !important; }
+/* ── 로그인 화면 ── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; background: var(--ink); position: fixed; inset: 0; z-index: 9999;
+}
+.login-box {
+  background: var(--card); border: 2px solid var(--border);
+  padding: 48px 40px; width: 360px; text-align: center; border-radius: 6px;
+}
+.login-box h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.5rem; margin-bottom: 6px; }
+.login-box p { color: var(--muted); font-size: .85rem; margin-bottom: 28px; }
+.login-box input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+  background: var(--paper); font-size: .95rem; margin-bottom: 12px;
+  outline: none; font-family: inherit; border-radius: 4px;
+}
+.login-box input:focus { border-color: var(--accent); }
+.login-box button {
+  width: 100%; padding: 13px; background: var(--accent); color: #fff;
+  border: none; cursor: pointer; font-weight: 600; font-size: .95rem; border-radius: 4px;
+}
+.login-err { color: var(--accent); font-size: .82rem; margin-top: 10px; min-height: 1.2em; }
 
-  /* [핵심] 시간표 글자 크기, 여백을 한계까지 줄이고 강제 자동 줄바꿈 처리 */
-  .tt-table { min-width: unset !important; width: 100% !important; table-layout: fixed !important; font-size: 0.6rem !important; }
-  .tt-table th { padding: 3px 0 !important; font-size: 0.58rem !important; }
-  .tt-table th:first-child { width: 32px !important; }
-  .tt-table td { 
-    padding: 5px 0 !important; 
-    font-size: 0.6rem !important; 
-    overflow: hidden !important;
-    text-overflow: clip !important;
-    white-space: normal !important; /* 한 줄로 뻗지 않고 칸 안에서 줄바꿈되도록 변경 */
-    word-break: break-all !important; 
-    line-height: 1.1 !important; 
-  }
-  .tt-table td.period { width: 32px !important; font-size: 0.55rem !important; }
-  .tt-edit-btn { margin-top: 5px !important; padding: 5px !important; font-size: 0.68rem !important; }
+/* ── 비밀번호 변경 모달 ── */
+.pw-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 500; align-items: center; justify-content: center; padding: 12px;
+}
+.pw-modal-overlay.show { display: flex; }
+.pw-modal-box {
+  background: var(--card); border: 2px solid var(--border);
+  width: 100%; max-width: 340px; border-radius: 6px; overflow: hidden;
+}
+.pw-modal-header {
+  background: var(--ink); color: #fff; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pw-modal-header h3 { font-family: 'Nanum Myeongjo', serif; font-size: 0.95rem; }
+.pw-modal-body { padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.pw-modal-body input {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+  background: var(--paper); font-size: .88rem; font-family: inherit;
+  outline: none; border-radius: 4px;
+}
+.pw-modal-body input:focus { border-color: var(--accent2); }
+.pw-modal-save {
+  width: 100%; padding: 10px; background: var(--accent2); color: #fff;
+  border: none; cursor: pointer; font-weight: 600; border-radius: 4px; margin-top: 4px;
+}
+.pw-modal-msg { font-size: .78rem; min-height: 1.2em; }
 
-  /* 알림 배너 뚱뚱해짐 방지 */
-  .alert-banner { padding: 8px 10px !important; gap: 6px !important; }
-  .alert-ico { font-size: 1.1rem !important; }
-  .alert-title { font-size: 0.8rem !important; }
-  .alert-list { font-size: 0.72rem !important; }
-  .alert-open-btn { padding: 4px 8px !important; font-size: 0.7rem !important; }
+/* ── 학생 기록 클래스 탭 ── */
+.class-tab-bar {
+  display: flex; align-items: center; gap: 0;
+  padding: 10px 16px 0; background: var(--paper);
+  border-bottom: 2px solid var(--border); flex-wrap: wrap;
+}
+.class-tab-btn {
+  padding: 8px 16px 6px; font-size: .82rem; font-weight: 600; cursor: pointer;
+  background: var(--closed); color: var(--muted); border: 1.5px solid var(--border);
+  border-bottom: none; border-radius: 6px 6px 0 0; transition: .15s;
+  margin-right: 3px; margin-bottom: -2px; white-space: nowrap;
+}
+.class-tab-btn.active { background: var(--card); color: var(--ink); border-color: var(--border); }
+.class-tab-btn:hover:not(.active) { background: #e8e2d8; color: var(--ink); }
+.class-tab-edit-btn {
+  margin-left: auto; background: none; border: 1.5px dashed var(--border);
+  color: var(--muted); padding: 5px 10px; cursor: pointer; font-size: .72rem;
+  border-radius: 4px; white-space: nowrap;
+}
+.class-tab-edit-btn:hover { border-color: var(--ink); color: var(--ink); }
 
-  /* 급식 미니어처 */
-  .meal-school { font-size: 0.68rem !important; }
-  .meal-tab-row { margin-bottom: 6px !important; gap: 3px !important; }
-  .meal-tab { padding: 3px !important; font-size: 0.68rem !important; }
-  .meal-list li { font-size: 0.72rem !important; padding: 3px 0 !important; }
-  
-  /* 업무 메모 미니어처 */
-  .memo-input-row { margin-bottom: 6px !important; gap: 3px !important; }
-  .memo-input { padding: 5px 6px !important; font-size: 0.72rem !important; }
-  .memo-add-btn { padding: 5px 8px !important; font-size: 0.7rem !important; }
-  .memo-item { padding: 5px 6px !important; gap: 5px !important; }
-  .memo-cb { width: 13px; height: 13px; }
-  .memo-text { font-size: 0.72rem !important; }
-  .memo-del { font-size: 0.8rem !important; }
-  
-  /* 헤더 컴팩트 */
-  .topbar { padding: 6px 8px !important; gap: 2px !important; }
-  .topbar-title { font-size: 0.85rem !important; }
-  .topbar-title span { font-size: 0.65rem !important; }
-  .topbar-clock { font-size: 0.8rem !important; }
-  .period-indicator { padding: 1px 4px !important; font-size: 0.65rem !important; }
-  .topbar-right { padding-top: 4px !important; width: 100% !important; justify-content: space-between !important; }
+/* 클래스 탭 편집 모달 */
+.classtab-modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 500; align-items: center; justify-content: center; padding: 12px;
+}
+.classtab-modal-overlay.show { display: flex; }
+.classtab-modal-box {
+  background: var(--card); border: 2px solid var(--border);
+  width: 100%; max-width: 420px; border-radius: 6px; overflow: hidden;
 }
 
-/* 학사일정 미니 달력 */
-.mini-cal { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
-.mini-cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.mini-cal-title { font-size: .82rem; font-weight: 700; color: var(--ink); }
-.mini-cal-nav-btn { background: none; border: 1px solid var(--border); color: var(--muted); width: 22px; height: 22px; cursor: pointer; font-size: .75rem; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
-.mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.mini-cal-head { font-size: .62rem; text-align: center; color: var(--muted); padding: 2px 0; font-weight: 600; }
-.mini-cal-cell { min-height: 28px; border-radius: 3px; padding: 2px; cursor: default; position: relative; display: flex; flex-direction: column; align-items: center; }
-.mini-cal-cell.has-event { cursor: pointer; }
-.mini-cal-cell.has-event:hover { background: #e8f0fe; }
-.mini-cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; }
-.mini-cal-cell { cursor: pointer; }
-.mini-cal-cell.today .mini-day { background: var(--ink); color: #fff; border-radius: 50%; }
-.mini-cal-cell.empty { }
-.mini-day { font-size: .7rem; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: 500; color: var(--ink); flex-shrink: 0; }
-.mini-cal-cell.sun .mini-day { color: #e74c3c; }
-.mini-cal-cell.sat .mini-day { color: #2980b9; }
-.mini-event-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 1px; }
-.mini-event-dot.holiday { background: #e74c3c; }
-.mini-event-dot.school { background: #27ae60; }
-.mini-schedule-list { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; max-height: 100px; overflow-y: auto; }
-.mini-schedule-item { font-size: .75rem; padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; gap: 6px; align-items: flex-start; }
-.mini-schedule-item:last-child { border-bottom: none; }
-.mini-schedule-date { color: var(--muted); flex-shrink: 0; font-size: .7rem; }
-.mini-schedule-name { color: var(--ink); flex: 1; }
-.mini-schedule-name.holiday { color: #e74c3c; font-weight: 600; }
-.mini-schedule-empty { color: var(--muted); font-size: .75rem; text-align: center; padding: 10px 0; }
-.mini-cal-loading { color: var(--muted); font-size: .75rem; text-align: center; padding: 10px 0; }
-.mini-cal-cell.has-memo { position: relative; }
-.mini-cal-cell.has-memo::after { content: ''; position: absolute; bottom: 2px; right: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--after-accent); }
-.mini-note-area { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
-.mini-note-header { font-size: .72rem; font-weight: 700; color: var(--ink); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
-.mini-note-back { font-size: .7rem; color: var(--accent2); cursor: pointer; font-weight: 400; }
-.mini-note-input-row { display: flex; gap: 4px; margin-bottom: 6px; }
-.mini-note-input { flex: 1; padding: 5px 7px; border: 1.5px solid var(--border); background: var(--paper); font-size: .75rem; font-family: inherit; outline: none; border-radius: 3px; }
-.mini-note-input:focus { border-color: var(--accent2); }
-.mini-note-add-btn { padding: 5px 8px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: .72rem; font-weight: 600; border-radius: 3px; white-space: nowrap; }
-.mini-note-item { font-size: .75rem; padding: 4px 6px; background: var(--paper); border-radius: 3px; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.mini-note-text { flex: 1; }
-.mini-note-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: .8rem; padding: 0; }
-.mini-note-del:hover { color: var(--accent); }
-.mini-note-empty { color: var(--muted); font-size: .75rem; padding: 4px 0; }
+/* ── 반응형 ── */
+@media screen and (max-width: 900px) {
+  .dash-wrap { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+  .memo-panel  { grid-column: 1; grid-row: 1; }
+  .tt-panel    { grid-column: 1; grid-row: 2; }
+  .cal-panel   { grid-column: 2; grid-row: 1 / 3; }
+  .meal-panel  { grid-column: 1 / 3; grid-row: 3; }
+  .student-wrap { grid-template-columns: 1fr; }
+}
+@media screen and (max-width: 580px) {
+  .dash-wrap { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
+  .memo-panel  { grid-column: 1; grid-row: 1; }
+  .cal-panel   { grid-column: 1; grid-row: 2; }
+  .meal-panel  { grid-column: 1; grid-row: 3; }
+  .tt-panel    { grid-column: 1; grid-row: 4; }
+  .mini-cal-cell { min-height: 44px; }
+  .topbar { padding: 6px 8px; }
+  .topbar-title { font-size: 0.85rem; }
+  .topbar-clock { font-size: 0.8rem; }
+}
+
+/* 📌 스티커 노트 (포스트잇) 전체 컨테이너 */
+.sticky-note {
+  position: absolute;
+  width: 200px;
+  min-height: 180px;
+  background: #fff7b2; /* 포스트잇 시그니처 옐로우 */
+  border: 1px solid #e1d78c;
+  box-shadow: 3px 3px 10px rgba(0,0,0,0.15);
+  padding: 10px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  cursor: default;
+}
+
+/* 🤝 드래그가 가능한 상단 핸들 바 */
+.sticky-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #8b804c;
+  border-bottom: 1px dashed #e1d78c;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  cursor: move; /* 드래그 가능함을 알리는 커서 */
+  user-select: none;
+}
+
+/* ❌ 삭제 버튼 */
+.sticky-del-btn {
+  background: none;
+  border: none;
+  color: #c0392b;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+/* 📝 텍스트 입력창 */
+.sticky-textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  outline: none;
+  color: #2c3e50;
+}
+
+/* ➕ 노트 추가 버튼 (탑바용 혹은 대시보드용) */
+.add-sticky-btn {
+  padding: 6px 12px;
+  background: #f1c40f;
+  color: #1a1a2e;
+  border: none;
+  font-weight: 600;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+}
+.add-sticky-btn:hover { background: #f39c12; }
 </style>
 </head>
 <body>
+
+<!-- 로그인 화면 -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>📋 흠쌤의 교무실</h1>
+    <p>관리자 비밀번호를 입력하세요</p>
+    <input type="password" id="main-pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doMainLogin()">
+    <button onclick="doMainLogin()">입장하기</button>
+    <div class="login-err" id="main-login-err"></div>
+  </div>
+</div>
+
+<!-- 메인 앱 (로그인 후 표시) -->
+<div id="main-app" style="display:none; display:flex; flex-direction:column; height:100%;">
 
 <div class="topbar">
   <div class="topbar-left">
@@ -268,8 +469,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
       📋 흠쌤의 교무실
       <span id="topbar-date"></span>
     </div>
-    <div id="dday-container" style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;"></div>
-    <button onclick="openDDayModal()" style="background:none; border:none; color:#999; cursor:pointer; font-size:0.85rem; padding:2px;" title="디데이 관리">⚙️</button>
+    <div id="dday-container" style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"></div>
+    <button onclick="openDDayModal()" style="background:none;border:none;color:#999;cursor:pointer;font-size:0.85rem;padding:2px;" title="디데이 관리">⚙️</button>
   </div>
   <div class="topbar-right">
     <div class="period-indicator" id="period-indicator">
@@ -277,89 +478,86 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
       <span class="p-timer" id="p-timer"></span>
     </div>
     <span class="topbar-clock" id="topbar-clock"></span>
+    <button onclick="openPwModal()" title="비밀번호 변경" style="background:none;border:none;color:#888;cursor:pointer;font-size:0.8rem;padding:2px 4px;line-height:1;" >🔑</button>
   </div>
 </div>
 
 <div class="tab-nav">
   <button class="tab-btn active" data-tab="dashboard">🏠 대시보드</button>
   <button class="tab-btn" data-tab="counsel">📋 상담 관리자</button>
+  <button class="tab-btn" data-tab="students">🧑‍🎓 학생 기록 관리</button>
 </div>
 
-<div class="tab-content active" id="tab-dashboard">
-  <div class="dash-container">
-    <div class="dash-wrap">
+<div class="tab-content active" id="tab-dashboard" style="position: relative; min-height: calc(100vh - 120px);">
+  <div class="alert-banner none" id="alert-banner">
+    <div class="alert-ico" id="alert-ico">✅</div>
+    <div class="alert-text">
+      <div class="alert-title none" id="alert-title">오늘 예정된 상담이 없어요</div>
+      <div class="alert-list none" id="alert-list">편안한 하루 되세요 😊</div>
+    </div>
+    <button class="add-sticky-btn" onclick="addStickyNote()">📌 스티커 노트 추가</button>
+    <button class="alert-open-btn" onclick="switchTab('counsel')">상담 관리 열기</button>
+  </div>
 
-      <div class="alert-banner none" id="alert-banner">
-        <div class="alert-ico" id="alert-ico">✅</div>
-        <div class="alert-text">
-          <div class="alert-title none" id="alert-title">오늘 예정된 상담이 없어요</div>
-          <div class="alert-list none" id="alert-list">편안한 하루 되세요 😊</div>
-        </div>
-        <button class="alert-open-btn" onclick="switchTab('counsel')">상담 관리 열기</button>
+  <div class="dash-wrap">
+    <div class="panel memo-panel">
+      <div class="panel-title">📝 업무 메모</div>
+      <div class="memo-input-row">
+        <input class="memo-input" id="memo-input" placeholder="할 일 입력 후 Enter" onkeydown="if(event.key==='Enter')addMemo()">
+        <button class="memo-add-btn" onclick="addMemo()">추가</button>
       </div>
+      <div class="memo-items" id="memo-items"></div>
+    </div>
+<div id="sticky-notes-container"></div>
 
-      <!-- 왼쪽 컬럼: 시간표 + 메모 -->
-      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div class="panel">
-          <div class="panel-title">📅 주간 시간표</div>
-          <div class="tt-responsive-wrapper">
-            <table class="tt-table" id="tt-table">
-              <thead>
-                <tr>
-                  <th>교시</th>
-                  <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
-                </tr>
-              </thead>
-              <tbody id="tt-body"></tbody>
-            </table>
-          </div>
-          <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
-        </div>
-
-        <div class="panel">
-          <div class="panel-title">📝 업무 메모</div>
-          <div class="memo-input-row">
-            <input class="memo-input" id="memo-input" placeholder="할 일을 입력하고 Enter" onkeydown="if(event.key==='Enter')addMemo()">
-            <button class="memo-add-btn" onclick="addMemo()">추가</button>
-          </div>
-          <div class="memo-items" id="memo-items"></div>
-        </div>
+    <div class="panel cal-panel">
+      <div class="panel-title">📆 학사 일정</div>
+      <div class="mini-cal-nav">
+        <button class="mini-cal-nav-btn" onclick="miniCalMove(-1)">←</button>
+        <div class="mini-cal-title" id="mini-cal-title">로딩중...</div>
+        <button class="mini-cal-nav-btn" onclick="miniCalMove(1)">→</button>
       </div>
-
-      <!-- 오른쪽 컬럼: 급식 + 학사달력 -->
-      <div class="panel">
-        <div class="panel-title">🍱 오늘의 급식</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div class="meal-school" id="meal-school">조회 중...</div>
-        </div>
-        <div class="meal-tab-row">
-          <button class="meal-tab active" onclick="showMeal('lunch', this)">중식</button>
-          <button class="meal-tab" onclick="showMeal('dinner', this)">석식</button>
-        </div>
-        <div id="meal-lunch-content"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
-        <div id="meal-dinner-content" style="display:none"><p class="meal-loading">급식 정보 불러오는 중...</p></div>
-
-        <!-- 학사일정 달력 -->
-        <div class="mini-cal">
-          <div class="mini-cal-nav">
-            <button class="mini-cal-nav-btn" onclick="miniCalMove(-1)">←</button>
-            <div class="mini-cal-title" id="mini-cal-title">로딩중...</div>
-            <button class="mini-cal-nav-btn" onclick="miniCalMove(1)">→</button>
-          </div>
-          <div class="mini-cal-grid" id="mini-cal-head">
-            <div class="mini-cal-head" style="color:#e74c3c">일</div>
-            <div class="mini-cal-head">월</div><div class="mini-cal-head">화</div>
-            <div class="mini-cal-head">수</div><div class="mini-cal-head">목</div>
-            <div class="mini-cal-head">금</div>
-            <div class="mini-cal-head" style="color:#2980b9">토</div>
-          </div>
-          <div class="mini-cal-grid" id="mini-cal-grid"></div>
-          <div class="mini-schedule-list" id="mini-schedule-list">
-            <div class="mini-cal-loading">학사일정 불러오는 중...</div>
-          </div>
-        </div>
+      <div class="mini-cal-grid" id="mini-cal-head">
+        <div class="mini-cal-head" style="color:#e74c3c">일</div>
+        <div class="mini-cal-head">월</div><div class="mini-cal-head">화</div>
+        <div class="mini-cal-head">수</div><div class="mini-cal-head">목</div>
+        <div class="mini-cal-head">금</div>
+        <div class="mini-cal-head" style="color:#2980b9">토</div>
       </div>
+      <div class="mini-cal-grid" id="mini-cal-grid"></div>
 
+      <div class="cal-detail-area" id="cal-detail-area">
+        <div class="cal-detail-empty" id="cal-detail-empty" style="display:none;">날짜를 클릭하면 일정과 메모를 볼 수 있어요</div>
+        <div id="cal-detail-content" style="display:none;"></div>
+        <div class="month-evt-list" id="month-evt-list"><div style="color:var(--muted);font-size:.75rem;padding:4px 0;">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <div class="panel meal-panel">
+      <div class="panel-title">🍱 오늘의 급식</div>
+      <div class="meal-school" id="meal-school">조회 중...</div>
+      <div class="meal-tab-row">
+        <button class="meal-tab active" onclick="showMeal('lunch', this)">중식</button>
+        <button class="meal-tab" onclick="showMeal('dinner', this)">석식</button>
+      </div>
+      <div id="meal-lunch-content"><p class="meal-loading">불러오는 중...</p></div>
+      <div id="meal-dinner-content" style="display:none"><p class="meal-loading">불러오는 중...</p></div>
+    </div>
+
+    <div class="panel tt-panel">
+      <div class="panel-title" style="font-size:.82rem;">📅 주간 시간표</div>
+      <div style="width:100%;overflow:hidden;">
+        <table class="tt-table" id="tt-table">
+          <thead>
+            <tr>
+              <th>교시</th>
+              <th id="th-mon">월</th><th id="th-tue">화</th><th id="th-wed">수</th><th id="th-thu">목</th><th id="th-fri">금</th>
+            </tr>
+          </thead>
+          <tbody id="tt-body"></tbody>
+        </table>
+      </div>
+      <button class="tt-edit-btn" onclick="openTTEdit()">✏️ 시간표 편집</button>
     </div>
   </div>
 </div>
@@ -367,6 +565,106 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 <div class="tab-content" id="tab-counsel">
   <iframe class="counsel-frame" id="counsel-frame" src="admin.html"></iframe>
 </div>
+
+<div class="tab-content" id="tab-students">
+  <!-- 클래스 하위 탭 바 -->
+  <div class="class-tab-bar" id="class-tab-bar">
+    <!-- JS로 렌더링 -->
+    <button class="class-tab-edit-btn" onclick="openClassTabModal()" title="탭 관리">⚙️ 탭 관리</button>
+  </div>
+
+  <div class="student-wrap">
+    <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
+      <div class="panel-title">🧑‍🎓 <span id="student-panel-title">학생 명렬</span></div>
+      <div style="display:flex; gap:6px;">
+        <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
+        <button class="memo-add-btn" style="width:100%; background:var(--accent2);" onclick="document.getElementById('excel-file').click()">NEIS 명렬 엑셀 업로드</button>
+        <button class="memo-add-btn" style="background:var(--accent); display:none;" id="btn-clear-students">초기화</button>
+      </div>
+      <div class="student-items" id="student-items">
+        <div class="memo-empty">오른쪽 상단 버튼을 눌러<br>NEIS 학생 명렬표(.xlsx)를 올리세요.</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div class="panel" id="record-empty-notice" style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); min-height:200px;">
+        왼쪽 명렬표에서 학생을 선택하면 종합 기록장이 열립니다.
+      </div>
+
+      <div class="panel" id="record-main-panel" style="display:none; width:100%;">
+        <div class="panel-title" style="font-size:1.1rem; border-bottom:2px solid var(--ink); padding-bottom:6px; margin-bottom:14px;">
+          📝 <span id="selected-student-name" style="color:var(--accent); font-weight:800;"></span> 관찰 기록장
+        </div>
+
+<div class="record-input-form">
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <input type="date" id="record-date" class="memo-input" style="flex:1; min-width:130px;">
+    <select id="record-category" class="memo-input" style="flex:1; min-width:130px; background:var(--paper); cursor:pointer;">
+      <option value="📚 학업/수업">📚 학업/수업(교과)</option>
+      <option value="🌱 행동/인성">🌱 행동/인성(행특)</option>
+      <option value="🎯 진로/창체">🎯 진로/창체</option>
+      <option value="💡 기타/상담">💡 기타/상담</option>
+    </select>
+  </div>
+  <textarea id="record-content" class="memo-input" rows="4" placeholder="누적할 관찰 내용이나 특이 사항을 입력해 주세요. (추후 생기부 원클릭 가공용)" style="resize:none; font-family:inherit; line-height:1.4;"></textarea>
+  <button class="memo-add-btn" style="width:100%; padding:10px; font-size:0.85rem;" onclick="addStudentRecord()">📌 관찰 내용 기록하기</button>
+
+  <div class="panel ai-panel" style="border: 2px solid var(--accent2); box-shadow: 4px 4px 0 rgba(41, 128, 185, 0.12); margin-top: 20px; padding: 15px; background: var(--card); border-radius: 4px; text-align: left;">
+    <div class="panel-title" style="font-weight: 700; margin-bottom: 8px; font-size: 0.95rem; color: var(--ink);">🤖 젬즈 멀티태스킹</div>
+    <p style="font-size: .8rem; color: var(--muted); margin-bottom: 12px; line-height: 1.4;">
+      오른쪽에 젬즈 창을 독립적으로 띄웁니다. 위의 관찰 기록을 복사하여 간편하게 다듬어보세요!
+    </p>
+    <button class="ai-btn" onclick="openGemsWindow()" style="width: 100%; padding: 10px; background: var(--accent2); color: #fff; border: none; font-weight: 600; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+      🚀 젬즈 팝업 창 열기
+    </button>
+  </div>
+</div>
+
+        <div class="record-items" id="record-items"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 모달 -->
+<div class="pw-modal-overlay" id="pw-modal">
+  <div class="pw-modal-box">
+    <div class="pw-modal-header">
+      <h3>🔑 비밀번호 변경</h3>
+      <button class="modal-close" onclick="closePwModal()">✕</button>
+    </div>
+    <div class="pw-modal-body">
+      <input type="password" id="pw-cur" placeholder="현재 비밀번호">
+      <input type="password" id="pw-new" placeholder="새 비밀번호 (4자 이상)">
+      <input type="password" id="pw-new2" placeholder="새 비밀번호 확인">
+      <button class="pw-modal-save" onclick="doChangePw()">변경하기</button>
+      <div class="pw-modal-msg" id="pw-modal-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 클래스 탭 편집 모달 -->
+<div class="classtab-modal-overlay" id="classtab-modal">
+  <div class="classtab-modal-box">
+    <div class="modal-header">
+      <h2>⚙️ 반 탭 관리</h2>
+      <button class="modal-close" onclick="closeClassTabModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">탭 이름을 편집하거나 순서를 변경하세요. 드래그로 순서 조정이 가능합니다.</p>
+      <div id="classtab-edit-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <input type="text" id="classtab-new-input" placeholder="새 탭 이름 (예: 3-2반)" class="memo-input" style="flex:1;">
+        <button class="memo-add-btn" onclick="addClassTab()">추가</button>
+      </div>
+      <button class="tt-save-btn" onclick="saveClassTabs()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-app -->
+
+
 
 <div class="modal-overlay" id="tt-modal">
   <div class="modal-box">
@@ -381,25 +679,25 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 </div>
 
 <div class="modal-overlay" id="dday-modal">
-  <div class="modal-box" style="max-width: 460px;">
+  <div class="modal-box" style="max-width:460px;">
     <div class="modal-header">
       <h2>⚙️ 디데이 관리자</h2>
       <button class="modal-close" onclick="closeDDayModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div style="display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;">
-        <input type="text" id="dday-title-input" placeholder="일정 이름 (예: 기말고사)" style="flex: 1; min-width: 150px; padding: 8px; border: 1.5px solid var(--border); background: var(--paper); font-family: inherit; font-size: 0.85rem; outline: none; border-radius: 4px;">
-        <input type="date" id="dday-date-input" style="padding: 8px; border: 1.5px solid var(--border); background: var(--paper); font-family: inherit; font-size: 0.85rem; outline: none; border-radius: 4px;">
-        <button onclick="addDDay()" style="padding: 8px 14px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; border-radius: 4px; white-space: nowrap;">추가</button>
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+        <input type="text" id="dday-title-input" placeholder="일정 이름 (예: 기말고사)" style="flex:1;min-width:150px;padding:8px;border:1.5px solid var(--border);background:var(--paper);font-family:inherit;font-size:0.85rem;outline:none;border-radius:4px;">
+        <input type="date" id="dday-date-input" style="padding:8px;border:1.5px solid var(--border);background:var(--paper);font-family:inherit;font-size:0.85rem;outline:none;border-radius:4px;">
+        <button onclick="addDDay()" style="padding:8px 14px;background:var(--ink);color:#fff;border:none;cursor:pointer;font-size:0.8rem;font-weight:600;border-radius:4px;white-space:nowrap;">추가</button>
       </div>
-      <div id="dday-manage-list" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+      <div id="dday-manage-list" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
@@ -421,9 +719,9 @@ let mealData = { lunch: [], dinner: [] };
 let timetable = defaultTimetable();
 let memos = [];
 
-const NEIS_API_KEY = "fb89c0e73fb7448cb1de95d45afda2d6"; 
-const OFFICE_CODE = "B10";     
-const SCHOOL_CODE = "7010083";  
+const NEIS_API_KEY = "fb89c0e73fb7448cb1de95d45afda2d6";
+const OFFICE_CODE = "B10";
+const SCHOOL_CODE = "7010083";
 
 const SCHOOL_SCHEDULE = [
   { period: 1, start: "08:20", end: "09:10" },
@@ -435,6 +733,222 @@ const SCHOOL_SCHEDULE = [
   { period: 7, start: "15:10", end: "16:00" }
 ];
 
+// ── 로그인 ──
+let adminPw = 'admin1234';
+
+async function loadAdminPw() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'adminInfo'));
+    if (snap.exists()) adminPw = snap.data().pw;
+  } catch(e) {}
+}
+
+window.doMainLogin = async function() {
+  await loadAdminPw();
+  const val = document.getElementById('main-pw-input').value;
+  const errEl = document.getElementById('main-login-err');
+  if (val === adminPw) {
+    document.getElementById('login-screen').style.display = 'none';
+    const app = document.getElementById('main-app');
+    app.style.display = 'flex';
+    app.style.flexDirection = 'column';
+    app.style.height = '100%';
+    initApp();
+  } else {
+    errEl.textContent = '비밀번호가 틀렸습니다.';
+    document.getElementById('main-pw-input').value = '';
+    document.getElementById('main-pw-input').focus();
+  }
+};
+
+// ── 비밀번호 변경 모달 ──
+window.openPwModal = function() { document.getElementById('pw-modal').classList.add('show'); };
+window.closePwModal = function() {
+  document.getElementById('pw-modal').classList.remove('show');
+  document.getElementById('pw-cur').value = '';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-new2').value = '';
+  document.getElementById('pw-modal-msg').textContent = '';
+};
+window.doChangePw = async function() {
+  const cur = document.getElementById('pw-cur').value;
+  const nw = document.getElementById('pw-new').value;
+  const nw2 = document.getElementById('pw-new2').value;
+  const msg = document.getElementById('pw-modal-msg');
+  if (cur !== adminPw) { msg.style.color='red'; msg.textContent='현재 비밀번호가 틀립니다.'; return; }
+  if (nw.length < 4) { msg.style.color='red'; msg.textContent='새 비밀번호는 4자 이상이어야 합니다.'; return; }
+  if (nw !== nw2) { msg.style.color='red'; msg.textContent='새 비밀번호가 일치하지 않습니다.'; return; }
+  try {
+    await setDoc(doc(db,'settings','adminInfo'),{pw:nw});
+    adminPw = nw;
+    msg.style.color='green'; msg.textContent='✅ 비밀번호가 변경되었습니다.';
+    setTimeout(closePwModal, 1500);
+  } catch(e) { msg.style.color='red'; msg.textContent='저장 실패. 다시 시도하세요.'; }
+};
+
+// ── 클래스 탭 시스템 ──
+const DEFAULT_CLASS_TABS = [
+  { id: 'homeroom', label: '담임' },
+];
+let classTabs = [...DEFAULT_CLASS_TABS];
+let currentClassTabId = classTabs[0].id;
+let editingClassTabs = [];
+
+function loadClassTabs() {
+  try {
+    const saved = localStorage.getItem('hmm_class_tabs');
+    if (saved) classTabs = JSON.parse(saved);
+  } catch(e) {}
+  currentClassTabId = classTabs[0]?.id || 'homeroom';
+}
+
+function saveClassTabsLocal() {
+  localStorage.setItem('hmm_class_tabs', JSON.stringify(classTabs));
+}
+
+function renderClassTabBar() {
+  const bar = document.getElementById('class-tab-bar');
+  // 기존 탭 버튼들 제거 (⚙️ 버튼 제외)
+  bar.querySelectorAll('.class-tab-btn').forEach(b => b.remove());
+  const editBtn = bar.querySelector('.class-tab-edit-btn');
+  classTabs.forEach(tab => {
+    const btn = document.createElement('button');
+    btn.className = `class-tab-btn${tab.id === currentClassTabId ? ' active' : ''}`;
+    btn.textContent = tab.label;
+    btn.onclick = () => switchClassTab(tab.id);
+    bar.insertBefore(btn, editBtn);
+  });
+}
+
+function switchClassTab(tabId) {
+  currentClassTabId = tabId;
+  currentStudentId = null;
+  currentStudentName = '';
+  if (unsubscribeRecords) { unsubscribeRecords(); unsubscribeRecords = null; }
+  document.getElementById('record-empty-notice').style.display = 'flex';
+  document.getElementById('record-main-panel').style.display = 'none';
+
+  const tab = classTabs.find(t => t.id === tabId);
+  document.getElementById('student-panel-title').textContent = `${tab?.label || ''} 학생 명렬`;
+
+  renderClassTabBar();
+  subscribeStudents(tabId);
+}
+
+// ── 클래스 탭 편집 모달 ──
+window.openClassTabModal = function() {
+  editingClassTabs = classTabs.map(t => ({...t}));
+  renderClassTabEditList();
+  document.getElementById('classtab-modal').classList.add('show');
+};
+window.closeClassTabModal = function() {
+  document.getElementById('classtab-modal').classList.remove('show');
+};
+function renderClassTabEditList() {
+  const list = document.getElementById('classtab-edit-list');
+  list.innerHTML = '';
+  editingClassTabs.forEach((tab, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    row.innerHTML = `
+      <span style="color:#ccc;cursor:grab;font-size:1rem;padding:0 4px;">⠿</span>
+      <input value="${tab.label}" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);background:var(--paper);font-size:.85rem;font-family:inherit;outline:none;border-radius:4px;" oninput="updateEditTab(${i}, this.value)">
+      ${editingClassTabs.length > 1 ? `<button onclick="removeEditTab(${i})" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:2px 6px;">✕</button>` : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+window.updateEditTab = function(i, val) { editingClassTabs[i].label = val; };
+window.removeEditTab = function(i) {
+  editingClassTabs.splice(i, 1);
+  renderClassTabEditList();
+};
+window.addClassTab = function() {
+  const input = document.getElementById('classtab-new-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const newId = 'class_' + Date.now();
+  editingClassTabs.push({ id: newId, label: val });
+  input.value = '';
+  renderClassTabEditList();
+};
+window.saveClassTabs = function() {
+  // 유효성 체크
+  if (editingClassTabs.some(t => !t.label.trim())) {
+    alert('탭 이름을 모두 입력해주세요.'); return;
+  }
+  classTabs = editingClassTabs.map(t => ({ id: t.id, label: t.label.trim() }));
+  saveClassTabsLocal();
+  if (!classTabs.find(t => t.id === currentClassTabId)) {
+    currentClassTabId = classTabs[0].id;
+  }
+  renderClassTabBar();
+  switchClassTab(currentClassTabId);
+  closeClassTabModal();
+};
+
+// ── 앱 초기화 (로그인 후 호출) ──
+function initApp() {
+  loadClassTabs();
+  renderClassTabBar();
+  updateClock();
+  fetchNeisMeal();
+  subscribeStudents(currentClassTabId);
+
+  onSnapshot(doc(db,'timetable','weekly'), snap => {
+    timetable = snap.exists() ? snap.data() : defaultTimetable();
+    renderTimetable(); updateClock();
+  });
+  onSnapshot(doc(db,'memos','list'), snap => {
+    memos = snap.exists()?(snap.data().list||[]):[];
+    renderMemos();
+  });
+  onSnapshot(collection(db,'slots'), snap => {
+    slotsCache={};snap.forEach(d=>slotsCache[d.id]=d.data());
+    _slotsReady=true;maybeUpdate();
+  });
+  onSnapshot(collection(db,'bookings'), snap => {
+    bookingsCache={};snap.forEach(d=>{const b=d.data();b.id=d.id;if(!bookingsCache[b.date])bookingsCache[b.date]=[];bookingsCache[b.date].push(b);});
+    _bookingsReady=true;maybeUpdate();
+  });
+  onSnapshot(doc(db,'cal_notes','data'), snap => {
+    calNotes = snap.exists() ? (snap.data().notes||{}) : {};
+    renderMiniCalDots();
+    if (currentViewDate) {
+      const evts = (scheduleCache[`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`]||[]).filter(e=>e.date===currentViewDate);
+      showScheduleForDate(currentViewDate, evts, true);
+    }
+  });
+  onSnapshot(collection(db,'ddays'), snap => {
+    const container=document.getElementById('dday-container');const manageList=document.getElementById('dday-manage-list');
+    container.innerHTML='';if(manageList)manageList.innerHTML='';
+    const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const items=[];
+    snap.forEach(sd=>{const data=sd.data();if(!data.title||!data.targetDate)return;items.push({id:sd.id,...data,obj:new Date(data.targetDate)});});
+    items.sort((a,b)=>a.obj-b.obj);
+    items.forEach((item,index)=>{
+      const td=new Date(item.obj.getFullYear(),item.obj.getMonth(),item.obj.getDate());
+      const diff=Math.ceil((td-today)/(1000*60*60*24));
+      const ddayText=diff===0?'D-DAY':diff>0?`D-${diff}`:`D+${Math.abs(diff)}`;
+      const badge=document.createElement('span');badge.className=`dday-badge dday-clr-${index%4}`;badge.title=item.targetDate;
+      badge.innerHTML=`<span>${item.title}</span> <span style="opacity:.85;font-size:.65rem;">${ddayText}</span>`;
+      container.appendChild(badge);
+      if(manageList){
+        const el=document.createElement('div');el.style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--paper);border-radius:4px;font-size:0.85rem;border:1px solid var(--border);";
+        el.innerHTML=`<div><strong>${item.title}</strong> <span style="font-size:.75rem;color:var(--muted);margin-left:6px;">(${item.targetDate})</span></div><button onclick="deleteDDay('${item.id}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;padding:2px 6px;">삭제</button>`;
+        manageList.appendChild(el);
+      }
+    });
+    if(manageList&&snap.empty)manageList.innerHTML='<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:16px 0;">등록된 디데이가 없습니다.</div>';
+  });
+
+  (function initMiniCal(){
+    const now=new Date(); miniCalYear=now.getFullYear(); miniCalMonth=now.getMonth()+1;
+    fetchSchoolSchedule(miniCalYear,miniCalMonth);
+  })();
+}
+
+// ── 시계 ──
 function updateClock() {
   const now = new Date();
   const days = ['일','월','화','수','목','금','토'];
@@ -442,536 +956,655 @@ function updateClock() {
   document.getElementById('topbar-clock').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   updatePeriodStatus(now);
 }
-
 function updatePeriodStatus(now) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const seconds = now.getSeconds();
-  const txtEl = document.getElementById('p-text');
-  const timerEl = document.getElementById('p-timer');
-  let currentPeriod = null; let statusText = ""; let remainingText = "";
-
+  const txtEl = document.getElementById('p-text'); const timerEl = document.getElementById('p-timer');
   document.querySelectorAll('#tt-body tr').forEach(tr => tr.classList.remove('current-period-row'));
-
-  if (currentMinutes >= 16 * 60 + 20) {
-    txtEl.textContent = "방과후"; timerEl.textContent = ""; return;
-  }
-  if (currentMinutes < 8 * 60 + 40) {
-    const diff = (8 * 60 + 40) - currentMinutes - 1;
-    txtEl.textContent = "일과 전"; timerEl.textContent = `${diff}분 ${60 - seconds}초 전`; return;
-  }
-
-  for (let i = 0; i < SCHOOL_SCHEDULE.length; i++) {
-    const sched = SCHOOL_SCHEDULE[i];
-    const [sH, sM] = sched.start.split(':').map(Number);
-    const [eH, eM] = sched.end.split(':').map(Number);
-    const startTotal = sH * 60 + sM; const endTotal = eH * 60 + eM;
-
-    if (currentMinutes >= startTotal && currentMinutes < endTotal) {
-      currentPeriod = sched.period;
-      const diff = endTotal - currentMinutes - 1;
-      statusText = `${sched.period}교시`; remainingText = `${diff}분 ${60 - seconds}초 남음`; break;
+  if (currentMinutes >= 16*60+20) { txtEl.textContent = "방과후"; timerEl.textContent = ""; return; }
+  if (currentMinutes < 8*60+40) { const diff=(8*60+40)-currentMinutes-1; txtEl.textContent="일과 전"; timerEl.textContent=`${diff}분 ${60-seconds}초 전`; return; }
+  let statusText="", remainingText="", currentPeriod=null;
+  for (let i=0; i<SCHOOL_SCHEDULE.length; i++) {
+    const s=SCHOOL_SCHEDULE[i];
+    const [sH,sM]=s.start.split(':').map(Number); const [eH,eM]=s.end.split(':').map(Number);
+    const st=sH*60+sM; const et=eH*60+eM;
+    if (currentMinutes>=st&&currentMinutes<et) {
+      currentPeriod=s.period; const diff=et-currentMinutes-1;
+      statusText=`${s.period}교시`; remainingText=`${diff}분 ${60-seconds}초 남음`; break;
     }
-    if (i < SCHOOL_SCHEDULE.length - 1) {
-      const nextSched = SCHOOL_SCHEDULE[i + 1];
-      const [nsH, nsM] = nextSched.start.split(':').map(Number);
-      if (currentMinutes >= endTotal && currentMinutes < (nsH * 60 + nsM)) {
-        const diff = (nsH * 60 + nsM) - currentMinutes - 1;
-        statusText = `쉬는 시간`; remainingText = `${nextSched.period}교시까지 ${diff}분 ${60 - seconds}초`; break;
+    if (i<SCHOOL_SCHEDULE.length-1) {
+      const ns=SCHOOL_SCHEDULE[i+1]; const [nsH,nsM]=ns.start.split(':').map(Number);
+      if (currentMinutes>=et&&currentMinutes<(nsH*60+nsM)) {
+        const diff=(nsH*60+nsM)-currentMinutes-1;
+        statusText="쉬는 시간"; remainingText=`${ns.period}교시까지 ${diff}분 ${60-seconds}초`; break;
       }
-    } else {
-      if (currentMinutes >= endTotal && currentMinutes < 16 * 60 + 20) { statusText = "일과 종료"; remainingText = ""; }
-    }
+    } else { if (currentMinutes>=et&&currentMinutes<16*60+20) { statusText="일과 종료"; remainingText=""; } }
   }
-  txtEl.innerHTML = statusText; timerEl.textContent = remainingText;
-  if (currentPeriod) {
-    const targetRow = document.getElementById('tt-body').children[currentPeriod - 1];
-    if (targetRow) targetRow.classList.add('current-period-row');
-  }
+  txtEl.innerHTML=statusText; timerEl.textContent=remainingText;
+  if (currentPeriod) { const r=document.getElementById('tt-body').children[currentPeriod-1]; if(r) r.classList.add('current-period-row'); }
 }
-
 setInterval(updateClock, 1000); updateClock();
 
+// ── 탭 ──
 window.switchTab = function(tab) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
 };
-document.querySelectorAll('.tab-btn').forEach(btn => { btn.addEventListener('click', () => switchTab(btn.dataset.tab)); });
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
-function defaultTimetable() { const tt = {}; for (let p = 1; p <= PERIODS; p++) { tt[p] = {}; DAYS.forEach(d => tt[p][d] = ''); } return tt; }
-
-onSnapshot(doc(db, 'timetable', 'weekly'), docSnap => {
-  if (docSnap.exists()) { timetable = docSnap.data(); } else { timetable = defaultTimetable(); }
-  renderTimetable(); updateClock();
-});
-
-async function saveTimetable() {
-  const tt = {};
-  for (let p = 1; p <= PERIODS; p++) { tt[p] = {}; DAYS.forEach(d => { tt[p][d] = document.getElementById(`tt-${p}-${d}`)?.value.trim() || ''; }); }
-  try {
-    await setDoc(doc(db, 'timetable', 'weekly'), tt);
-    closeTTEdit();
-  } catch (error) {
-    console.error("시간표 파이어베이스 저장 실패:", error);
-    alert("시간표 저장에 실패했습니다.");
-  }
-}
-window.saveTimetable = saveTimetable;
+// ── 시간표 ──
+function defaultTimetable() { const tt={}; for(let p=1;p<=PERIODS;p++){tt[p]={};DAYS.forEach(d=>tt[p][d]='');} return tt; }
 
 function renderTimetable() {
-  const dow = new Date().getDay(); const todayCol = dow >= 1 && dow <= 5 ? DAYS[dow - 1] : null;
-  DAYS.forEach((d, i) => { const th = document.getElementById('th-' + d); if (th) { th.className = d === todayCol ? 'today-col' : ''; th.textContent = DAY_LABELS[i] + (d === todayCol ? ' ★' : ''); } });
-  const tbody = document.getElementById('tt-body'); tbody.innerHTML = '';
-  for (let p = 1; p <= PERIODS; p++) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="period">${p}교시</td>` + DAYS.map(d => { const val = timetable[p]?.[d] || ''; const cls = d === todayCol ? 'today-col' : (val === '' ? 'empty' : ''); return `<td class="${cls}">${val || '—'}</td>`; }).join('');
+  const dow=new Date().getDay(); const todayCol=dow>=1&&dow<=5?DAYS[dow-1]:null;
+  DAYS.forEach((d,i) => { const th=document.getElementById('th-'+d); if(th){th.className=d===todayCol?'today-col':''; th.textContent=DAY_LABELS[i]+(d===todayCol?' ★':'');} });
+  const tbody=document.getElementById('tt-body'); tbody.innerHTML='';
+  for(let p=1;p<=PERIODS;p++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="period">${p}교</td>`+DAYS.map(d=>{const v=timetable[p]?.[d]||'';const cls=d===todayCol?'today-col':(v===''?'empty':'');return`<td class="${cls}">${v||'—'}</td>`;}).join('');
     tbody.appendChild(tr);
   }
 }
+async function saveTimetable() {
+  const tt={};
+  for(let p=1;p<=PERIODS;p++){tt[p]={};DAYS.forEach(d=>{tt[p][d]=document.getElementById(`tt-${p}-${d}`)?.value.trim()||'';});}
+  try { await setDoc(doc(db,'timetable','weekly'),tt); closeTTEdit(); } catch(e) { alert("시간표 저장 실패"); }
+}
+window.saveTimetable=saveTimetable;
 function openTTEdit() {
-  const tbody = document.getElementById('tt-edit-body'); tbody.innerHTML = '';
-  for (let p = 1; p <= PERIODS; p++) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td style="text-align:center;font-size:.78rem;color:var(--muted);padding:4px 8px">${p}교시</td>` + DAYS.map(d => `<td><input id="tt-${p}-${d}" value="${timetable[p]?.[d] || ''}" placeholder="—"></td>`).join('');
+  const tbody=document.getElementById('tt-edit-body'); tbody.innerHTML='';
+  for(let p=1;p<=PERIODS;p++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="text-align:center;font-size:.78rem;color:var(--muted);padding:4px 8px">${p}교시</td>`+DAYS.map(d=>`<td><input id="tt-${p}-${d}" value="${timetable[p]?.[d]||''}" placeholder="—"></td>`).join('');
     tbody.appendChild(tr);
   }
   document.getElementById('tt-modal').classList.add('show');
 }
 function closeTTEdit() { document.getElementById('tt-modal').classList.remove('show'); }
-window.openTTEdit = openTTEdit; window.closeTTEdit = closeTTEdit;
+window.openTTEdit=openTTEdit; window.closeTTEdit=closeTTEdit;
 
+// ── 급식 ──
 async function fetchNeisMeal() {
-  const schoolLabel = document.getElementById('meal-school');
-  if (NEIS_API_KEY === "발급받은_실제_인증키를_여기에_넣으세요") {
-    schoolLabel.textContent = "인증키 미설정 상태";
-    document.getElementById('meal-lunch-content').innerHTML = '<p class="meal-loading">코드 내부의 NEIS_API_KEY를 수정해주세요.</p>';
-    return;
-  }
-  const now = new Date();
-  const yyyymmdd = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&MLSV_YMD=${yyyymmdd}`;
+  const schoolLabel=document.getElementById('meal-school');
+  const now=new Date();
+  const yyyymmdd=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const url=`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&MLSV_YMD=${yyyymmdd}`;
   try {
-    const res = await fetch(url); const data = await res.json(); mealData = { lunch: [], dinner: [] };
-    if (data.mealServiceDietInfo) {
-      const items = data.mealServiceDietInfo[1].row; schoolLabel.textContent = items[0].SCHUL_NM;
-      items.forEach(row => {
-        const menuClean = row.DDISH_NM.split('<br/>').map(menu => menu.replace(/[0-9.()]/g, '').trim()).filter(Boolean);
-        if (row.MMEAL_SC_CODE === "2") { mealData.lunch = menuClean; } else if (row.MMEAL_SC_CODE === "3") { mealData.dinner = menuClean; }
+    const res=await fetch(url); const data=await res.json(); mealData={lunch:[],dinner:[]};
+    if(data.mealServiceDietInfo){
+      const items=data.mealServiceDietInfo[1].row; schoolLabel.textContent=items[0].SCHUL_NM;
+      items.forEach(row=>{
+        const menuClean=row.DDISH_NM.split('<br/>').map(m=>m.replace(/[0-9.()]/g,'').trim()).filter(Boolean);
+        if(row.MMEAL_SC_CODE==="2") mealData.lunch=menuClean;
+        else if(row.MMEAL_SC_CODE==="3") mealData.dinner=menuClean;
       });
-    } else { schoolLabel.textContent = "급식 없음 (주말/공휴일)"; }
-  } catch (error) { console.error("나이스 API 로드 중 실패:", error); schoolLabel.textContent = "데이터 에러"; }
+    } else { schoolLabel.textContent="급식 없음 (주말/공휴일)"; }
+  } catch(e) { schoolLabel.textContent="데이터 에러"; }
   renderMeal('lunch'); renderMeal('dinner');
 }
 function renderMeal(type) {
-  const el = document.getElementById(`meal-${type}-content`); const items = mealData[type];
-  if (!items || !items.length) { el.innerHTML = `<p class="meal-loading">오늘 ${type==='lunch'?'중식':'석식'} 정보가 없습니다.</p>`; return; }
-  el.innerHTML = `<ul class="meal-list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+  const el=document.getElementById(`meal-${type}-content`); const items=mealData[type];
+  if(!items||!items.length){el.innerHTML=`<p class="meal-loading">오늘 ${type==='lunch'?'중식':'석식'} 정보가 없습니다.</p>`;return;}
+  el.innerHTML=`<ul class="meal-list">${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
 }
-window.showMeal = function(type, btn) {
-  document.querySelectorAll('.meal-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active');
-  document.getElementById('meal-lunch-content').style.display = type === 'lunch' ? '' : 'none';
-  document.getElementById('meal-dinner-content').style.display = type === 'dinner' ? '' : 'none';
+window.showMeal=function(type,btn){
+  document.querySelectorAll('.meal-tab').forEach(t=>t.classList.remove('active')); btn.classList.add('active');
+  document.getElementById('meal-lunch-content').style.display=type==='lunch'?'':'none';
+  document.getElementById('meal-dinner-content').style.display=type==='dinner'?'':'none';
 };
-fetchNeisMeal();
 
-window.renderMemos = function() {
-  const container = document.getElementById('memo-items');
-  container.innerHTML = '';
-  if (!memos || !memos.length) {
-    container.innerHTML = '<div class="memo-empty">할 일을 추가해보세요</div>';
-    return;
-  }
-  memos.forEach((m, i) => {
-    const div = document.createElement('div');
-    div.className = 'memo-item';
-    div.draggable = true;
-    div.dataset.idx = i;
-    div.innerHTML = `
+// ── 메모 ──
+window.renderMemos=function(){
+  const container=document.getElementById('memo-items'); container.innerHTML='';
+  if(!memos||!memos.length){container.innerHTML='<div class="memo-empty">할 일을 추가해보세요 ✏️</div>';return;}
+  memos.forEach((m,i)=>{
+    const div=document.createElement('div'); div.className='memo-item'; div.draggable=true; div.dataset.idx=i;
+    div.innerHTML=`
       <span class="memo-drag" title="드래그해서 순서 변경">⠿</span>
-      <input type="checkbox" class="memo-cb" ${m.done ? 'checked' : ''} onchange="toggleMemo(${i})">
-      <span class="memo-text ${m.done ? 'done' : ''}" id="memo-text-${i}">${m.text}</span>
+      <input type="checkbox" class="memo-cb" ${m.done?'checked':''} onchange="toggleMemo(${i})">
+      <span class="memo-text ${m.done?'done':''}" id="memo-text-${i}">${m.text}</span>
       <button class="memo-edit-btn" onclick="startEditMemo(${i})" title="수정">✏️</button>
       <button class="memo-del" onclick="deleteMemo(${i})">✕</button>
     `;
-    // 드래그 이벤트
-    div.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text/plain', i);
-      setTimeout(() => div.classList.add('dragging'), 0);
-    });
-    div.addEventListener('dragend', () => div.classList.remove('dragging'));
-    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
-    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
-    div.addEventListener('drop', async e => {
-      e.preventDefault();
-      div.classList.remove('drag-over');
-      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-      const toIdx = parseInt(div.dataset.idx);
-      if (fromIdx === toIdx) return;
-      const updated = [...memos];
-      const [moved] = updated.splice(fromIdx, 1);
-      updated.splice(toIdx, 0, moved);
-      await syncMemosToFirebase(updated);
-    });
+    div.addEventListener('dragstart', e=>{e.dataTransfer.setData('text/plain',i);setTimeout(()=>div.classList.add('dragging'),0);});
+    div.addEventListener('dragend', ()=>div.classList.remove('dragging'));
+    div.addEventListener('dragover', e=>{e.preventDefault();div.classList.add('drag-over');});
+    div.addEventListener('dragleave', ()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop', async e=>{e.preventDefault();div.classList.remove('drag-over');const from=parseInt(e.dataTransfer.getData('text/plain'));const to=parseInt(div.dataset.idx);if(from===to)return;const u=[...memos];const[moved]=u.splice(from,1);u.splice(to,0,moved);await syncMemos(u);});
     container.appendChild(div);
   });
 };
-
-window.startEditMemo = function(i) {
-  const textEl = document.getElementById('memo-text-' + i);
-  if (!textEl) return;
-  const currentText = memos[i].text;
-  const item = textEl.closest('.memo-item');
-  // 텍스트 → 인풋으로 교체
-  textEl.style.display = 'none';
-  const input = document.createElement('input');
-  input.className = 'memo-edit-input';
-  input.value = currentText;
-  item.insertBefore(input, textEl.nextSibling);
-  input.focus();
-  input.select();
-
-  const save = async () => {
-    const newText = input.value.trim();
-    if (newText && newText !== currentText) {
-      const updated = [...memos];
-      updated[i].text = newText;
-      await syncMemosToFirebase(updated);
-    } else {
-      renderMemos();
-    }
-  };
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') save();
-    if (e.key === 'Escape') renderMemos();
-  });
-  input.addEventListener('blur', save);
+window.startEditMemo=function(i){
+  const textEl=document.getElementById('memo-text-'+i); if(!textEl)return;
+  const cur=memos[i].text; const item=textEl.closest('.memo-item');
+  textEl.style.display='none';
+  const input=document.createElement('input'); input.className='memo-edit-input'; input.value=cur;
+  item.insertBefore(input,textEl.nextSibling); input.focus(); input.select();
+  const save=async()=>{const t=input.value.trim();if(t&&t!==cur){const u=[...memos];u[i].text=t;await syncMemos(u);}else{renderMemos();}};
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')save();if(e.key==='Escape')renderMemos();});
+  input.addEventListener('blur',save);
 };
-async function syncMemosToFirebase(newMemos) {
-  try { await setDoc(doc(db, 'memos', 'list'), { list: newMemos }); } catch (error) { console.error("메모 파이어베이스 동기화 실패:", error); }
+async function syncMemos(m){try{await setDoc(doc(db,'memos','list'),{list:m});}catch(e){console.error(e);}}
+window.addMemo=async function(){const input=document.getElementById('memo-input');const text=input.value.trim();if(!text)return;await syncMemos([...memos,{text,done:false}]);input.value='';};
+window.toggleMemo=async function(i){const u=[...memos];u[i].done=!u[i].done;await syncMemos(u);};
+window.deleteMemo=async function(i){const u=[...memos];u.splice(i,1);await syncMemos(u);};
+
+// ── 알림 배너 ──
+function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function updateAlertBanner(){
+  const today=todayStr();const books=bookingsCache[today]||[];const slotData=slotsCache[today]||{};const customs=slotData.custom||[];const FIXED_LABEL={lunch:'점심',after:'방과후'};
+  const banner=document.getElementById('alert-banner');const ico=document.getElementById('alert-ico');const title=document.getElementById('alert-title');const list=document.getElementById('alert-list');
+  if(!books.length){banner.className='alert-banner none';ico.textContent='✅';title.className='alert-title none';title.textContent='오늘 예정된 상담이 없어요';list.className='alert-list none';list.textContent='편안한 하루 되세요 😊';return;}
+  banner.className='alert-banner';ico.textContent='🔔';title.className='alert-title';title.textContent=`오늘 상담 ${books.length}건이 있어요`;
+  const sorted=[...books].sort((a,b)=>({lunch:0,after:1,custom:2}[a.type]??2)-({lunch:0,after:1,custom:2}[b.type]??2));
+  list.className='alert-list';list.textContent=sorted.map(b=>{let label=FIXED_LABEL[b.type]||'';let time=b.type==='lunch'?'12:40':b.type==='after'?'15:10':'';if(b.type==='custom'){const cs=customs[b.customIdx];if(cs){label=cs.name;time=cs.start;}}return`${label} (${time}) — ${b.name}`;}).join('  ·  ');
 }
-window.addMemo = async function() {
-  const input = document.getElementById('memo-input'); const text = input.value.trim(); if (!text) return;
-  const updated = [...memos, { text, done: false }]; input.value = ''; await syncMemosToFirebase(updated);
+let _slotsReady=false,_bookingsReady=false;
+function maybeUpdate(){if(_slotsReady&&_bookingsReady)updateAlertBanner();}
+
+// ── 디데이 ──
+window.openDDayModal=function(){document.getElementById('dday-modal').classList.add('show');};
+window.closeDDayModal=function(){document.getElementById('dday-modal').classList.remove('show');document.getElementById('dday-title-input').value='';document.getElementById('dday-date-input').value='';};
+window.addDDay=async function(){
+  const ti=document.getElementById('dday-title-input');const di=document.getElementById('dday-date-input');
+  const title=ti.value.trim();const targetDate=di.value;
+  if(!title||!targetDate){alert('이름과 날짜를 입력해주세요!');return;}
+  try{await addDoc(collection(db,'ddays'),{title,targetDate});ti.value='';di.value='';}catch(e){alert("저장 실패");}
 };
-window.toggleMemo = async function(i) { 
-  const updated = [...memos]; updated[i].done = !updated[i].done; await syncMemosToFirebase(updated);
-};
-window.deleteMemo = async function(i) { 
-  const updated = [...memos]; updated.splice(i, 1); await syncMemosToFirebase(updated);
-};
+window.deleteDDay=async function(id){if(!confirm('삭제하시겠습니까?'))return;try{await deleteDoc(doc(db,'ddays',id));}catch(e){alert("삭제 실패");}};
 
-onSnapshot(doc(db, 'memos', 'list'), docSnap => {
-  if (docSnap.exists()) { memos = docSnap.data().list || []; } else { memos = []; }
-  renderMemos();
-});
-
-function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function updateAlertBanner() {
-  const today = todayStr(); const books = bookingsCache[today] || []; const slotData = slotsCache[today] || {}; const customs = slotData.custom || []; const FIXED_LABEL = { lunch: '점심', after: '방과후' };
-  const banner = document.getElementById('alert-banner'); const ico = document.getElementById('alert-ico'); const title = document.getElementById('alert-title'); const list = document.getElementById('alert-list');
-  if (!books.length) { banner.className = 'alert-banner none'; ico.textContent = '✅'; title.className = 'alert-title none'; title.textContent = '오늘 예정된 상담이 없어요'; list.className = 'alert-list none'; list.textContent = '편안한 하루 되세요 😊'; return; }
-  banner.className = 'alert-banner'; ico.textContent = '🔔'; title.className = 'alert-title'; title.textContent = `오늘 상담 ${books.length}건이 있어요`;
-  const sorted = [...books].sort((a,b) => { const o = { lunch: 0, after: 1, custom: 2 }; return (o[a.type]??2) - (o[b.type]??2); });
-  list.className = 'alert-list'; list.textContent = sorted.map(b => { let label = FIXED_LABEL[b.type] || ''; let time = b.type === 'lunch' ? '12:40' : b.type === 'after' ? '15:10' : ''; if (b.type === 'custom') { const cs = customs[b.customIdx]; if (cs) { label = cs.name; time = cs.start; } } return `${label} (${time}) — ${b.name}`; }).join('  ·  ');
-}
-let _slotsReady = false, _bookingsReady = false;
-function maybeUpdate() { if (_slotsReady && _bookingsReady) updateAlertBanner(); }
-onSnapshot(collection(db, 'slots'), snap => { slotsCache = {}; snap.forEach(d => slotsCache[d.id] = d.data()); _slotsReady = true; maybeUpdate(); });
-onSnapshot(collection(db, 'bookings'), snap => { bookingsCache = {}; snap.forEach(d => { const b = d.data(); b.id = d.id; if (!bookingsCache[b.date]) bookingsCache[b.date] = []; bookingsCache[b.date].push(b); }); _bookingsReady = true; maybeUpdate(); });
-
-window.openDDayModal = function() { document.getElementById('dday-modal').classList.add('show'); };
-window.closeDDayModal = function() {
-  document.getElementById('dday-modal').classList.remove('show');
-  document.getElementById('dday-title-input').value = ''; document.getElementById('dday-date-input').value = '';
-};
-window.addDDay = async function() {
-  const titleInput = document.getElementById('dday-title-input'); const dateInput = document.getElementById('dday-date-input');
-  const title = titleInput.value.trim(); const targetDate = dateInput.value;
-  if (!title || !targetDate) { alert('일정 이름 and 날짜를 모두 입력해주세요!'); return; }
-  try {
-    await addDoc(collection(db, 'ddays'), { title: title, targetDate: targetDate });
-    titleInput.value = ''; dateInput.value = '';
-  } catch (error) { console.error("디데이 추가 실패:", error); alert("저장에 실패했습니다."); }
-};
-window.deleteDDay = async function(id) {
-  if (!confirm('이 디데이 일정을 삭제하시겠습니까?')) return;
-  try { await deleteDoc(doc(db, 'ddays', id)); } catch (error) { console.error("디데이 삭제 실패:", error); alert("삭제에 실패했습니다."); }
-};
-onSnapshot(collection(db, 'ddays'), snap => {
-  const container = document.getElementById('dday-container'); const manageList = document.getElementById('dday-manage-list');
-  if (!container) return;
-  container.innerHTML = ''; if (manageList) manageList.innerHTML = '';
-  
-  const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const ddayItems = [];
-  
-  snap.forEach(snapshotDoc => {
-    const data = snapshotDoc.data(); if (!data.title || !data.targetDate) return;
-    let target = new Date(data.targetDate);
-    ddayItems.push({ id: snapshotDoc.id, title: data.title, targetDateString: data.targetDate, targetDateObj: target });
-  });
-
-  ddayItems.sort((a, b) => a.targetDateObj - b.targetDateObj);
-
-  ddayItems.forEach((itemData, index) => {
-    const targetDay = new Date(itemData.targetDateObj.getFullYear(), itemData.targetDateObj.getMonth(), itemData.targetDateObj.getDate());
-    const diffTime = targetDay.getTime() - today.getTime(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    let ddayText = '';
-    if (diffDays === 0) ddayText = 'D-DAY';
-    else if (diffDays > 0) ddayText = `D-${diffDays}`;
-    else ddayText = `D+${Math.abs(diffDays)}`;
-
-    const colorClass = `dday-clr-${index % 4}`;
-    const badge = document.createElement('span');
-    badge.className = `dday-badge ${colorClass}`;
-    badge.title = itemData.targetDateString;
-    badge.innerHTML = `<span>${itemData.title}</span> <span style="opacity: 0.85; font-size: 0.65rem;">${ddayText}</span>`;
-    container.appendChild(badge);
-
-    if (manageList) {
-      const item = document.createElement('div');
-      item.style = "display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--paper); border-radius: 4px; font-size: 0.85rem; border: 1px solid var(--border);";
-      item.innerHTML = `
-        <div>
-          <strong style="color: var(--ink);">${itemData.title}</strong> 
-          <span style="font-size: 0.75rem; color: var(--muted); margin-left: 6px;">(${itemData.targetDateString})</span>
-        </div>
-        <button onclick="deleteDDay('${itemData.id}')" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.85rem; padding: 2px 6px;">삭제</button>
-      `;
-      manageList.appendChild(item);
-    }
-  });
-  
-  if (manageList && snap.empty) {
-    manageList.innerHTML = '<div style="color: var(--muted); font-size: 0.82rem; text-align: center; padding: 16px 0;">등록된 디데이가 없습니다.</div>';
-  }
-});
 // ── 학사일정 달력 ──
 let miniCalYear, miniCalMonth;
 let scheduleCache = {};
-let calNotes = {};        // { 'YYYYMMDD': ['메모1','메모2'] } — Firebase 실시간 동기화
+let calNotes = {};
 let currentViewDate = null;
 
-// Firebase 실시간 동기화
-onSnapshot(doc(db, 'cal_notes', 'data'), snap => {
-  calNotes = snap.exists() ? (snap.data().notes || {}) : {};
-  renderMiniCalDots();
-  // 상세보기 중이면 메모 목록도 갱신
-  if (currentViewDate) {
-    const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
-    const evts = (scheduleCache[key] || []).filter(e => e.date === currentViewDate);
-    showScheduleForDate(currentViewDate, evts, true);
-  }
-});
+async function saveCalNotes(){ await setDoc(doc(db,'cal_notes','data'),{notes:calNotes}); }
 
-async function saveCalNotes() {
-  await setDoc(doc(db, 'cal_notes', 'data'), { notes: calNotes });
-}
-
-(function initMiniCal() {
-  const now = new Date();
-  miniCalYear = now.getFullYear();
-  miniCalMonth = now.getMonth() + 1;
-  fetchSchoolSchedule(miniCalYear, miniCalMonth);
-})();
-
-window.miniCalMove = function(dir) {
-  miniCalMonth += dir;
-  if (miniCalMonth > 12) { miniCalMonth = 1; miniCalYear++; }
-  if (miniCalMonth < 1)  { miniCalMonth = 12; miniCalYear--; }
-  currentViewDate = null;
+window.miniCalMove=function(dir){
+  miniCalMonth+=dir;
+  if(miniCalMonth>12){miniCalMonth=1;miniCalYear++;}
+  if(miniCalMonth<1){miniCalMonth=12;miniCalYear--;}
+  currentViewDate=null;
   renderMiniCal();
-  const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
-  if (!scheduleCache[key]) fetchSchoolSchedule(miniCalYear, miniCalMonth);
+  const key=`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+  if(!scheduleCache[key])fetchSchoolSchedule(miniCalYear,miniCalMonth);
 };
 
-async function fetchSchoolSchedule(year, month) {
-  const key = `${year}-${String(month).padStart(2,'0')}`;
-  const ym = `${year}${String(month).padStart(2,'0')}`;
-  const url = `https://open.neis.go.kr/hub/SchoolSchedule?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&AA_YMD=${ym}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    const rows = data?.SchoolSchedule?.[1]?.row || [];
-    scheduleCache[key] = rows.map(r => ({
-      date: r.AA_YMD,
-      name: r.EVENT_NM,
-      isHoliday: r.EVENT_NM.includes('방학') || r.EVENT_NM.includes('휴업') || r.EVENT_NM.includes('공휴일')
-    }));
-  } catch(e) {
-    scheduleCache[key] = [];
-  }
-  renderMiniCal();
+async function fetchSchoolSchedule(year,month){
+  const key=`${year}-${String(month).padStart(2,'0')}`;
+  const ym=`${year}${String(month).padStart(2,'0')}`;
+  const url=`https://open.neis.go.kr/hub/SchoolSchedule?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&AA_YMD=${ym}`;
+  try{
+    const res=await fetch(url);const data=await res.json();
+    const rows=data?.SchoolSchedule?.[1]?.row||[];
+    scheduleCache[key]=rows.map(r=>({date:r.AA_YMD,name:r.EVENT_NM,isHoliday:r.EVENT_NM.includes('방학')||r.EVENT_NM.includes('휴업')||r.EVENT_NM.includes('공휴일')}));
+  }catch(e){scheduleCache[key]=[];}
+  window.renderMiniCal();
 }
 
-window.renderMiniCal = function renderMiniCal() {
-  const key = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
-  const events = scheduleCache[key] || null;
-  document.getElementById('mini-cal-title').textContent = `${miniCalYear}년 ${miniCalMonth}월`;
+window.renderMiniCal=function(){
+  const key=`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
+  const events=scheduleCache[key]||null;
+  document.getElementById('mini-cal-title').textContent=`${miniCalYear}년 ${miniCalMonth}월`;
+  const grid=document.getElementById('mini-cal-grid'); grid.innerHTML='';
 
-  const grid = document.getElementById('mini-cal-grid');
-  grid.innerHTML = '';
+  const firstDay=new Date(miniCalYear,miniCalMonth-1,1).getDay();
+  const lastDate=new Date(miniCalYear,miniCalMonth,0).getDate();
+  const now=new Date();
+  const todayStr2=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-  const firstDay = new Date(miniCalYear, miniCalMonth - 1, 1).getDay();
-  const lastDate = new Date(miniCalYear, miniCalMonth, 0).getDate();
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  for(let i=0;i<firstDay;i++){const el=document.createElement('div');el.className='mini-cal-cell empty';grid.appendChild(el);}
 
-  for (let i = 0; i < firstDay; i++) {
-    const el = document.createElement('div');
-    el.className = 'mini-cal-cell empty';
-    grid.appendChild(el);
-  }
+  for(let d=1;d<=lastDate;d++){
+    const dateStr=`${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(d).padStart(2,'0')}`;
+    const dow=new Date(miniCalYear,miniCalMonth-1,d).getDay();
+    const dayEvts=events?events.filter(e=>e.date===dateStr):[];
+    const hasNote=(calNotes[dateStr]||[]).length>0;
+    const isToday=dateStr===todayStr2;
+    const isSelected=dateStr===currentViewDate;
 
-  for (let d = 1; d <= lastDate; d++) {
-    const dateStr = `${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(d).padStart(2,'0')}`;
-    const dayOfWeek = new Date(miniCalYear, miniCalMonth - 1, d).getDay();
-    const dayEvents = events ? events.filter(e => e.date === dateStr) : [];
-    const hasNote = (calNotes[dateStr] || []).length > 0;
-    const isToday = dateStr === todayStr;
-    const isSelected = dateStr === currentViewDate;
+    const cell=document.createElement('div');
+    let cls='mini-cal-cell';
+    if(isToday)cls+=' today';
+    if(dow===0)cls+=' sun';
+    if(dow===6)cls+=' sat';
+    if(dayEvts.length)cls+=' has-event';
+    if(hasNote)cls+=' has-memo';
+    if(isSelected)cls+=' selected';
+    cell.className=cls;
 
-    const cell = document.createElement('div');
-    let cls = 'mini-cal-cell';
-    if (isToday) cls += ' today';
-    if (dayOfWeek === 0) cls += ' sun';
-    if (dayOfWeek === 6) cls += ' sat';
-    if (dayEvents.length) cls += ' has-event';
-    if (hasNote) cls += ' has-memo';
-    if (isSelected) cls += ' selected';
-    cell.className = cls;
-
-    let inner = `<div class="mini-day">${d}</div>`;
-    dayEvents.slice(0, 1).forEach(ev => {
-      inner += `<div class="mini-event-dot ${ev.isHoliday ? 'holiday' : 'school'}"></div>`;
+    let inner=`<div class="mini-day">${d}</div>`;
+    dayEvts.slice(0,2).forEach(ev=>{
+      inner+=`<div class="cal-event-tag ${ev.isHoliday?'holiday':'school'}">${ev.name}</div>`;
     });
-    cell.innerHTML = inner;
-    cell.onclick = () => showScheduleForDate(dateStr, dayEvents);
+    if(dayEvts.length>2) inner+=`<div class="cal-event-tag school">+${dayEvts.length-2}</div>`;
+    cell.innerHTML=inner;
+    cell.onclick=()=>showScheduleForDate(dateStr,dayEvts);
     grid.appendChild(cell);
   }
 
-  if (currentViewDate) {
-    const evts = events ? events.filter(e => e.date === currentViewDate) : [];
-    showScheduleForDate(currentViewDate, evts, true);
+  if(currentViewDate){
+    const evts=events?events.filter(e=>e.date===currentViewDate):[];
+    showScheduleForDate(currentViewDate,evts,true);
   } else {
-    renderScheduleList(events, key);
+    renderMonthEventList(events,key);
   }
+};
+
+function renderMonthEventList(events){
+  const detailEmpty=document.getElementById('cal-detail-empty');
+  const detailContent=document.getElementById('cal-detail-content');
+  const monthList=document.getElementById('month-evt-list');
+  detailContent.style.display='none'; detailEmpty.style.display='none'; monthList.style.display='';
+  
+  if(!events){monthList.innerHTML='<div style="color:var(--muted);font-size:.75rem;padding:4px 0;">불러오는 중...</div>';return;}
+  const now=new Date();
+  const todayNum=parseInt(`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`);
+  const upcoming=events.filter(e=>parseInt(e.date)>=todayNum).slice(0,10);
+  if(!upcoming.length){monthList.innerHTML='<div style="color:var(--muted);font-size:.75rem;padding:4px 0;">이번 달 남은 학사일정이 없습니다.</div>';return;}
+  monthList.innerHTML='';
+  upcoming.forEach(e=>{
+    const d=e.date;
+    const dateLabel=`${parseInt(d.slice(4,6))}/${parseInt(d.slice(6,8))}`;
+    const div=document.createElement('div');div.className='month-evt-item';
+    div.innerHTML=`<span class="month-evt-date">${dateLabel}</span><span class="month-evt-name ${e.isHoliday?'holiday':''}">${e.name}</span>`;
+    div.onclick=()=>{
+      const k=`${d.slice(0,4)}-${d.slice(4,6)}`;
+      const evts=(scheduleCache[k]||[]).filter(x=>x.date===d);
+      showScheduleForDate(d,evts);
+    };
+    monthList.appendChild(div);
+  });
 }
 
-window.renderScheduleList = function renderScheduleList(events, key) {
-  const list = document.getElementById('mini-schedule-list');
-  if (!events) { list.innerHTML = '<div class="mini-cal-loading">불러오는 중...</div>'; return; }
+window.showScheduleForDate=function(dateStr,dayEvts,skipRerender){
+  currentViewDate=dateStr;
+  if(!skipRerender) renderMiniCal();
 
-  const now = new Date();
-  const todayNum = parseInt(`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`);
-  const upcoming = events.filter(e => parseInt(e.date) >= todayNum).slice(0, 8);
+  const d=dateStr;
+  const dateLabel=`${parseInt(d.slice(0,4))}년 ${parseInt(d.slice(4,6))}월 ${parseInt(d.slice(6,8))}일`;
+  const notes=calNotes[dateStr]||[];
 
-  let html = '';
-  if (upcoming.length) {
-    const frag = document.createDocumentFragment();
-    upcoming.forEach(e => {
-      const d = e.date;
-      const dateLabel = `${parseInt(d.slice(4,6))}/${parseInt(d.slice(6,8))}`;
-      const div = document.createElement('div');
-      div.className = 'mini-schedule-item';
-      div.style.cursor = 'pointer';
-      div.innerHTML = `<span class="mini-schedule-date">${dateLabel}</span><span class="mini-schedule-name ${e.isHoliday ? 'holiday' : ''}">${e.name}</span>`;
-      div.onclick = () => {
-        const key2 = `${d.slice(0,4)}-${d.slice(4,6)}`;
-        const evts = (scheduleCache[key2] || []).filter(x => x.date === d);
-        showScheduleForDate(d, evts);
-      };
-      frag.appendChild(div);
-    });
-    list.innerHTML = '';
-    list.appendChild(frag);
-    return;
-  } else {
-    html = '<div class="mini-schedule-empty">이번 달 남은 학사일정이 없습니다.</div>';
-  }
-}
+  const detailEmpty=document.getElementById('cal-detail-empty');
+  const detailContent=document.getElementById('cal-detail-content');
+  const monthList=document.getElementById('month-evt-list');
+  detailEmpty.style.display='none'; detailContent.style.display=''; monthList.style.display='none';
 
-window.showScheduleForDate = function showScheduleForDate(dateStr, dayEvents, skipRerender) {
-  currentViewDate = dateStr;
-  if (!skipRerender) renderMiniCal();  // 달력 셀 선택 표시 갱신
-
-  const d = dateStr;
-  const dateLabel = `${parseInt(d.slice(0,4))}년 ${parseInt(d.slice(4,6))}월 ${parseInt(d.slice(6,8))}일`;
-  const notes = calNotes[dateStr] || [];
-  const curKey = `${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
-
-  const list = document.getElementById('mini-schedule-list');
-  list.innerHTML = `
-    <div class="mini-note-header">
-      <span>📅 ${dateLabel}</span>
-      <span class="mini-note-back" id="mini-back-btn">← 목록으로</span>
+  detailContent.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cal-detail-date">📅 ${dateLabel}</div>
+      <button onclick="clearCalDate()" style="background:none;border:none;color:var(--accent2);cursor:pointer;font-size:.75rem;font-weight:600;">← 목록으로</button>
     </div>
-    ${dayEvents.length
-      ? dayEvents.map(e => `<div class="mini-schedule-item"><span class="mini-schedule-name ${e.isHoliday ? 'holiday' : ''}">${e.name}</span></div>`).join('')
-      : '<div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">학사일정 없음</div>'
+    ${dayEvts.length
+      ? `<div class="cal-evt-list">${dayEvts.map(e=>`<div class="cal-evt-item"><span class="cal-evt-dot ${e.isHoliday?'holiday':'school'}"></span><span>${e.name}</span></div>`).join('')}</div>`
+      : `<div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;">학사일정 없음</div>`
     }
-    <div class="mini-note-area">
-      <div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:5px">📌 메모</div>
-      <div class="mini-note-input-row">
-        <input class="mini-note-input" id="mini-note-input-${dateStr}" placeholder="메모 입력 후 Enter">
-        <button class="mini-note-add-btn">추가</button>
-      </div>
-      <div id="mini-notes-${dateStr}">
-        ${notes.length
-          ? notes.map((n,i) => `<div class="mini-note-item"><span class="mini-note-text">${n}</span><button class="mini-note-del" data-idx="${i}">✕</button></div>`).join('')
-          : '<div class="mini-note-empty">메모가 없습니다.</div>'
-        }
-      </div>
+    <div style="font-size:.75rem;font-weight:700;color:var(--muted);margin:8px 0 5px;">📌 날짜 메모</div>
+    <div class="mini-note-input-row">
+      <input class="mini-note-input" id="mini-note-input-${dateStr}" placeholder="메모 입력 후 Enter">
+      <button class="mini-note-add-btn" id="mini-note-add-${dateStr}">추가</button>
+    </div>
+    <div id="mini-notes-${dateStr}">
+      ${notes.length
+        ? notes.map((n,i)=>`<div class="mini-note-item"><span class="mini-note-text">${n}</span><button class="mini-note-del" data-idx="${i}" data-date="${dateStr}">✕</button></div>`).join('')
+        : '<div class="mini-note-empty">메모가 없습니다.</div>'
+      }
     </div>
   `;
-  // 목록으로 버튼 이벤트 — innerHTML onclick은 module scope에서 안 됨
-  const backBtn = document.getElementById('mini-back-btn');
-  if (backBtn) {
-    backBtn.onclick = () => {
-      currentViewDate = null;
-      renderMiniCal();
-    };
+  const addBtn=document.getElementById('mini-note-add-'+dateStr);
+  if(addBtn)addBtn.onclick=()=>addCalNote(dateStr);
+  const noteInput=document.getElementById('mini-note-input-'+dateStr);
+  if(noteInput)noteInput.addEventListener('keydown',e=>{if(e.key==='Enter')addCalNote(dateStr);});
+  detailContent.querySelectorAll('.mini-note-del').forEach(btn=>{
+    btn.onclick=()=>delCalNote(btn.dataset.date,parseInt(btn.dataset.idx));
+  });
+};
+
+window.clearCalDate=function(){
+  currentViewDate=null;
+  renderMiniCal();
+};
+
+window.addCalNote=async function(dateStr){
+  const input=document.getElementById('mini-note-input-'+dateStr); if(!input)return;
+  const text=input.value.trim(); if(!text)return;
+  if(!calNotes[dateStr])calNotes[dateStr]=[];
+  calNotes[dateStr].push(text); input.value='';
+  await saveCalNotes();
+};
+window.delCalNote=async function(dateStr,idx){
+  if(!calNotes[dateStr])return;
+  calNotes[dateStr].splice(idx,1);
+  if(!calNotes[dateStr].length)delete calNotes[dateStr];
+  await saveCalNotes();
+};
+function renderMiniCalDots(){
+  document.querySelectorAll('.mini-cal-cell').forEach(cell=>{
+    const d=cell.querySelector('.mini-day'); if(!d)return;
+    const dayNum=parseInt(d.textContent); if(isNaN(dayNum))return;
+    const dateStr=`${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(dayNum).padStart(2,'0')}`;
+    cell.classList.toggle('has-memo',(calNotes[dateStr]||[]).length>0);
+  });
+}
+
+// ── 📝 학생 기록 관리 (클래스 탭별 분리) ──
+let currentStudentId = null;
+let currentStudentName = "";
+let unsubscribeRecords = null;
+let unsubscribeStudents = null;
+
+// Firestore 컬렉션 경로: 탭 ID별 분리
+function studentsCol(tabId) { return `class_students/${tabId}/list`; }
+function studentRecordsCol(tabId, studentId) { return `class_students/${tabId}/list/${studentId}/records`; }
+
+// 특정 탭의 학생 목록 구독
+function subscribeStudents(tabId) {
+  if (unsubscribeStudents) { unsubscribeStudents(); unsubscribeStudents = null; }
+
+  const container = document.getElementById('student-items');
+  const clearBtn = document.getElementById('btn-clear-students');
+  container.innerHTML = '<div class="memo-empty">불러오는 중...</div>';
+
+  unsubscribeStudents = onSnapshot(collection(db, studentsCol(tabId)), snap => {
+    container.innerHTML = '';
+    if (snap.empty) {
+      container.innerHTML = '<div class="memo-empty">등록된 학생이 없습니다.<br>NEIS 명렬을 업로드해주세요.</div>';
+      clearBtn.style.display = 'none';
+      return;
+    }
+    clearBtn.style.display = 'block';
+    const list = [];
+    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    list.sort((a, b) => a.number - b.number);
+    list.forEach(s => {
+      const div = document.createElement('div');
+      div.className = `student-item ${currentStudentId === s.id ? 'active' : ''}`;
+      div.id = `stud-${s.id}`;
+      div.innerHTML = `<span><strong>${String(s.number).padStart(2,'0')}번</strong> ${s.name}</span> <span>❯</span>`;
+      div.onclick = () => selectStudent(s.id, s.name);
+      container.appendChild(div);
+    });
+  });
+}
+
+// NEIS 명렬 엑셀 업로드 (현재 탭으로)
+document.getElementById('excel-file').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const data = new Uint8Array(evt.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    let headerIdx = -1, numColIdx = -1, nameColIdx = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      numColIdx = row.findIndex(c => String(c).trim() === '번호');
+      nameColIdx = row.findIndex(c => String(c).trim() === '성명' || String(c).trim() === '이름');
+      if (numColIdx !== -1 && nameColIdx !== -1) { headerIdx = i; break; }
+    }
+    if (headerIdx === -1) { alert("'번호'와 '성명' 열을 찾지 못했습니다."); return; }
+    const parsedStudents = [];
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i];
+      const num = parseInt(row[numColIdx]);
+      const name = String(row[nameColIdx] || '').trim();
+      if (!isNaN(num) && name && name !== 'undefined') {
+        parsedStudents.push({ id: String(num).padStart(2, '0'), number: num, name });
+      }
+    }
+    if (!parsedStudents.length) { alert("파싱된 학생 정보가 없습니다."); return; }
+    const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
+    if (confirm(`[${tabLabel}] 탭에 ${parsedStudents.length}명을 등록할까요?\n(기존 명렬이 덮어씌워집니다.)`)) {
+      const batch = writeBatch(db);
+      parsedStudents.forEach(s => {
+        batch.set(doc(db, studentsCol(currentClassTabId), s.id), { number: s.number, name: s.name });
+      });
+      batch.commit()
+        .then(() => alert("명렬 등록이 완료되었습니다."))
+        .catch(() => alert("Firestore 권한 오류가 발생했습니다."));
+    }
+    e.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('btn-clear-students').onclick = async function() {
+  const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
+  if (!confirm(`[${tabLabel}] 탭의 학생 명렬을 완전히 초기화하시겠습니까?\n(삭제 후 복구가 불가능합니다.)`)) return;
+  try {
+    const snap = await getDocs(collection(db, studentsCol(currentClassTabId)));
+    if (snap.empty) { alert('삭제할 학생 데이터가 없습니다.'); return; }
+    // Firestore writeBatch는 최대 500건 — 대부분 학급은 50명 이하이므로 1회 배치로 충분
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    currentStudentId = null;
+    document.getElementById('record-empty-notice').style.display = 'flex';
+    document.getElementById('record-main-panel').style.display = 'none';
+    alert(`[${tabLabel}] 학생 명렬이 초기화되었습니다.`);
+  } catch(e) {
+    alert('초기화 중 오류가 발생했습니다: ' + e.message);
   }
-  // addCalNote, delCalNote 버튼도 이벤트 재바인딩
-  const addBtn = list.querySelector('.mini-note-add-btn');
-  if (addBtn) addBtn.onclick = () => addCalNote(dateStr);
-  const noteInput = list.querySelector('.mini-note-input');
-  if (noteInput) noteInput.addEventListener('keydown', e => { if (e.key === 'Enter') addCalNote(dateStr); });
-  list.querySelectorAll('.mini-note-del').forEach((btn, i) => {
-    btn.onclick = () => delCalNote(dateStr, i);
+};
+
+// 학생 선택
+function selectStudent(id, name) {
+  currentStudentId = id;
+  currentStudentName = name;
+  document.querySelectorAll('.student-item').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById(`stud-${id}`);
+  if (target) target.classList.add('active');
+  document.getElementById('record-empty-notice').style.display = 'none';
+  document.getElementById('record-main-panel').style.display = 'block';
+  document.getElementById('selected-student-name').textContent = `${id}번 ${name}`;
+  document.getElementById('record-date').value = todayStr();
+  document.getElementById('record-content').value = '';
+  if (unsubscribeRecords) unsubscribeRecords();
+  unsubscribeRecords = onSnapshot(collection(db, studentRecordsCol(currentClassTabId, id)), snap => {
+    const box = document.getElementById('record-items');
+    box.innerHTML = '';
+    if (snap.empty) {
+      box.innerHTML = '<div class="memo-empty">아직 누적된 관찰/상담 내역이 없습니다.<br>첫 기록을 작성해보세요.✏️</div>';
+      return;
+    }
+    const recs = [];
+    snap.forEach(d => recs.push({ id: d.id, ...d.data() }));
+    recs.sort((a, b) => new Date(b.date + ' ' + (b.time||'00:00')) - new Date(a.date + ' ' + (a.time||'00:00')));
+    recs.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'record-card';
+      card.innerHTML = `
+        <div class="record-meta">
+          <div>
+            <span class="record-badge">${r.category}</span>
+            <span style="margin-left:6px; font-weight:600;">${r.date}</span>
+          </div>
+          <button class="memo-del" onclick="deleteStudentRecord('${r.id}')" title="삭제">✕</button>
+        </div>
+        <div class="record-content-text">${r.content}</div>
+      `;
+      box.appendChild(card);
+    });
+  });
+}
+window.selectStudent = selectStudent;
+
+async function addStudentRecord() {
+  if (!currentStudentId) return;
+  const date = document.getElementById('record-date').value;
+  const category = document.getElementById('record-category').value;
+  const content = document.getElementById('record-content').value.trim();
+  if (!content) { alert("관찰 피드백 텍스트를 입력해 주세요."); return; }
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  try {
+    await addDoc(collection(db, studentRecordsCol(currentClassTabId, currentStudentId)), {
+      date, time: timeStr, category, content, stamp: now.getTime()
+    });
+    document.getElementById('record-content').value = '';
+  } catch(e) { alert("Firestore 저장 중 오류가 발생했습니다."); }
+}
+window.addStudentRecord = addStudentRecord;
+
+async function deleteStudentRecord(recId) {
+  if (!confirm("해당 관찰 내역을 삭제하시겠습니까?")) return;
+  try {
+    await deleteDoc(doc(db, studentRecordsCol(currentClassTabId, currentStudentId), recId));
+  } catch(e) { alert("삭제 실패"); }
+}
+window.deleteStudentRecord = deleteStudentRecord;
+
+window.openGemsWindow = function() {
+  const gemsUrl = "https://gemini.google.com/gem/1MJumdSg_ypiivyg8-jE3PGV8jPavmkL0?usp=sharing";
+  const popupWidth = 480;
+  const popupHeight = window.screen.availHeight - 100;
+  const popupLeft = window.screen.availWidth - popupWidth - 20;
+  window.open(gemsUrl, 'GemsMultiWindow', `width=${popupWidth},height=${popupHeight},left=${popupLeft},top=50,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`);
+};
+
+// ─────────────────────────────────────────────────────────
+// 📌 Firebase Firestore 실시간 스티커 노트(포스트잇) 로직
+// ─────────────────────────────────────────────────────────
+
+// 1. Firestore의 'sticky_notes' 컬렉션 참조 (db 변수는 상단에 이미 선언되어 있어야 합니다)
+const stickyColRef = collection(db, "sticky_notes"); 
+
+// 2. 페이지 시작 시 Firestore에서 실시간으로 스티커 노트를 가져와 그리는 함수
+function initStickyNotes() {
+  onSnapshot(stickyColRef, (snapshot) => {
+    const container = document.getElementById('sticky-notes-container');
+    if (!container) return;
+    
+    container.innerHTML = ''; // 화면 초기화 후 다시 그리기
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const id = docSnap.id;
+      
+      const noteEl = document.createElement('div');
+      noteEl.className = 'sticky-note';
+      noteEl.style.left = (data.x || 150) + 'px';
+      noteEl.style.top = (data.y || 250) + 'px';
+      noteEl.setAttribute('data-id', id);
+
+      // 깨짐 방지를 위해 이모지 대신 텍스트와 대문자 X 버튼을 사용합니다.
+      noteEl.innerHTML = `
+        <div class="sticky-header">
+          <span>메모장</span>
+          <button class="sticky-del-btn" onclick="deleteStickyNote('${id}')">X</button>
+        </div>
+        <textarea class="sticky-textarea" placeholder="내용을 입력하세요." onchange="updateStickyText('${id}', this.value)">${data.content || ''}</textarea>
+      `;
+
+      // 드래그앤드롭 기능 연결 및 화면에 추가
+      makeElementDraggable(noteEl);
+      container.appendChild(noteEl);
+    });
   });
 }
 
-window.addCalNote = async function(dateStr) {
-  const input = document.getElementById('mini-note-input-' + dateStr);
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-  if (!calNotes[dateStr]) calNotes[dateStr] = [];
-  calNotes[dateStr].push(text);
-  input.value = '';
-  await saveCalNotes(); // Firebase 저장 (onSnapshot이 자동으로 UI 갱신)
-};
-
-window.delCalNote = async function(dateStr, idx) {
-  if (!calNotes[dateStr]) return;
-  calNotes[dateStr].splice(idx, 1);
-  if (!calNotes[dateStr].length) delete calNotes[dateStr];
-  await saveCalNotes(); // Firebase 저장
-};
-
-function renderMiniCalDots() {
-  // 메모 dot만 갱신 (달력 전체 재렌더 없이)
-  document.querySelectorAll('.mini-cal-cell').forEach(cell => {
-    const d = cell.querySelector('.mini-day');
-    if (!d) return;
-    const dayNum = parseInt(d.textContent);
-    if (isNaN(dayNum)) return;
-    const dateStr = `${miniCalYear}${String(miniCalMonth).padStart(2,'0')}${String(dayNum).padStart(2,'0')}`;
-    const hasNote = (calNotes[dateStr] || []).length > 0;
-    cell.classList.toggle('has-memo', hasNote);
-  });
+// 3. 스티커 노트 추가 버튼을 눌렀을 때 실행되는 함수
+async function addStickyNote() {
+  try {
+    // Firestore 데이터베이스에 새 메모 문서 추가
+    await addDoc(stickyColRef, {
+      content: "",
+      x: 150, 
+      y: 250, 
+      createdAt: new Date().getTime()
+    });
+  } catch (e) {
+    console.error("스티커 노트 생성 실패:", e);
+    alert("생성 실패");
+  }
 }
+
+// 4. 텍스트 입력창에서 포커스가 벗어날 때(내용 변경 시) 자동으로 DB를 업데이트하는 함수
+async function updateStickyText(id, value) {
+  try {
+    const docRef = doc(db, "sticky_notes", id);
+    await updateDoc(docRef, { content: value });
+  } catch (e) {
+    console.error("텍스트 업데이트 실패:", e);
+  }
+}
+
+// 5. 스티커 노트의 X 버튼을 눌렀을 때 삭제하는 함수
+async function deleteStickyNote(id) {
+  if (!confirm("삭제하시겠습니까?")) return;
+  try {
+    const docRef = doc(db, "sticky_notes", id);
+    await deleteDoc(docRef);
+  } catch (e) {
+    console.error("스티커 노트 삭제 실패:", e);
+  }
+}
+
+// 6. 스티커 노트 창을 마우스로 드래그하여 자유롭게 이동시키는 함수
+function makeElementDraggable(elmnt) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  const header = elmnt.querySelector('.sticky-header');
+  
+  if (header) {
+    header.onmousedown = dragMouseDown;
+  } else {
+    elmnt.onmousedown = dragMouseDown;
+  }
+
+  function dragMouseDown(e) {
+    e = e || window.event;
+    // 텍스트 영역이나 버튼을 클릭했을 때는 드래그가 발동하지 않도록 차단
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+    e.preventDefault();
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+    elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+  }
+
+  async function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+
+    const id = elmnt.getAttribute('data-id');
+    const finalX = parseInt(elmnt.style.left);
+    const finalY = parseInt(elmnt.style.top);
+
+    // 마우스를 놓았을 때 최종 위치를 Firestore에 자동 저장
+    try {
+      const docRef = doc(db, "sticky_notes", id);
+      await updateDoc(docRef, { x: finalX, y: finalY });
+    } catch (e) {
+      console.error("위치 업데이트 실패:", e);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// 💡 모듈 스코프 탈출을 위해 전역(window) 객체에 함수 등록
+// ─────────────────────────────────────────────────────────
+window.addStickyNote = addStickyNote;
+window.deleteStickyNote = deleteStickyNote;
+window.updateStickyText = updateStickyText;
+
+// 7. HTML 로드가 끝나면 스티커 노트 실시간 동기화 시작
+window.addEventListener('DOMContentLoaded', () => {
+  initStickyNotes();
+});
 
 
 </script>
