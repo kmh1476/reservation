@@ -177,14 +177,25 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 }
 .mini-cal-nav-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-.mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.mini-cal-grid { 
+  display: grid; 
+  grid-template-columns: repeat(7, minmax(0, 1fr)); /* ◀ minmax(0, 1fr)로 변경하여 칸이 무조건 균등하게 줄어들도록 강제합니다 */
+  gap: 3px; 
+}
 .mini-cal-head { font-size: .7rem; text-align: center; color: var(--muted); padding: 4px 0; font-weight: 600; }
 
 .mini-cal-cell {
-  min-height: 54px; border-radius: 5px; padding: 3px 4px;
-  cursor: pointer; position: relative;
-  display: flex; flex-direction: column; align-items: flex-start;
-  border: 1px solid transparent; transition: background .12s;
+  min-height: 54px; 
+  border-radius: 5px; 
+  padding: 3px 4px;
+  cursor: pointer; 
+  position: relative;
+  display: flex; 
+  flex-direction: column; 
+  align-items: stretch; /* ◀ flex-start에서 stretch로 변경하여 태그가 가득 차게 만듭니다 */
+  border: 1px solid transparent; 
+  transition: background .12s;
+  overflow: hidden; /* ◀ 혹시 모를 텍스트 탈출 원천 차단 */
 }
 .mini-cal-cell:hover { background: #f0ede6; }
 .mini-cal-cell.selected { background: #e8f0fe; border-color: var(--accent2); }
@@ -200,9 +211,20 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .mini-cal-cell.sat .mini-day { color: #2980b9; }
 
 .cal-event-tag {
-  font-size: .55rem; line-height: 1.2; padding: 1px 4px;
-  border-radius: 3px; color: #fff; margin-top: 2px;
-  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: .55rem; 
+  line-height: 1.2; 
+  padding: 2px 4px; /* 가독성을 위해 패딩 살짝 조정 */
+  border-radius: 3px; 
+  color: #fff; 
+  margin-top: 2px;
+  max-width: 100%; 
+  
+  /* ── 텍스트 튀어나감 방지 핵심 속성 ── */
+  white-space: normal;      /* ◀ nowrap에서 normal로 변경하여 줄바꿈을 허용합니다 */
+  word-break: break-all;     /* ◀ 글자가 칸 끝에 도달하면 단어 단위가 아니더라도 강제로 깨뜨려 줄바꿈합니다 */
+  /* text-overflow: ellipsis; ◀ 줄바꿈 처리를 위해 이 줄과 아래 줄은 작동하지 않아도 무방하거나 지워도 좋습니다. */
+  
+  box-sizing: border-box;
   font-weight: 600;
 }
 .cal-event-tag.holiday { background: #e74c3c; }
@@ -355,7 +377,11 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   width: 100%; max-width: 420px; border-radius: 6px; overflow: hidden;
 }
 
-/* ── 반응형 ── */
+/* ──────────────────────────────────────────────────────────
+   📱 반응형 레이아웃 및 달력 축소 버그 수정
+────────────────────────────────────────────────────────── */
+
+/* 1. 화면 너비가 900px 이하일 때 */
 @media screen and (max-width: 900px) {
   .dash-wrap { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
   .memo-panel  { grid-column: 1; grid-row: 1; }
@@ -363,17 +389,43 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   .cal-panel   { grid-column: 2; grid-row: 1 / 3; }
   .meal-panel  { grid-column: 1 / 3; grid-row: 3; }
   .student-wrap { grid-template-columns: 1fr; }
+
+  /* 900px 이하부터 달력 칸 크기가 고정되는 걸 막고 유연하게 줄입니다 */
+  .mini-cal-grid { 
+    grid-template-columns: repeat(7, minmax(0, 1fr)); 
+  }
+  .mini-cal-cell { 
+    align-items: stretch; /* 태그가 셀 너비에 꽉 차게 */
+    overflow: hidden; 
+  }
+  .cal-event-tag {
+    white-space: normal;  /* 줄바꿈 허용 */
+    word-break: break-all; /* 단어 끊어서 줄바꿈 */
+  }
 }
+
+/* 2. 화면 너비가 580px 이하일 때 (모바일) */
 @media screen and (max-width: 580px) {
   .dash-wrap { grid-template-columns: 1fr; padding: 8px; gap: 8px; }
   .memo-panel  { grid-column: 1; grid-row: 1; }
   .cal-panel   { grid-column: 1; grid-row: 2; }
   .meal-panel  { grid-column: 1; grid-row: 3; }
   .tt-panel    { grid-column: 1; grid-row: 4; }
-  .mini-cal-cell { min-height: 44px; }
+  
   .topbar { padding: 6px 8px; }
   .topbar-title { font-size: 0.85rem; }
   .topbar-clock { font-size: 0.8rem; }
+
+  /* 모바일 환경에서는 달력 요소들의 글자를 더 조그맣게 줄여서 쏙 넣습니다 */
+  .mini-cal-grid { gap: 2px; }
+  .mini-cal-cell { min-height: 44px; padding: 2px; }
+  .mini-day { font-size: .7rem; } /* 날짜 숫자 크기 축소 */
+  
+  .cal-event-tag {
+    font-size: .5rem; /* 태그 글자 크기를 더 작게 */
+    padding: 1px 2px;
+    line-height: 1.1;
+  }
 }
 
 /* 📌 스티커 노트 (포스트잇) 전체 컨테이너 */
