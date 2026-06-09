@@ -1466,19 +1466,33 @@ window.openGemsWindow = function() {
 };
 
 // ─────────────────────────────────────────────────────────
-// 📌 Firebase Firestore 실시간 스티커 노트(포스트잇) 로직
+// 📌 화면 비율(%) 대응 및 안전한 이벤트 바인딩 스티커 메모 로직
 // ─────────────────────────────────────────────────────────
 
-// 1. Firestore의 'sticky_notes' 컬렉션 참조 (db 변수는 상단에 이미 선언되어 있어야 합니다)
+// ─────────────────────────────────────────────────────────
+// 📌 [에러 완벽 교정] 화면 비율(%) 대응 및 안전한 스티커 메모 로직
+// ─────────────────────────────────────────────────────────
+
 const stickyColRef = collection(db, "sticky_notes"); 
 
-// 2. 페이지 시작 시 Firestore에서 실시간으로 스티커 노트를 가져와 그리는 함수
+// 1. 실시간 리스너 및 버튼 이벤트 연결
 function initStickyNotes() {
+  // 상단 [+] 버튼 연동 (타이밍 에러 방지)
+  const addBtn = document.getElementById('add-sticky-btn');
+  if (addBtn) {
+    addBtn.onclick = null; // 기존 중복 바인딩 방지
+    addBtn.addEventListener('click', () => {
+      addStickyNote();
+    });
+  }
+
+  // Firestore 실시간 감시 시작
   onSnapshot(stickyColRef, (snapshot) => {
-    const container = document.getElementById('sticky-notes-container');
-    if (!container) return;
+    const container = document.getElementById('tab-dashboard'); 
+    const notesContainer = document.getElementById('sticky-notes-container');
+    if (!container || !notesContainer) return;
     
-    container.innerHTML = ''; // 화면 초기화 후 다시 그리기
+    notesContainer.innerHTML = ''; 
 
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -1486,64 +1500,79 @@ function initStickyNotes() {
       
       const noteEl = document.createElement('div');
       noteEl.className = 'sticky-note';
-      noteEl.style.left = (data.x || 150) + 'px';
-      noteEl.style.top = (data.y || 250) + 'px';
+      
+      // DB에 저장된 % 값을 현재 창 크기에 맞는 픽셀 비율로 복원
+      const percentX = (data.x > 100) ? 20 : (data.x || 20);
+      const percentY = (data.y > 100) ? 30 : (data.y || 30);
+      
+      noteEl.style.left = percentX + "%";
+      noteEl.style.top = percentY + "%";
       noteEl.setAttribute('data-id', id);
 
-      // 깨짐 방지를 위해 이모지 대신 텍스트와 대문자 X 버튼을 사용합니다.
+      // 인라인 onclick을 모두 제거한 내부 구조 생성
       noteEl.innerHTML = `
         <div class="sticky-header">
           <span>메모장</span>
-          <button class="sticky-del-btn" onclick="deleteStickyNote('${id}')">X</button>
+          <button class="sticky-del-btn">X</button>
         </div>
-        <textarea class="sticky-textarea" placeholder="내용을 입력하세요." onchange="updateStickyText('${id}', this.value)">${data.content || ''}</textarea>
+        <textarea class="sticky-textarea" placeholder="내용을 입력하세요.">${data.content || ''}</textarea>
       `;
 
-      // 드래그앤드롭 기능 연결 및 화면에 추가
+      // 자바스크립트 내부에서 삭제 버튼 이벤트 다이렉트 바인딩
+      const delBtn = noteEl.querySelector('.sticky-del-btn');
+      delBtn.addEventListener('click', () => {
+        deleteStickyNote(id);
+      });
+
+      // 자바스크립트 내부에서 텍스트 변경 이벤트 다이렉트 바인딩
+      const textarea = noteEl.querySelector('.sticky-textarea');
+      textarea.addEventListener('change', (e) => {
+        updateStickyText(id, e.target.value);
+      });
+
+      // 드래그앤드롭 기능 적용 후 화면에 렌더링
       makeElementDraggable(noteEl);
-      container.appendChild(noteEl);
+      notesContainer.appendChild(noteEl);
     });
   });
 }
 
-// 3. 스티커 노트 추가 버튼을 눌렀을 때 실행되는 함수
+// 2. 새 메모 추가 (초기 위치를 % 비율로 설정)
 async function addStickyNote() {
   try {
-    // Firestore 데이터베이스에 새 메모 문서 추가
     await addDoc(stickyColRef, {
       content: "",
-      x: 150, 
-      y: 250, 
+      x: 20, // 가로 20% 지점
+      y: 30, // 세로 30% 지점
       createdAt: new Date().getTime()
     });
   } catch (e) {
-    console.error("스티커 노트 생성 실패:", e);
-    alert("생성 실패");
+    console.error("생성 실패:", e);
   }
 }
 
-// 4. 텍스트 입력창에서 포커스가 벗어날 때(내용 변경 시) 자동으로 DB를 업데이트하는 함수
+// 3. 내용 수정 자동 저장
 async function updateStickyText(id, value) {
   try {
     const docRef = doc(db, "sticky_notes", id);
     await updateDoc(docRef, { content: value });
   } catch (e) {
-    console.error("텍스트 업데이트 실패:", e);
+    console.error("저장 실패:", e);
   }
 }
 
-// 5. 스티커 노트의 X 버튼을 눌렀을 때 삭제하는 함수
+// 4. 메모 삭제
 async function deleteStickyNote(id) {
   if (!confirm("삭제하시겠습니까?")) return;
   try {
     const docRef = doc(db, "sticky_notes", id);
     await deleteDoc(docRef);
   } catch (e) {
-    console.error("스티커 노트 삭제 실패:", e);
+    console.error("삭제 실패:", e);
   }
 }
 
-// 6. 스티커 노트 창을 마우스로 드래그하여 자유롭게 이동시키는 함수
+// 5. 드래그 기능 구현 (% 값 변환 포함)
 function makeElementDraggable(elmnt) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
   const header = elmnt.querySelector('.sticky-header');
@@ -1556,7 +1585,6 @@ function makeElementDraggable(elmnt) {
 
   function dragMouseDown(e) {
     e = e || window.event;
-    // 텍스트 영역이나 버튼을 클릭했을 때는 드래그가 발동하지 않도록 차단
     if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
     e.preventDefault();
     pos3 = e.clientX;
@@ -1581,19 +1609,32 @@ function makeElementDraggable(elmnt) {
     document.onmousemove = null;
 
     const id = elmnt.getAttribute('data-id');
-    const finalX = parseInt(elmnt.style.left);
-    const finalY = parseInt(elmnt.style.top);
+    const container = document.getElementById('tab-dashboard');
+    if (!container) return;
 
-    // 마우스를 놓았을 때 최종 위치를 Firestore에 자동 저장
+    // 현재 픽셀 좌표를 부모 컨테이너 크기 기준 백분율(%)로 변환 계산
+    const parentWidth = container.clientWidth;
+    const parentHeight = container.clientHeight;
+
+    const finalXPercent = Math.min(Math.max((elmnt.offsetLeft / parentWidth) * 100, 0), 90).toFixed(1);
+    const finalYPercent = Math.min(Math.max((elmnt.offsetTop / parentHeight) * 100, 0), 90).toFixed(1);
+
     try {
       const docRef = doc(db, "sticky_notes", id);
-      await updateDoc(docRef, { x: finalX, y: finalY });
+      await updateDoc(docRef, { 
+        x: parseFloat(finalXPercent), 
+        y: parseFloat(finalYPercent) 
+      });
     } catch (e) {
-      console.error("위치 업데이트 실패:", e);
+      console.error("위치 저장 실패:", e);
     }
   }
 }
 
+// 6. 페이지 로드 완수 시 구동 시작
+window.addEventListener('DOMContentLoaded', () => {
+  initStickyNotes();
+});
 // ─────────────────────────────────────────────────────────
 // 💡 모듈 스코프 탈출을 위해 전역(window) 객체에 함수 등록
 // ─────────────────────────────────────────────────────────
