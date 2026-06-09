@@ -16,16 +16,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', sans-serif; min-height: 100vh; }
 
-  /* 로그인 */
-  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--ink); }
-  .login-box { background: var(--card); border: 2px solid var(--border); padding: 48px 40px; width: 360px; text-align: center; }
-  .login-box h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.6rem; margin-bottom: 6px; }
-  .login-box p { color: var(--muted); font-size: .85rem; margin-bottom: 32px; }
-  .login-box input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); background: var(--paper); font-size: .95rem; margin-bottom: 12px; outline: none; }
-  .login-box button { width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; cursor: pointer; font-weight: 600; }
-  .login-err { color: var(--accent); font-size: .82rem; margin-top: 8px; }
+  /* 비밀번호 변경 섹션은 dashboard에서 통합 관리 */
+  #login-screen { display: none !important; }
 
-  #app { display: none; }
+  #app { display: block; }
   header { background: var(--ink); color: #fff; padding: 0 40px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
   header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.25rem; }
   .logout-btn { background: none; border: 1px solid #555; color: #ccc; padding: 6px 14px; cursor: pointer; font-size: .8rem; }
@@ -235,7 +229,6 @@
       <span style="font-size:.8rem;color:#aaa" id="header-date"></span>
       <button class="logout-btn" style="margin-right:6px" onclick="window.openStatModal()">📊 통계/내보내기</button>
       <button class="logout-btn" style="margin-right:6px" onclick="document.getElementById('hist-overlay').classList.add('show')">🗂 학생 기록</button>
-      <button class="logout-btn" onclick="window.doLogout()">로그아웃</button>
     </div>
   </header>
 
@@ -280,16 +273,7 @@
         <div id="booking-list"><p class="no-date-msg">날짜를 선택하세요</p></div>
       </div>
 
-      <!-- 비밀번호 변경 -->
-      <div class="panel-card">
-        <h3>비밀번호 변경</h3>
-        <div class="pw-section">
-          <input type="password" id="pw-cur" placeholder="현재 비밀번호">
-          <input type="password" id="pw-new" placeholder="새 비밀번호">
-          <button onclick="window.changePw()">변경하기</button>
-          <div id="pw-msg" style="font-size:.75rem;margin-top:8px"></div>
-        </div>
-      </div>
+
     </div>
   </div>
 </div>
@@ -439,7 +423,7 @@ function maybeShowTodayAlert() {
   };
 }
 
-// ── 로그인 ──
+// ── 자동 초기화 (dashboard에서 로그인 통합) ──
 window.doLogin = async function() {
   const val = document.getElementById('pw-input').value;
   const snap = await getDoc(doc(db, 'settings', 'adminInfo'));
@@ -454,6 +438,15 @@ window.doLogin = async function() {
 };
 
 window.doLogout = () => location.reload();
+
+// 자동 실행
+(async function autoStart() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'adminInfo'));
+    if (snap.exists()) adminPw = snap.data().pw;
+  } catch(e) {}
+  initApp();
+})();
 
 // ── 앱 초기화 ──
 function initApp() {
@@ -688,18 +681,6 @@ window.deleteBooking = async (id) => {
   if (confirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
     await deleteDoc(doc(db, 'bookings', id));
   }
-};
-
-// ── 비밀번호 변경 ──
-window.changePw = async () => {
-  const cur = document.getElementById('pw-cur').value;
-  const n   = document.getElementById('pw-new').value;
-  const msg = document.getElementById('pw-msg');
-  if (cur !== adminPw) { msg.style.color = 'red'; msg.textContent = '현재 비밀번호가 틀립니다.'; return; }
-  if (n.length < 4)    { msg.style.color = 'red'; msg.textContent = '4자 이상 입력하세요.'; return; }
-  await setDoc(doc(db, 'settings', 'adminInfo'), { pw: n });
-  adminPw = n;
-  msg.style.color = 'green'; msg.textContent = '비밀번호가 변경되었습니다.';
 };
 
 // ── 상담 기록 ──
