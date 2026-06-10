@@ -589,8 +589,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   <div class="login-box">
     <h1>📋 흠쌤의 교무실</h1>
     <p>관리자 비밀번호를 입력하세요</p>
-    <input type="password" id="main-pw-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doMainLogin()">
-    <button onclick="doMainLogin()">입장하기</button>
+    <input type="password" id="main-pw-input" placeholder="비밀번호">
+    <button id="main-login-btn">입장하기</button>
     <div class="login-err" id="main-login-err"></div>
   </div>
 </div>
@@ -708,18 +708,21 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     <button class="class-tab-edit-btn" onclick="openClassTabModal()" title="탭 관리">⚙️ 탭 관리</button>
   </div>
 
-  <div class="student-wrap">
-    <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
-      <div class="panel-title">🧑‍🎓 <span id="student-panel-title">학생 명렬</span></div>
-      <div style="display:flex; gap:6px;">
-        <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
-        <button class="memo-add-btn" style="width:100%; background:var(--accent2);" onclick="document.getElementById('excel-file').click()">NEIS 명렬 엑셀 업로드</button>
-        <button class="memo-add-btn" style="background:var(--accent); display:none;" id="btn-clear-students">초기화</button>
-      </div>
-      <div class="student-items" id="student-items">
-        <div class="memo-empty">오른쪽 상단 버튼을 눌러<br>NEIS 학생 명렬표(.xlsx)를 올리세요.</div>
-      </div>
+<div class="student-wrap">
+  <div class="panel" style="display:flex; flex-direction:column; gap:10px;">
+    <div class="panel-title">🧑‍🎓 <span id="student-panel-title">학생 명렬</span></div>
+    
+    <div style="display:flex; gap:6px; flex-wrap: wrap;">
+      <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
+      <button class="memo-add-btn" style="flex: 1; background:var(--accent2); min-width: 130px;" onclick="document.getElementById('excel-file').click()">NEIS 명렬 엑셀 업로드</button>
+      <button class="memo-add-btn" style="background:var(--accent); display:none;" id="btn-clear-students">초기화</button>
+      <button class="memo-add-btn" style="background:#9b59b6; color:#fff;" id="btn-gems-main" onclick="openGemsWindow()">젬즈(GEMS)</button>
     </div>
+    
+    <div class="student-items" id="student-items">
+      <div class="memo-empty">오른쪽 상단 버튼을 눌러<br>NEIS 학생 명렬표(.xlsx)를 올리세요.</div>
+    </div>
+  </div>
 
     <div style="display:flex; flex-direction:column; gap:12px;">
       <div class="panel" id="record-empty-notice" style="flex:1; display:flex; align-items:center; justify-content:center; color:var(--muted); min-height:200px;">
@@ -759,16 +762,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     <button class="keyword-save-btn" id="kw-save-btn">저장하기</button>
   </div>
 </div>
-  <div class="panel ai-panel" style="border: 2px solid var(--accent2); box-shadow: 4px 4px 0 rgba(41, 128, 185, 0.12); margin-top: 20px; padding: 15px; background: var(--card); border-radius: 4px; text-align: left;">
-    <div class="panel-title" style="font-weight: 700; margin-bottom: 8px; font-size: 0.95rem; color: var(--ink);">🤖 젬즈 멀티태스킹</div>
-    <p style="font-size: .8rem; color: var(--muted); margin-bottom: 12px; line-height: 1.4;">
-      오른쪽에 젬즈 창을 독립적으로 띄웁니다. 위의 관찰 기록을 복사하여 간편하게 다듬어보세요!
-    </p>
-    <button class="ai-btn" onclick="openGemsWindow()" style="width: 100%; padding: 10px; background: var(--accent2); color: #fff; border: none; font-weight: 600; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
-      🚀 젬즈 팝업 창 열기
-    </button>
-  </div>
-</div>
+
 
         <div class="record-items" id="record-items"></div>
       </div>
@@ -911,6 +905,14 @@ window.doMainLogin = async function() {
   }
 };
 
+// ── 로그인 버튼 이벤트 — 모듈 스코프에서 직접 바인딩 (onclick 인라인 대체) ──
+document.addEventListener('DOMContentLoaded', () => {
+  const loginBtn = document.getElementById('main-login-btn');
+  const pwInput  = document.getElementById('main-pw-input');
+  if (loginBtn) loginBtn.addEventListener('click', window.doMainLogin);
+  if (pwInput)  pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') window.doMainLogin(); });
+});
+
 // ── 비밀번호 변경 모달 ──
 window.openPwModal = function() { document.getElementById('pw-modal').classList.add('show'); };
 window.closePwModal = function() {
@@ -944,16 +946,26 @@ let classTabs = [...DEFAULT_CLASS_TABS];
 let currentClassTabId = classTabs[0].id;
 let editingClassTabs = [];
 
-function loadClassTabs() {
+async function loadClassTabs() {
   try {
-    const saved = localStorage.getItem('hmm_class_tabs');
-    if (saved) classTabs = JSON.parse(saved);
-  } catch(e) {}
+    const snap = await getDoc(doc(db, 'settings', 'classTabs'));
+    if (snap.exists() && Array.isArray(snap.data().list) && snap.data().list.length > 0) {
+      classTabs = snap.data().list;
+    }
+  } catch(e) { console.warn('클래스탭 Firebase 로드 실패(localStorage 폴백):', e); 
+    try { const s=localStorage.getItem('hmm_class_tabs'); if(s) classTabs=JSON.parse(s); } catch(_){} 
+  }
   currentClassTabId = classTabs[0]?.id || 'homeroom';
 }
 
-function saveClassTabsLocal() {
-  localStorage.setItem('hmm_class_tabs', JSON.stringify(classTabs));
+async function saveClassTabsLocal() {
+  try {
+    await setDoc(doc(db, 'settings', 'classTabs'), { list: classTabs });
+    localStorage.setItem('hmm_class_tabs', JSON.stringify(classTabs));
+  } catch(e) { 
+    console.warn('Firebase 저장 실패, localStorage만 저장:', e);
+    localStorage.setItem('hmm_class_tabs', JSON.stringify(classTabs));
+  }
 }
 
 function renderClassTabBar() {
@@ -1022,13 +1034,12 @@ window.addClassTab = function() {
   input.value = '';
   renderClassTabEditList();
 };
-window.saveClassTabs = function() {
-  // 유효성 체크
+window.saveClassTabs = async function() {
   if (editingClassTabs.some(t => !t.label.trim())) {
     alert('탭 이름을 모두 입력해주세요.'); return;
   }
   classTabs = editingClassTabs.map(t => ({ id: t.id, label: t.label.trim() }));
-  saveClassTabsLocal();
+  await saveClassTabsLocal();
   if (!classTabs.find(t => t.id === currentClassTabId)) {
     currentClassTabId = classTabs[0].id;
   }
@@ -1038,8 +1049,8 @@ window.saveClassTabs = function() {
 };
 
 // ── 앱 초기화 (로그인 후 호출) ──
-function initApp() {
-  loadClassTabs();
+async function initApp() {
+  await loadClassTabs();
   renderClassTabBar();
   updateClock();
   fetchNeisMeal();
@@ -1064,6 +1075,7 @@ function initApp() {
   onSnapshot(doc(db,'cal_notes','data'), snap => {
     calNotes = snap.exists() ? (snap.data().notes||{}) : {};
     renderMiniCalDots();
+    updateAlertBanner(); // 달력 메모 변경 시 알림 배너도 갱신
     if (currentViewDate) {
       const evts = (scheduleCache[`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`]||[]).filter(e=>e.date===currentViewDate);
       showScheduleForDate(currentViewDate, evts, true);
@@ -1109,31 +1121,87 @@ function updateClock() {
 function updatePeriodStatus(now) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const seconds = now.getSeconds();
-  const txtEl = document.getElementById('p-text'); const timerEl = document.getElementById('p-timer');
+  const txtEl = document.getElementById('p-text');
+  const timerEl = document.getElementById('p-timer');
+  
+  // 기존 하이라이트 지우기
   document.querySelectorAll('#tt-body tr').forEach(tr => tr.classList.remove('current-period-row'));
-  if (currentMinutes >= 16*60+20) { txtEl.textContent = "방과후"; timerEl.textContent = ""; return; }
-  if (currentMinutes < 8*60+40) { const diff=(8*60+40)-currentMinutes-1; txtEl.textContent="일과 전"; timerEl.textContent=`${diff}분 ${60-seconds}초 전`; return; }
-  let statusText="", remainingText="", currentPeriod=null;
-  for (let i=0; i<SCHOOL_SCHEDULE.length; i++) {
-    const s=SCHOOL_SCHEDULE[i];
-    const [sH,sM]=s.start.split(':').map(Number); const [eH,eM]=s.end.split(':').map(Number);
-    const st=sH*60+sM; const et=eH*60+eM;
-    if (currentMinutes>=st&&currentMinutes<et) {
-      currentPeriod=s.period; const diff=et-currentMinutes-1;
-      statusText=`${s.period}교시`; remainingText=`${diff}분 ${60-seconds}초 남음`; break;
-    }
-    if (i<SCHOOL_SCHEDULE.length-1) {
-      const ns=SCHOOL_SCHEDULE[i+1]; const [nsH,nsM]=ns.start.split(':').map(Number);
-      if (currentMinutes>=et&&currentMinutes<(nsH*60+nsM)) {
-        const diff=(nsH*60+nsM)-currentMinutes-1;
-        statusText="쉬는 시간"; remainingText=`${ns.period}교시까지 ${diff}분 ${60-seconds}초`; break;
-      }
-    } else { if (currentMinutes>=et&&currentMinutes<16*60+20) { statusText="일과 종료"; remainingText=""; } }
+
+  // 1교시 시작 시간과 마지막 교시 종료 시간 자동 추출
+  const firstStart = SCHOOL_SCHEDULE[0].start.split(':').map(Number);
+  const firstStartMins = firstStart[0] * 60 + firstStart[1];
+  const lastEnd = SCHOOL_SCHEDULE[SCHOOL_SCHEDULE.length-1].end.split(':').map(Number);
+  const lastEndMins = lastEnd[0] * 60 + lastEnd[1];
+
+  // 초 단위 타이머 계산 보정 (0초일 때 60초로 표기되는 버그 수정)
+  const secText = seconds === 0 ? 0 : 60 - seconds;
+  const minOffset = seconds === 0 ? 0 : 1;
+
+  // 1. 방과후 (7교시 종료 후)
+  if (currentMinutes >= lastEndMins) {
+    txtEl.textContent = "방과후";
+    timerEl.textContent = "";
+    return;
   }
-  txtEl.innerHTML=statusText; timerEl.textContent=remainingText;
-  if (currentPeriod) { const r=document.getElementById('tt-body').children[currentPeriod-1]; if(r) r.classList.add('current-period-row'); }
-}
-setInterval(updateClock, 1000); updateClock();
+
+  // 2. 일과 전 (1교시 시작 전)
+  if (currentMinutes < firstStartMins) {
+    const diff = firstStartMins - currentMinutes - minOffset;
+    txtEl.textContent = "일과 전";
+    timerEl.textContent = `${diff}분 ${secText}초 전`;
+    return;
+  }
+
+  let statusText = "", remainingText = "", currentPeriod = null;
+
+  for (let i = 0; i < SCHOOL_SCHEDULE.length; i++) {
+    const s = SCHOOL_SCHEDULE[i];
+    const [sH, sM] = s.start.split(':').map(Number);
+    const [eH, eM] = s.end.split(':').map(Number);
+    const st = sH * 60 + sM;
+    const et = eH * 60 + eM;
+
+    // 수업 시간 중
+    if (currentMinutes >= st && currentMinutes < et) {
+      currentPeriod = s.period;
+      const diff = et - currentMinutes - minOffset;
+      statusText = `${s.period}교시`;
+      remainingText = `${diff}분 ${secText}초 남음`;
+      break;
+    }
+
+    // 쉬는 시간 및 점심 시간
+    if (i < SCHOOL_SCHEDULE.length - 1) {
+      const ns = SCHOOL_SCHEDULE[i + 1];
+      const [nsH, nsM] = ns.start.split(':').map(Number);
+      const nst = nsH * 60 + nsM;
+
+      if (currentMinutes >= et && currentMinutes < nst) {
+        const diff = nst - currentMinutes - minOffset;
+        
+        // 4교시(s.period === 4)와 5교시(ns.period === 5) 사이는 점심시간으로 판별
+        if (s.period === 4 && ns.period === 5) {
+          statusText = "점심시간 🍱";
+        } else {
+          statusText = "쉬는 시간";
+        }
+        
+        remainingText = `${ns.period}교시까지 ${diff}분 ${secText}초`;
+        break;
+      }
+    }
+  }
+
+  // 화면에 텍스트 렌더링
+  txtEl.innerHTML = statusText;
+  timerEl.textContent = remainingText;
+
+  // 주간 시간표에서 현재 교시에 해당하는 행 하이라이트
+  if (currentPeriod) {
+    const r = document.getElementById('tt-body').children[currentPeriod - 1];
+    if (r) r.classList.add('current-period-row');
+  }
+}setInterval(updateClock, 1000); updateClock();
 
 // ── 탭 ──
 window.switchTab = function(tab) {
@@ -1242,12 +1310,54 @@ window.deleteMemo=async function(i){const u=[...memos];u.splice(i,1);await syncM
 // ── 알림 배너 ──
 function todayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function updateAlertBanner(){
-  const today=todayStr();const books=bookingsCache[today]||[];const slotData=slotsCache[today]||{};const customs=slotData.custom||[];const FIXED_LABEL={lunch:'점심',after:'방과후'};
-  const banner=document.getElementById('alert-banner');const ico=document.getElementById('alert-ico');const title=document.getElementById('alert-title');const list=document.getElementById('alert-list');
-  if(!books.length){banner.className='alert-banner none';ico.textContent='✅';title.className='alert-title none';title.textContent='오늘 예정된 상담이 없어요';list.className='alert-list none';list.textContent='편안한 하루 되세요 😊';return;}
-  banner.className='alert-banner';ico.textContent='🔔';title.className='alert-title';title.textContent=`오늘 상담 ${books.length}건이 있어요`;
-  const sorted=[...books].sort((a,b)=>({lunch:0,after:1,custom:2}[a.type]??2)-({lunch:0,after:1,custom:2}[b.type]??2));
-  list.className='alert-list';list.textContent=sorted.map(b=>{let label=FIXED_LABEL[b.type]||'';let time=b.type==='lunch'?'12:40':b.type==='after'?'15:10':'';if(b.type==='custom'){const cs=customs[b.customIdx];if(cs){label=cs.name;time=cs.start;}}return`${label} (${time}) — ${b.name}`;}).join('  ·  ');
+  const today=todayStr();
+  const books=bookingsCache[today]||[];
+  const slotData=slotsCache[today]||{};const customs=slotData.custom||[];const FIXED_LABEL={lunch:'점심',after:'방과후'};
+
+  // 달력 메모: calNotes 키는 'YYYYMMDD' 형식
+  const todayKey=today.replace(/-/g,'');
+  const todayNotes=(calNotes[todayKey]||[]);
+
+  const banner=document.getElementById('alert-banner');
+  const ico=document.getElementById('alert-ico');
+  const title=document.getElementById('alert-title');
+  const list=document.getElementById('alert-list');
+
+  const hasBooks=books.length>0;
+  const hasNotes=todayNotes.length>0;
+
+  if(!hasBooks&&!hasNotes){
+    banner.className='alert-banner none';
+    ico.textContent='✅';
+    title.className='alert-title none';
+    title.textContent='오늘 예정된 상담과 일정이 없어요';
+    list.className='alert-list none';
+    list.textContent='편안한 하루 되세요 😊';
+    return;
+  }
+
+  banner.className='alert-banner';
+  ico.textContent='🔔';
+  title.className='alert-title';
+  const titleParts=[];
+  if(hasBooks) titleParts.push(`상담 ${books.length}건`);
+  if(hasNotes) titleParts.push(`일정 ${todayNotes.length}건`);
+  title.textContent=`오늘 ${titleParts.join(' · ')}이 있어요`;
+
+  const parts=[];
+  if(hasBooks){
+    const sorted=[...books].sort((a,b)=>({lunch:0,after:1,custom:2}[a.type]??2)-({lunch:0,after:1,custom:2}[b.type]??2));
+    sorted.forEach(b=>{
+      let label=FIXED_LABEL[b.type]||'';let time=b.type==='lunch'?'12:40':b.type==='after'?'15:10':'';
+      if(b.type==='custom'){const cs=customs[b.customIdx];if(cs){label=cs.name;time=cs.start;}}
+      parts.push(`🗣 ${label}(${time}) — ${b.name}`);
+    });
+  }
+  if(hasNotes){
+    todayNotes.forEach(n=>parts.push(`📅 ${n}`));
+  }
+  list.className='alert-list';
+  list.innerHTML=parts.map(p=>`<span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p}</span>`).join('');
 }
 let _slotsReady=false,_bookingsReady=false;
 function maybeUpdate(){if(_slotsReady&&_bookingsReady)updateAlertBanner();}
@@ -1483,44 +1593,87 @@ document.getElementById('excel-file').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = function(evt) {
+reader.onload = function(evt) {
     const data = new Uint8Array(evt.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    let headerIdx = -1, numColIdx = -1, nameColIdx = -1;
+    
+    let headerIdx = -1;
+    let numColIdx = -1;
+    let nameColIdx = -1;
+    let banNumColIdx = -1; // 💡 교과 세특 양식용 '반/번호' 열 추적 변수 추가
+    
+    // 1. 헤더 위치 탐색 (담임용 명렬표와 교과 세특 양식 둘 다 지원)
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       numColIdx = row.findIndex(c => String(c).trim() === '번호');
       nameColIdx = row.findIndex(c => String(c).trim() === '성명' || String(c).trim() === '이름');
-      if (numColIdx !== -1 && nameColIdx !== -1) { headerIdx = i; break; }
+      banNumColIdx = row.findIndex(c => String(c).trim() === '반/번호'); // 💡 '반/번호'가 있는지 검사
+      
+      // '번호와 성명'을 찾았거나, 혹은 '반/번호와 성명'을 찾았다면 헤더 행으로 확정
+      if ((numColIdx !== -1 && nameColIdx !== -1) || (banNumColIdx !== -1 && nameColIdx !== -1)) {
+        headerIdx = i;
+        break;
+      }
     }
-    if (headerIdx === -1) { alert("'번호'와 '성명' 열을 찾지 못했습니다."); return; }
+    
+    if (headerIdx === -1) {
+      alert("'번호'(또는 '반/번호')와 '성명' 열을 찾지 못했습니다.");
+      return;
+    }
+    
     const parsedStudents = [];
+    
+    // 2. 학생 데이터 추출
     for (let i = headerIdx + 1; i < rows.length; i++) {
       const row = rows[i];
-      const num = parseInt(row[numColIdx]);
+      let num = NaN;
       const name = String(row[nameColIdx] || '').trim();
+      
+      // 케이스 1: 일반 담임용 명렬표 ('번호' 열 사용)
+      if (numColIdx !== -1) {
+        num = parseInt(row[numColIdx]);
+      } 
+      // 케이스 2: 교과 세특 양식 ('반/번호' 열에서 분리)
+      else if (banNumColIdx !== -1 && row[banNumColIdx]) {
+        const banNumStr = String(row[banNumColIdx]).trim();
+        if (banNumStr.includes('/')) {
+          const parts = banNumStr.split('/');
+          num = parseInt(parts[1]); // 💡 "3/5" 나 "5/12"에서 뒤쪽 번호만 추출
+        }
+      }
+      
       if (!isNaN(num) && name && name !== 'undefined') {
         parsedStudents.push({ id: String(num).padStart(2, '0'), number: num, name });
       }
     }
-    if (!parsedStudents.length) { alert("파싱된 학생 정보가 없습니다."); return; }
+    
+    if (!parsedStudents.length) {
+      alert("파싱된 학생 정보가 없습니다.");
+      return;
+    }
+    
     const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
     if (confirm(`[${tabLabel}] 탭에 ${parsedStudents.length}명을 등록할까요?\n(기존 명렬이 덮어씌워집니다.)`)) {
       const batch = writeBatch(db);
       parsedStudents.forEach(s => {
+        // 💡 원래 코드의 경로 규칙(studentsCol 함수 호출 형태)을 그대로 유지합니다.
         batch.set(doc(db, studentsCol(currentClassTabId), s.id), { number: s.number, name: s.name });
       });
+      
       batch.commit()
         .then(() => alert("명렬 등록이 완료되었습니다."))
         .catch(() => alert("Firestore 권한 오류가 발생했습니다."));
     }
+    
+    // 💡 다음 업로드를 위해 파일 선택을 초기화하는 원래 코드 유지
     e.target.value = '';
   };
+  // 👆 여기까지(reader.onload 끝) 수정이 완료됩니다.
+
   reader.readAsArrayBuffer(file);
 });
-
 document.getElementById('btn-clear-students').onclick = async function() {
   const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
   if (!confirm(`[${tabLabel}] 탭의 학생 명렬을 완전히 초기화하시겠습니까?\n(삭제 후 복구가 불가능합니다.)`)) return;
@@ -1908,6 +2061,80 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // ⚡ 퀵 키워드 엔진 가동
   initQuickKeywords();
+});
+
+
+/**
+ * ⚙️ 나이스(NEIS) 기준 바이트 계산 함수 (최신 UTF-8 반영)
+ * 한글 = 3바이트 / 영문, 숫자, 공백, 기본기호 = 1바이트
+ */
+function getNeisByteLength(str) {
+  if (!str) return 0;
+  let bytes = 0;
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i);
+    if (charCode > 128) {
+      bytes += 3; // 한글, 특수문자 등
+    } else {
+      bytes += 1; // 영문, 숫자, 공백 등
+    }
+  }
+  return bytes;
+}
+
+// ── 바이트 화면 표시를 갱신하는 공통 함수 ──
+function updateBytesDisplay(textarea, counterSpan) {
+  if (!textarea || !counterSpan) return;
+  const byteLength = getNeisByteLength(textarea.value);
+  counterSpan.textContent = byteLength;
+  
+  // 1500바이트 초과 시 빨간색 경고
+  if (byteLength > 1500) {
+    counterSpan.style.color = 'var(--accent)';
+    counterSpan.style.fontWeight = '700';
+  } else {
+    counterSpan.style.color = 'var(--ink)';
+    counterSpan.style.fontWeight = '400';
+  }
+}
+
+// 페이지 로드 후 실행
+window.addEventListener('DOMContentLoaded', () => {
+  // 현재 코드 상의 관찰내용 textarea ID를 찾습니다.
+  const recordContentInput = document.getElementById('record-content') || document.getElementById('student-obs-input');
+  
+  if (recordContentInput) {
+    // 1. textarea 바로 밑에 바이트 표시용 div 엘리먼트 동적 삽입
+    const counterDiv = document.createElement('div');
+    counterDiv.id = 'obs-byte-counter';
+    counterDiv.style.cssText = 'text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: 4px;';
+    counterDiv.innerHTML = '<span id="current-bytes">0</span> / 1500 Byte';
+    
+    recordContentInput.parentNode.insertBefore(counterDiv, recordContentInput.nextSibling);
+    const currentBytesSpan = document.getElementById('current-bytes');
+    
+    // 2. 사용자가 직접 입력할 때 감지 (키보드 입력)
+    ['input', 'keyup', 'change'].forEach(eventType => {
+      recordContentInput.addEventListener(eventType, function() {
+        updateBytesDisplay(this, currentBytesSpan);
+      });
+    });
+    
+    // ⭐ [핵심 수정] 3. 다른 학생을 클릭하여 프로그램이 글자를 바꿀 때(value 변경) 감지
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+    Object.defineProperty(recordContentInput, 'value', {
+      get: function() {
+        return descriptor.get.call(this);
+      },
+      set: function(val) {
+        descriptor.set.call(this, val); // 원래 글자 입력 기능 수행
+        updateBytesDisplay(this, currentBytesSpan); // 💡 글자가 바뀌는 순간 바이트 수 즉시 업데이트!
+      }
+    });
+
+    // 최초 로드 시 한 번 정렬
+    updateBytesDisplay(recordContentInput, currentBytesSpan);
+  }
 });
 </script>
 </body>
