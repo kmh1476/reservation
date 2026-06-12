@@ -12,6 +12,9 @@
   --muted: #8c7b6e; --border: #d4c9ba; --card: #fffdf8;
   --open: #27ae60; --closed: #e0d8cc;
   --after-accent: #e67e22;
+  /* 상담 관리자 추가 변수 */
+  --lunch: #e8f4fd; --after: #fdf3e8; --custom: #f0ede8;
+  --lunch-accent: #2980b9; --custom-accent: #6c4f8e;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; width: 100%; overflow-x: hidden !important; }
@@ -580,6 +583,198 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   cursor: pointer;
 }
 .keyword-save-btn:hover { background: #219653; }
+
+/* ═══════════════════════════════════════════════════
+   📋 상담 관리자 탭 전용 스타일
+   ═══════════════════════════════════════════════════ */
+
+/* 상담 관리자 헤더 */
+.adm-header { background: var(--ink); color: #fff; padding: 0 40px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+.adm-header h1 { font-family: 'Nanum Myeongjo', serif; font-size: 1.25rem; }
+.logout-btn { background: none; border: 1px solid #555; color: #ccc; padding: 6px 14px; cursor: pointer; font-size: .8rem; }
+
+/* 메인 레이아웃 */
+.adm-main-wrap { max-width: 1100px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: 1fr 400px; gap: 32px; }
+
+/* 달력 */
+.cal-nav { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.cal-nav h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.5rem; flex: 1; }
+.nav-btn { background: none; border: 1.5px solid var(--border); width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.calendar { border: 1.5px solid var(--border); background: var(--card); overflow: hidden; }
+.cal-head { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--ink); color: #ccc; font-size: .78rem; text-align: center; }
+.cal-head span { padding: 10px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-height: 90px; padding: 8px; cursor: pointer; position: relative; }
+.cal-cell.empty { background: #f0ebe3; cursor: default; }
+.cal-cell.selected { background: #e8f0fe; outline: 2px solid var(--accent2); outline-offset: -2px; }
+.cell-date { font-size: .78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.slot-badge { display: flex; align-items: center; gap: 4px; font-size: .68rem; font-weight: 600; padding: 2px 6px; border-radius: 2px; margin-bottom: 3px; width: fit-content; max-width: 100%; overflow: hidden; }
+.slot-badge span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot-badge.lunch-open { background: var(--lunch); color: var(--lunch-accent); }
+.slot-badge.after-open { background: var(--after); color: var(--after-accent); }
+.slot-badge.custom-open { background: var(--custom); color: var(--custom-accent); }
+
+/* 패널 카드 */
+.panel-card { background: var(--card); border: 1.5px solid var(--border); padding: 24px; margin-bottom: 20px; }
+.panel-card h3 { font-family: 'Nanum Myeongjo', serif; font-size: 1.1rem; margin-bottom: 4px; }
+.panel-sub { font-size: .8rem; color: var(--muted); margin-bottom: 20px; }
+.slot-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.slot-row:last-child { border-bottom: none; }
+.slot-label { font-size: .9rem; font-weight: 600; }
+.slot-label.lunch { color: var(--lunch-accent); }
+.slot-label.after { color: var(--after-accent); }
+.slot-label.custom { color: var(--custom-accent); }
+.slot-time { font-size: .78rem; color: var(--muted); }
+
+/* 토글 */
+.toggle { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: var(--closed); border-radius: 13px; cursor: pointer; transition: .25s; }
+.toggle-track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: .25s; }
+.toggle input:checked + .toggle-track { background: var(--open); }
+.toggle input:checked + .toggle-track::after { transform: translateX(22px); }
+
+/* 커스텀 슬롯 추가 폼 */
+.add-slot-section { margin-top: 16px; padding-top: 16px; border-top: 1.5px dashed var(--border); }
+.add-slot-label { font-size: .78rem; font-weight: 600; color: var(--custom-accent); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.add-slot-label::before { content: '+'; font-size: 1rem; }
+.add-slot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.add-slot-grid input { padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .82rem; outline: none; width: 100%; }
+.add-slot-grid input:focus { border-color: var(--custom-accent); }
+.add-slot-name { grid-column: 1 / -1; }
+.add-slot-btn { width: 100%; padding: 9px; background: var(--custom-accent); color: #fff; border: none; cursor: pointer; font-weight: 600; font-size: .82rem; }
+.add-slot-btn:hover { opacity: .85; }
+
+/* 커스텀 슬롯 아이템 */
+.custom-slot-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.custom-slot-info { flex: 1; min-width: 0; margin-right: 12px; }
+.custom-slot-name { font-size: .88rem; font-weight: 600; color: var(--custom-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom-slot-time { font-size: .75rem; color: var(--muted); }
+.custom-slot-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.del-slot-btn { background: none; border: 1px solid #ddd; color: #bbb; font-size: .7rem; padding: 2px 7px; cursor: pointer; }
+.del-slot-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 예약 목록 */
+.booking-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.booking-item:last-child { border-bottom: none; }
+.b-type { display: inline-block; padding: 1px 6px; font-size: .65rem; font-weight: 700; border-radius: 1px; margin-right: 5px; }
+.b-type.lunch { background: var(--lunch); color: var(--lunch-accent); }
+.b-type.after { background: var(--after); color: var(--after-accent); }
+.b-type.custom { background: var(--custom); color: var(--custom-accent); }
+.b-name { font-weight: 600; font-size: .9rem; }
+.b-slot { font-size: .75rem; color: var(--custom-accent); margin-top: 2px; }
+.b-content { font-size: .8rem; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+.b-delete { margin-top: 8px; background: none; border: 1px solid #ddd; color: #999; font-size: .72rem; padding: 2px 8px; cursor: pointer; }
+.b-delete:hover { border-color: var(--accent); color: var(--accent); }
+.b-record { margin-top: 8px; margin-left: 4px; background: none; border: 1px solid var(--accent2); color: var(--accent2); font-size: .72rem; padding: 2px 8px; cursor: pointer; }
+.b-record:hover { background: var(--accent2); color: #fff; }
+.b-has-record::before { content: "✓ "; }
+
+.no-date-msg { text-align: center; color: #999; padding: 20px 0; font-size: .85rem; }
+
+/* 오늘 상담 알림 모달 */
+.today-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+.today-overlay.show { display: flex; }
+.today-modal { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 380px; overflow: hidden; }
+.today-modal-header { background: var(--ink); color: #fff; padding: 18px 22px; display: flex; align-items: center; gap: 10px; }
+.today-modal-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.1rem; }
+.today-modal-body { padding: 20px 22px; }
+.today-date-label { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
+.today-booking-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.today-booking-item:last-child { border-bottom: none; }
+.today-slot-tag { font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; margin-top: 2px; }
+.today-slot-tag.lunch { background: var(--lunch); color: var(--lunch-accent); }
+.today-slot-tag.after { background: var(--after); color: var(--after-accent); }
+.today-slot-tag.custom { background: var(--custom); color: var(--custom-accent); }
+.today-booking-name { font-weight: 600; font-size: .9rem; }
+.today-booking-time { font-size: .75rem; color: var(--muted); }
+.today-modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+.today-close-btn { flex: 1; padding: 10px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-weight: 600; font-size: .88rem; }
+.today-goto-btn { flex: 1; padding: 10px; background: none; border: 1.5px solid var(--accent2); color: var(--accent2); cursor: pointer; font-weight: 600; font-size: .88rem; }
+
+/* 기록 작성/수정 모달 */
+.rec-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1100; align-items: center; justify-content: center; padding: 20px; }
+.rec-overlay.show { display: flex; }
+.rec-modal { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 480px; }
+.rec-modal-header { background: var(--ink); color: #fff; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; }
+.rec-modal-header h2 { font-family: "Nanum Myeongjo", serif; font-size: 1rem; }
+.rec-modal-close { background: none; border: none; color: #aaa; font-size: 1.3rem; cursor: pointer; line-height: 1; }
+.rec-modal-body { padding: 22px; }
+.rec-info { font-size: .78rem; color: var(--muted); margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.rec-field { margin-bottom: 14px; }
+.rec-field label { display: block; font-size: .75rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.rec-field textarea { width: 100%; padding: 10px; border: 1.5px solid var(--border); font-family: inherit; font-size: .88rem; outline: none; resize: vertical; }
+.rec-field textarea:focus { border-color: var(--accent2); }
+.rec-private-area { background: #fff8f0; border: 1.5px solid #f0c080; padding: 12px; margin-bottom: 14px; }
+.rec-private-area label { font-size: .75rem; font-weight: 700; color: #c0762b; margin-bottom: 5px; display: block; }
+.rec-private-area textarea { border-color: #f0c080; background: #fff; width: 100%; padding: 10px; font-family: inherit; font-size: .88rem; outline: none; resize: vertical; }
+.rec-save-btn { width: 100%; padding: 12px; background: var(--accent2); color: #fff; border: none; cursor: pointer; font-weight: 700; font-size: .92rem; }
+
+/* 학생 이력 조회 모달 */
+.hist-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1100; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.hist-overlay.show { display: flex; }
+.hist-modal { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 560px; }
+.hist-modal-header { background: var(--ink); color: #fff; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; }
+.hist-modal-header h2 { font-family: "Nanum Myeongjo", serif; font-size: 1rem; }
+.hist-search { display: flex; gap: 8px; padding: 16px 22px; border-bottom: 1px solid var(--border); }
+.hist-search input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); background: var(--paper); font-size: .9rem; outline: none; }
+.hist-search input:focus { border-color: var(--accent2); }
+.hist-search button { padding: 9px 18px; background: var(--ink); color: #fff; border: none; cursor: pointer; font-weight: 600; }
+.hist-body { padding: 16px 22px; max-height: 62vh; overflow-y: auto; }
+.hist-item { border: 1.5px solid var(--border); margin-bottom: 14px; }
+.hist-item-header { background: var(--paper); padding: 9px 14px; display: flex; align-items: center; gap: 10px; }
+.hist-item-date { font-weight: 700; font-size: .88rem; }
+.hist-item-body { padding: 12px 14px; }
+.hist-section-label { font-size: .7rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; letter-spacing: .04em; }
+.hist-section-text { font-size: .85rem; margin-bottom: 10px; white-space: pre-wrap; line-height: 1.6; color: var(--ink); }
+.hist-private-box { background: #fff8f0; border: 1px solid #f0c080; padding: 10px 12px; margin-top: 4px; }
+.hist-private-label { font-size: .7rem; font-weight: 700; color: #c0762b; margin-bottom: 4px; }
+.hist-private-text { font-size: .85rem; white-space: pre-wrap; line-height: 1.6; }
+.hist-empty { text-align: center; color: #999; padding: 40px 0; font-size: .88rem; }
+.hist-request-text { font-size: .8rem; color: var(--muted); font-style: italic; margin-bottom: 8px; white-space: pre-wrap; }
+
+/* 통계 모달 */
+.stat-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1100; align-items: flex-start; justify-content: center; padding: 30px 20px; overflow-y: auto; }
+.stat-overlay.show { display: flex; }
+.stat-modal { background: var(--card); border: 2px solid var(--border); width: 100%; max-width: 680px; }
+.stat-modal-header { background: var(--ink); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.stat-modal-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 1.05rem; }
+.stat-tabs { display: flex; border-bottom: 2px solid var(--border); background: var(--paper); }
+.stat-tab { padding: 12px 22px; font-size: .85rem; font-weight: 600; cursor: pointer; border: none; background: none; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.stat-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.stat-body { padding: 24px; }
+.stat-section { margin-bottom: 28px; }
+.stat-section h4 { font-family: 'Nanum Myeongjo', serif; font-size: 1rem; margin-bottom: 14px; color: var(--ink); }
+.stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.stat-bar-label { font-size: .82rem; min-width: 90px; color: var(--ink); }
+.stat-bar-wrap { flex: 1; background: #ede8e0; height: 18px; border-radius: 2px; overflow: hidden; }
+.stat-bar { height: 100%; border-radius: 2px; transition: width .4s; }
+.stat-bar.lunch { background: var(--lunch-accent); }
+.stat-bar.after { background: var(--after-accent); }
+.stat-bar.custom { background: var(--custom-accent); }
+.stat-bar.total { background: var(--accent2); }
+.stat-count { font-size: .82rem; font-weight: 700; color: var(--muted); min-width: 28px; text-align: right; }
+.stat-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-summary-card { background: var(--paper); border: 1.5px solid var(--border); padding: 14px; text-align: center; }
+.stat-summary-num { font-family: 'Nanum Myeongjo', serif; font-size: 2rem; font-weight: 800; color: var(--ink); }
+.stat-summary-label { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.stat-top-list { list-style: none; }
+.stat-top-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .87rem; }
+.stat-top-item:last-child { border-bottom: none; }
+.stat-top-rank { font-weight: 700; color: var(--muted); min-width: 24px; }
+.stat-top-name { flex: 1; }
+.stat-top-cnt { font-weight: 700; color: var(--accent2); }
+.export-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.export-row input[type=month] { padding: 8px 10px; border: 1.5px solid var(--border); background: var(--paper); font-size: .85rem; outline: none; }
+.export-btn { padding: 9px 18px; border: none; cursor: pointer; font-weight: 600; font-size: .85rem; color: #fff; }
+.export-btn.csv { background: #27ae60; }
+.export-btn.excel { background: var(--accent2); }
+.export-hint { font-size: .75rem; color: var(--muted); margin-top: 8px; }
+
+@media(max-width: 768px) {
+  .adm-main-wrap { grid-template-columns: 1fr; }
+  .adm-header { padding: 0 16px; }
+}
 </style>
 </head>
 <body>
@@ -698,7 +893,133 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 </div>
 
 <div class="tab-content" id="tab-counsel">
-  <iframe class="counsel-frame" id="counsel-frame" src="admin.html"></iframe>
+  <!-- ═══════ 상담 관리자 (통합) ═══════ -->
+  <div id="counsel-app">
+    <div class="adm-header">
+      <h1>📋 상담 관리자</h1>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:.8rem;color:#aaa" id="adm-header-date"></span>
+        <button class="logout-btn" style="margin-right:6px" onclick="window.openStatModal()">📊 통계/내보내기</button>
+        <button class="logout-btn" style="margin-right:6px" onclick="document.getElementById('hist-overlay').classList.add('show')">🗂 학생 기록</button>
+      </div>
+    </div>
+
+    <div class="adm-main-wrap">
+      <div class="cal-section">
+        <div class="cal-nav">
+          <button class="nav-btn" onclick="window.admChangeMonth(-1)">←</button>
+          <h2 id="adm-cal-title"></h2>
+          <button class="nav-btn" onclick="window.admChangeMonth(1)">→</button>
+        </div>
+        <div class="calendar">
+          <div class="cal-head">
+            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+          </div>
+          <div class="cal-grid" id="adm-cal-grid"></div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <!-- 슬롯 설정 -->
+        <div class="panel-card">
+          <h3 id="adm-slot-title">날짜를 선택하세요</h3>
+          <p class="panel-sub">상담 슬롯 개방/폐쇄 설정</p>
+          <div id="adm-slot-rows"><p class="no-date-msg">날짜를 선택하세요</p></div>
+
+          <!-- 커스텀 슬롯 추가 폼 -->
+          <div class="add-slot-section" id="adm-add-slot-section" style="display:none">
+            <div class="add-slot-label">커스텀 슬롯 추가</div>
+            <div class="add-slot-grid">
+              <input class="add-slot-name" type="text" id="adm-cs-name" placeholder="슬롯 이름 (예: 긴급상담)">
+              <input type="text" id="adm-cs-start" placeholder="시작 (예: 14:00)">
+              <input type="text" id="adm-cs-end" placeholder="종료 (예: 14:30)">
+            </div>
+            <button class="add-slot-btn" onclick="window.admAddCustomSlot()">+ 슬롯 추가</button>
+          </div>
+        </div>
+
+        <!-- 예약 현황 -->
+        <div class="panel-card">
+          <h3>예약 현황</h3>
+          <p class="panel-sub" id="adm-booking-sub">선택한 날짜의 예약 목록</p>
+          <div id="adm-booking-list"><p class="no-date-msg">날짜를 선택하세요</p></div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /counsel-app -->
+
+  <!-- 오늘 상담 알림 모달 -->
+  <div class="today-overlay" id="today-overlay">
+    <div class="today-modal">
+      <div class="today-modal-header">
+        <span style="font-size:1.4rem">🔔</span>
+        <h2>오늘 상담이 있어요!</h2>
+      </div>
+      <div class="today-modal-body">
+        <div class="today-date-label" id="today-date-label"></div>
+        <div id="today-booking-list"></div>
+      </div>
+      <div class="today-modal-footer">
+        <button class="today-goto-btn" id="today-goto-btn">오늘 날짜로 이동</button>
+        <button class="today-close-btn" onclick="document.getElementById('today-overlay').classList.remove('show')">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상담 기록 작성 모달 -->
+  <div class="rec-overlay" id="rec-overlay">
+    <div class="rec-modal">
+      <div class="rec-modal-header">
+        <h2>📝 상담 기록 작성</h2>
+        <button class="rec-modal-close" onclick="document.getElementById('rec-overlay').classList.remove('show')">✕</button>
+      </div>
+      <div class="rec-modal-body">
+        <div class="rec-info" id="rec-info"></div>
+        <div class="rec-field">
+          <label>상담 내용</label>
+          <textarea id="rec-content" rows="5" placeholder="상담 내용을 기록하세요..."></textarea>
+        </div>
+        <div class="rec-private-area">
+          <label>🔒 비공개 메모 (선생님만 볼 수 있습니다)</label>
+          <textarea id="rec-private" rows="3" placeholder="학생에게 보이지 않는 개인 메모..."></textarea>
+        </div>
+        <button class="rec-save-btn" onclick="window.admSaveRecord()">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 기록 조회 모달 -->
+  <div class="hist-overlay" id="hist-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="hist-modal">
+      <div class="hist-modal-header">
+        <h2>🗂 학생 상담 이력 조회</h2>
+        <button style="background:none;border:none;color:#aaa;font-size:1.3rem;cursor:pointer;line-height:1" onclick="document.getElementById('hist-overlay').classList.remove('show')">✕</button>
+      </div>
+      <div class="hist-search">
+        <input type="text" id="hist-name-input" placeholder="학생 이름 입력" onkeydown="if(event.key==='Enter')window.admSearchHistory()">
+        <button onclick="window.admSearchHistory()">조회</button>
+      </div>
+      <div class="hist-body" id="hist-body">
+        <p class="hist-empty">이름을 입력하고 조회하세요.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 통계 & 내보내기 모달 -->
+  <div class="stat-overlay" id="stat-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="stat-modal">
+      <div class="stat-modal-header">
+        <h2>📊 상담 통계 & 내보내기</h2>
+        <button style="background:none;border:none;color:#aaa;font-size:1.3rem;cursor:pointer" onclick="document.getElementById('stat-overlay').classList.remove('show')">✕</button>
+      </div>
+      <div class="stat-tabs">
+        <button class="stat-tab active" onclick="window.admSwitchStatTab('overview', this)">전체 현황</button>
+        <button class="stat-tab" onclick="window.admSwitchStatTab('monthly', this)">월별 통계</button>
+        <button class="stat-tab" onclick="window.admSwitchStatTab('export', this)">내보내기</button>
+      </div>
+      <div class="stat-body" id="stat-body"></div>
+    </div>
+  </div>
 </div>
 
 <div class="tab-content" id="tab-students">
@@ -717,6 +1038,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
       <button class="memo-add-btn" style="flex: 1; background:var(--accent2); min-width: 130px;" onclick="document.getElementById('excel-file').click()">NEIS 명렬 엑셀 업로드</button>
       <button class="memo-add-btn" style="background:var(--accent); display:none;" id="btn-clear-students">초기화</button>
       <button class="memo-add-btn" style="background:#9b59b6; color:#fff;" id="btn-gems-main" onclick="openGemsWindow()">젬즈(GEMS)</button>
+<button class="memo-add-btn" style="background:#27ae60; color:#fff;" id="btn-gems-ai" onclick="openGemsPanel()">✨ AI 비서</button>
     </div>
     
     <div class="student-items" id="student-items">
@@ -738,10 +1060,10 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   <div style="display:flex; gap:8px; flex-wrap:wrap;">
     <input type="date" id="record-date" class="memo-input" style="flex:1; min-width:130px;">
     <select id="record-category" class="memo-input" style="flex:1; min-width:130px; background:var(--paper); cursor:pointer;">
-      <option value="📚 학업/수업">📚 학업/수업(교과)</option>
-      <option value="🌱 행동/인성">🌱 행동/인성(행특)</option>
-      <option value="🎯 진로/창체">🎯 진로/창체</option>
-      <option value="💡 기타/상담">💡 기타/상담</option>
+      <option value="물리학 과세특>">물리학 과세특></option>
+      <option value="행발>"> 행발></option>
+      <option value="진로/창체>"> 진로/창체></option>
+      <option value="상담/기타>"> 상담/기타></option>
     </select>
   </div>
   <textarea id="record-content" class="memo-input" rows="4" placeholder="누적할 관찰 내용이나 특이 사항을 입력해 주세요. (추후 생기부 원클릭 가공용)" style="resize:none; font-family:inherit; line-height:1.4;"></textarea>
@@ -839,9 +1161,45 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   </div>
 </div>
 
+
+<div id="gems-ai-panel" style="display:none; position:fixed; bottom:24px; right:24px; width:420px; background:var(--card); border:2px solid var(--ink); border-radius:8px; box-shadow:4px 4px 0 rgba(26,26,46,0.15); z-index:9999; flex-direction:column; overflow:hidden; transition: all 0.3s ease;">
+  
+  <div style="background:var(--ink); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleGemsBody()">
+    <div style="font-family:'Nanum Myeongjo', serif; font-size:1rem; font-weight:700;">✨ GEMS 생기부 비서</div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <span id="gems-toggle-icon" style="font-size:0.8rem; color:#ccc;">▼</span>
+      <button onclick="closeGemsPanel(event)" style="background:none; border:none; color:#ccc; cursor:pointer; font-size:1.1rem; padding:0;">✕</button>
+    </div>
+  </div>
+
+  <div id="gems-ai-body" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+      <span style="font-size: 0.8rem; font-weight: bold; color: var(--muted);">학생 관찰 메모</span>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <select id="gems-tag-filter" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 0.75rem; color: var(--ink); font-family: 'Pretendard', sans-serif; outline: none; cursor: pointer;">
+          <option value="all">전체 태그</option>
+        </select>
+        <button onclick="importStudentRecord()" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; color: var(--ink); font-family: 'Pretendard', sans-serif;">📋 기록 불러오기</button>
+      </div>
+    </div>
+
+    <textarea id="gems-obs-input" class="memo-input" style="height:120px; resize:none; font-size:0.85rem;" placeholder="여기에 학생 관찰 메모를 입력하거나 위 버튼을 눌러 불러오세요..."></textarea>
+    
+    <button id="gems-submit-btn" class="memo-add-btn" style="background:var(--accent2); font-size:0.9rem; padding:12px; border-radius:6px;" onclick="runGemsEngine()">생기부 생성하기 🚀</button>
+    
+    <textarea id="gems-result-box" class="memo-input" style="height:180px; resize:none; font-size:0.85rem; background:var(--paper);" readonly placeholder="AI가 작성한 결과가 여기에 출력됩니다..."></textarea>
+    
+    <div style="text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: -8px; margin-bottom: 2px;">
+      결과 바이트: <span id="gems-result-byte-counter" style="font-weight: bold; color: var(--accent2);">0 Byte</span>
+    </div>
+  </div>
+  
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
@@ -861,6 +1219,15 @@ const PERIODS = 7;
 let slotsCache = {}, bookingsCache = {};
 let mealData = { lunch: [], dinner: [] };
 let timetable = defaultTimetable();
+
+// ── 상담 관리자 전용 변수 ──
+let recordsCache = {};
+let admYear, admMonth;
+let admSelectedDate = null;
+let adm_alertShown = false;
+let _currentRecordBookingId = null;
+let _statTab = 'overview';
+const ADM_FIXED_TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
 let memos = [];
 
 const NEIS_API_KEY = "fb89c0e73fb7448cb1de95d45afda2d6";
@@ -1067,10 +1434,23 @@ async function initApp() {
   onSnapshot(collection(db,'slots'), snap => {
     slotsCache={};snap.forEach(d=>slotsCache[d.id]=d.data());
     _slotsReady=true;maybeUpdate();
+    // 상담 관리자 탭 업데이트
+    admRenderCal();
+    if (admSelectedDate) admRenderSlotPanel(admSelectedDate);
+    admMaybeShowTodayAlert();
   });
   onSnapshot(collection(db,'bookings'), snap => {
     bookingsCache={};snap.forEach(d=>{const b=d.data();b.id=d.id;if(!bookingsCache[b.date])bookingsCache[b.date]=[];bookingsCache[b.date].push(b);});
     _bookingsReady=true;maybeUpdate();
+    // 상담 관리자 탭 업데이트
+    admRenderCal();
+    if (admSelectedDate) admRenderBookingPanel(admSelectedDate);
+    admMaybeShowTodayAlert();
+  });
+  onSnapshot(collection(db,'records'), snap => {
+    recordsCache = {};
+    snap.forEach(d => { recordsCache[d.id] = d.data(); });
+    if (admSelectedDate) admRenderBookingPanel(admSelectedDate);
   });
   onSnapshot(doc(db,'cal_notes','data'), snap => {
     calNotes = snap.exists() ? (snap.data().notes||{}) : {};
@@ -1108,6 +1488,9 @@ async function initApp() {
     const now=new Date(); miniCalYear=now.getFullYear(); miniCalMonth=now.getMonth()+1;
     fetchSchoolSchedule(miniCalYear,miniCalMonth);
   })();
+
+  // ── 상담 관리자 초기화 ──
+  admInitApp();
 }
 
 // ── 시계 ──
@@ -2136,6 +2519,1082 @@ window.addEventListener('DOMContentLoaded', () => {
     updateBytesDisplay(recordContentInput, currentBytesSpan);
   }
 });
+
+
+// ─────────────────────────────────────────────────────────
+// 🤖 GEMS AI 비서 로직 및 패널 제어 (2026 업데이트 버전)
+// ─────────────────────────────────────────────────────────
+
+// 생기부(나이스) 표준 바이트 계산 함수 (한글 3바이트, 영문/숫자/공백 1바이트, 엔터 2바이트)
+function calculateGemsBytes(str) {
+  if (!str) return 0;
+  let bytes = 0;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    if (ch === 10) { // 엔터(줄바꿈)
+      bytes += 2;
+    } else if (ch > 128) { // 한글 및 전각 문자
+      bytes += 3;
+    } else { // 영문, 숫자, 공백, 기본 반각 특수문자
+      bytes += 1;
+    }
+  }
+  return bytes;
+}
+
+// 1. AI 결과창 바이트 표시 갱신 함수
+window.updateGemsResultBytes = function() {
+  const resultBox = document.getElementById("gems-result-box");
+  const counterSpan = document.getElementById("gems-result-byte-counter");
+  if (resultBox && counterSpan) {
+    counterSpan.textContent = calculateGemsBytes(resultBox.value) + " Byte";
+  }
+};
+
+// 현재 선택된 학생의 화면에 존재하는 기록 태그들을 동적으로 추출하여 드롭다운에 채워넣는 함수
+window.updateGemsTagOptions = function() {
+  const selectNode = document.getElementById('gems-tag-filter');
+  if (!selectNode) return;
+  
+  // '전체 태그' 옵션 제외하고 초기화
+  selectNode.innerHTML = '<option value="all">전체 태그</option>';
+  
+  // 대시보드 학생 기록 탭의 모든 레코드 카드에서 태그 배지(.record-badge) 추출
+  const badges = document.querySelectorAll('.record-card .record-badge');
+  const tags = new Set();
+  
+  badges.forEach(badge => {
+    const tagText = badge.textContent.trim();
+    if (tagText) tags.add(tagText);
+  });
+  
+  // 추출된 유일한 태그 항목들을 드롭다운 선택지에 추가
+  tags.forEach(tag => {
+    const option = document.createElement('option');
+    option.value = tag;
+    option.textContent = tag;
+    selectNode.appendChild(option);
+  });
+};
+
+// 2. 대시보드 누적 관찰 기록 연동 및 복사 수집 함수
+window.importStudentRecord = function() {
+  const gemsInput = document.getElementById('gems-obs-input');
+  const tagFilter = document.getElementById('gems-tag-filter').value;
+  if (!gemsInput) return;
+  
+  // 대시보드 학생 우측 리스트에 바인딩된 모든 기록 카드 탐색
+  const recordCards = document.querySelectorAll('.record-card');
+  
+  if (recordCards.length > 0) {
+    let compiledText = [];
+    
+    recordCards.forEach(card => {
+      const badgeNode = card.querySelector('.record-badge');
+      const contentNode = card.querySelector('.record-content-text');
+      
+      if (contentNode) {
+        const tagText = badgeNode ? badgeNode.textContent.trim() : '';
+        const contentText = contentNode.textContent.trim();
+        
+        // 사용자가 선택한 필터 조건과 일치하거나 '전체 태그'인 경우에만 텍스트 축적
+        if (tagFilter === 'all' || tagFilter === tagText) {
+          if (tagFilter === 'all' && tagText) {
+            compiledText.push(`[${tagText}] ${contentText}`);
+          } else {
+            compiledText.push(contentText);
+          }
+        }
+      }
+    });
+    
+    if (compiledText.length > 0) {
+      gemsInput.value = compiledText.join('\n\n');
+      return; // 여러 개 텍스트 취합 성공 시 처리 종료
+    }
+  }
+  
+  // 예외/하위 호환 처리: 만약 저장된 카드가 전혀 없다면 임시 작성 칸에서 글자를 긁어옴
+  const dashboardInput = document.getElementById('record-content') || document.getElementById('student-obs-input');
+  if (dashboardInput && dashboardInput.value.trim()) {
+    gemsInput.value = dashboardInput.value;
+  } else {
+    alert("선택된 학생의 관찰 기록 카드를 찾지 못했거나 내용이 비어있습니다. 학생이 정상 선택되었는지 확인해 주세요.");
+  }
+};
+
+// 창 열기 (열릴 때 필터 셋업 및 학생 기록 연동이 자동으로 매끄럽게 동기화됩니다)
+window.openGemsPanel = function() {
+  const panel = document.getElementById('gems-ai-panel');
+  panel.style.display = 'flex';
+  document.getElementById('gems-ai-body').style.display = 'flex';
+  document.getElementById('gems-toggle-icon').textContent = '▼';
+  
+  // 동적으로 드롭다운 태그 옵션 빌드 후 자동 복사 실행
+  window.updateGemsTagOptions();
+  window.importStudentRecord();
+};
+
+// 창 닫기
+window.closeGemsPanel = function(e) {
+  e.stopPropagation();
+  document.getElementById('gems-ai-panel').style.display = 'none';
+};
+
+// 창 접기/펴기
+window.toggleGemsBody = function() {
+  const body = document.getElementById('gems-ai-body');
+  const icon = document.getElementById('gems-toggle-icon');
+  if (body.style.display === 'none') {
+    body.style.display = 'flex';
+    icon.textContent = '▼';
+  } else {
+    body.style.display = 'none';
+    icon.textContent = '▲';
+  }
+};
+
+// API 설정 및 프롬프트 (선생님의 고유 키와 프롬프트 지침 데이터를 백틱 내부에 유지하세요)
+const GEMS_API_KEY = "AQ.Ab8RN6Je2CRjdZzBvUaHBZwh5eZ4aewxLcvidWeOpnp8k_3BIw"; 
+const GEMS_SYSTEM_PROMPT = `너는 [2025 유초중고 생기부 AI 비서 젬스(GEMS)]이다. 너는 교육부 기재요령 점검 장학사의 시각을 가진 생기부 작성 전문가이며, 아래의 통합 지침을 절대적인 헌법으로 준수한다.
+
+
+
+[시스템 기동 및 파일 처리 수칙]
+
+1. 대화 시작 전 [지식]의 'GEMS_통합_마스터_지침.txt' 파일을 최우선 로딩하여 판단 기준으로 삼는다.
+
+
+[0. 대원칙: 입체적 참조 시스템]
+
+
+1. 할루시네이션 방지: 파일에 없는 수행평가나 행사는 창작하지 않는다. 정보 부족 시 사용자에게 공식 명칭을 되묻는다.
+
+
+
+[1. 학교급별 교육과정 적용 로직 (엄수)]
+
+
+나. 중학교 (과정 중심):
+
+- 1학년(자유학기): 일제식 지필평가 지양, 과정 중심 평가 서술. 학교폭력 조치는 '조치상황 관리'란에 일원화.
+
+다. 고등학교 (대입/진로 중심):
+
+- 1학년(22개정/고교학점제): 최소 성취수준 미달 예상 시 '보충지도 프로그램 이수' 내용 포함하여 기술.
+
+- 2~3학년(15개정): 대입 연계. [동기(Why) → 심화탐구(How Deep) → 확장(So What)]의 3단계 심화 구조 적용. 서울대 등 가이드북의 '지적 호기심' 반영.
+
+라. 직업계고 (실무 중심):
+
+- NCS 기반 "조작할 수 있음", "수행함", "해결함" 등 현장 실무 역량 기술.
+
+마. 학교자율시간 (2025 신설):
+
+- 학교 개설 '과목'은 세특에, 창체 연계 '활동'은 자율/진로 특기사항에 활동명을 포함하여 기재.
+
+
+
+[2. 작성 기본 규칙 및 금지어 가이드 (Tone & Safety)]
+
+
+
+1. 문체 원칙 (Style & Objectivity):
+
+   - 모든 문장은 명사형 종결어미(~함, ~임)로 끝낸다. ("했다", "하였다" 금지)
+
+   - "탁월함, 뛰어남, 우수함" 등 교사의 주관적 평가어 사용을 금지하며, 대신 **구체적 행동과 변화(Fact)**로 우수성을 입증한다.
+
+   - "이해함, 느낌" 등 학생 입장에서 서술된 평가어 사용을 금지한다.
+
+   - 여러 활동이 입력되는 경우 여러개의 결과를 내는 것이 아니라 통합하여 하나의 결과만을 출력한다.
+
+
+
+2. 절대 입력 금지 (Red Flag) ⭐Strict:
+
+   - 사교육 유발: 교외 수상, 논문(학회지), 도서 출간, 발명 특허, 해외 어학연수, 영재교육원, 영어.
+
+   - 구체적 수치: 석차(1등/전교 10등), 등급(1등급), 원점수(98점), 관련 대학/기관명.
+
+   - 부모 정보: 부모의 직업, 지위, 사회 경제적 배경 암시 금지.
+
+
+
+3. "모의고사/수능" 자동 순화 (Auto-Sanitizing) ⭐Critical:
+
+   - 사용자 입력(Raw): "모의고사", "학평", "수능 기출", "3월 학력평가", "문제집(쎈/정석)", "1등급 목표".
+
+   - AI 처리 원칙: 해당 단어를 **즉시 삭제**하고, 그 안에 담긴 **[학습 주제]**와 **[탐구 역량]**으로 변환하여 기술한다.
+
+   - (예: "모의고사 빈칸 문제 틀림" → "문맥을 통해 추상적 어휘의 의미를 추론하는 논리적 독해력을 기름.")
+
+   - (예: "3월 학평 30번 미적분 오답 정리" → "고난도 함수 추론 문제 해결 과정에서 도함수의 활용 개념을 재정립함.")
+
+
+
+4. 어휘 필터 (Vocabulary Guard):
+
+   - 사설 서비스명 순화: 유튜브→동영상 플랫폼, 카카오톡→메신저, 네이버→포털사이트/검색엔진.
+
+   - 비속어/은어: 학생이 입력한 구어체나 비속어는 교육적인 표준어로 자동 변환한다.
+
+
+
+5. 개인정보 보호 (Privacy Masking):
+
+   - 학생 실명, 전화번호, 주소 등은 출력 시 반드시 'OOO', '위 학생' 등으로 마스킹 처리한다.
+
+
+
+
+[2-5. 외국어 및 전문용어 표기 '안전 괄호' 프로토콜 (Safety-Parenthesis)]
+
+1. 대원칙 (Hangeul First): 
+
+   - 학교생활기록부는 "한글 기재"가 원칙이므로, 영문/외국어 단독 표기를 엄격히 금지한다.
+
+   - 불가피한 전문 용어(Key terms), 고유 명사, 작품명 등은 반드시 [국문 용어(영문 원어)] 형태로 병기하여 기재 규정을 준수한다.
+
+
+
+2. 표기 양식 (3단 필터):
+
+   - (❌ 금지) 영문 단독: "High-context culture를 분석하고..." (감사 지적 대상)
+
+   - (🔺 주의) 영문 주도: "High-context culture(고맥락 문화)를 분석하고..." (가독성 저하)
+
+   - (🔺 주의) 국문 주도: "고맥락 문화(High-context culture)를 분석하고..." (안전)
+   - (✅ 권장) 국문 단독: "고맥락 문화를 분석하고..." (규정 준수 및 안전)
+
+
+
+3. 금지 사항 (Red Line):
+
+   - 일반 명사(Apple, Book, Friend)의 영문 병기 금지.
+
+   - 영어 문장 전체(I have a dream...)의 원문 기재 절대 불가. (단어/구 단위만 허용)
+
+
+
+4. 교과별 적용 예시:
+
+   - [영어] Low-context culture → 저맥락 문화(Low-context culture)
+
+   - [정보] Python, C-lang → 파이썬(Python), C언어(C-lang)
+
+   - [과학] ATP, DNA → 아데노신 삼인산(ATP), 디엔에이(DNA)
+
+   - [예술] Pop Art, Cubism → 팝아트(Pop Art), 입체파(Cubism)
+
+
+
+
+
+[3. 교과 세특 작성 심화 가이드]
+
+1. 구조: [단원/동기] → [탐구 활동/과정] → [결과/산출물] → [성장/변화].
+
+2. 고등 심화: 단순 나열을 지양하고, 교과 지식을 자신의 진로(전공)와 연결하거나, 심층 자료(논문/통계)를 분석한 과정을 구체화한다.
+
+3. 예체능: "잘 그린다/부른다" 대신 [이론적 분석] + [실기 적용] 구조로 기술. (예: 운동 역학 원리를 적용하여 슛 자세를 교정함)
+
+4. 행정 용어 소거: 출력물에 '1학기', '논술형', '수행평가', '지필평가' 등의 용어를 포함하지 않고 "수업 시간에", "탐구 과정에서"로 자연스럽게 변환한다.
+
+
+
+
+
+[3-1. 교과(세특) 및 특수·다문화 통합 가이드 (All-in-One)]
+
+
+
+가. 중·고등학교 일반교과 (Academic & Analytical) ⭐NEW
+
+   - 원칙: 단순한 '학습 내용 나열'을 지양하고, 학생의 **'탐구 역량', '비판적 사고력', '심화 학습 과정'**을 구체적으로 기술한다.
+
+   - 구성: [동기] → [심화 탐구 활동] → [결과 및 변화] → [전공 적합성/학업 역량]
+
+   - 예시: "수행평가(보고서) 작성 중 'OOO' 개념에 의문을 품고 추가 자료를 조사하여..."
+
+
+
+
+
+[3-4. 전문상담교사 및 담임교사(상담활동) 통합 가이드 (Dual Mode)]
+
+※ 전문상담교사의 상담일지뿐만 아니라, 담임교사의 '학생 상담록(생활지도)' 작성 시에도 동일하게 적용한다.
+
+
+
+가. [모드 A] 학교생활기록부(생기부) 작성 (Growth & Positive)
+
+   - 적용 대상: 자율/진로/동아리 특기사항, 행발 등 학생의 성장을 기록하는 공식 문서.
+
+   1) 절대 금지 사항 (Privacy Shield):
+
+      학생의 **내밀한 상담 내용(가정폭력, 이혼, 우울증, 자해, 구체적인 병명, 친구 관계의 갈등 세부 내용)**은 생기부에 절대 기재하지 않는다.
+
+   2) 작성 원칙 (Activity-Based):
+
+      고민의 '내용'이 아니라, 이를 극복하기 위해 참여한 **'활동'**과 **'성장'** 위주로 긍정적으로 기술한다.
+
+      - (예: "우울증 상담 받음"(X) → "정서 조절 프로그램에 참여하여 자신의 감정을 긍정적으로 표현하는 법을 익힘"(O))
+
+
+
+나. [모드 B] 상담일지(행정/관찰) 작성 (Dry & Objective)
+
+   - 적용 대상: 나이스(NEIS) 상담기록, 담임교사 학생상담록, 내부 결재용 상담 대장.
+
+   1) 톤 앤 매너 (Tone & Manner):
+
+      - 미화된 표현(슬기롭게, 아름답게)을 배제하고, **제3자적 관찰자 시점**에서 **건조하고(Dry) 명확한 행정 용어**를 사용한다.
+
+   2) 민감정보 순화 (Safety Protocol):
+
+      - 실명 금지: 학생/가족의 실명은 '내담자', '부(父)', '모(母)', '교우', '반 학생' 등으로 변경한다.
+
+      - 자극적 묘사 순화: 구체적 폭력/자해 방법 등은 **추상적 행정 용어**로 변환한다.
+
+   3) 필수 종결 어미:
+
+      - 진술: **~라고 호소함, ~라고 진술함, ~라고 언급함**
+
+      - 관찰: **~한 것으로 관찰됨, ~한 양상을 보임, ~한 것으로 파악됨**
+
+      - 조치: **~하도록 조력함, ~할 것을 지도함, ~하기로 협의함**
+
+
+
+
+[3-10. 특목고(과고/외고/국제고) 및 자사고 심화 작성 가이드]
+
+
+
+가. 작성의 핵심: 학문적 수월성(Academic Excellence)
+
+일반적인 '이해함', '학습함' 수준을 넘어, 대학 학부 수준의 **'심화 개념 적용'**, **'비판적 분석'**, **'대안 제시'** 역량을 기술한다.
+
+
+
+나. 학교 유형별 맞춤 전략:
+
+1) 과학고/영재학교 (Science & Math):
+
+   - 실험의 성공 여부보다 **'실험 설계(Variable Control)'**, **'오차 원인 분석(Error Analysis)'**, **'이론적 한계 극복'** 과정을 기술한다.
+
+   - 전문 교과(고급물리학, 고급화학 등)의 경우, 단순 문제 풀이가 아닌 **'실생활 현상의 수학적 모델링'**이나 **'자신만의 가설 검증'** 내용을 포함한다.
+
+2) 외고/국제고 (Global & Humanities):
+
+   - 원서(Original Text) 강독 능력을 바탕으로, 번역본이 아닌 **'원문 텍스트 분석'**을 통한 저자의 의도 파악 및 비판적 수용 과정을 기술한다.
+
+   - 국제 이슈(환경, 인권, 외교)에 대해 단순한 현상 나열이 아닌, **'다각적 관점(정치/경제/문화)에서의 분석'**과 **'실질적인 해결책 제안'**을 강조한다.
+
+3) 자사고 (Self-Directed):
+
+   - 학교의 다양한 특색 프로그램(과제연구, 학술제)과 교과 수업을 연결하여, **'지적 호기심의 확장 과정(꼬리에 꼬리를 무는 탐구)'**을 유기적으로 서술한다.
+
+
+
+다. 고급 어휘 사용 (Advanced Vocabulary):
+
+학문적 깊이를 드러내기 위해 **'메타인지', '학제간 융합', '변증법적 추론', '통계적 유의성 검증'** 등 교과 특성에 맞는 전문 용어를 적절히 활용한다.
+
+
+
+
+
+[4. 창의적 체험활동 작성 가이드]
+
+1. 자율/진로: 학교 특색 활동, 범교과 학습(안전/인성/AI윤리) 내용을 녹여낸다.
+
+2. 동아리: 활동의 단순 나열보다 학생의 '역할(기여도)'과 '협력 태도'를 강조한다.
+
+3. 봉사: 실적만 입력하고 특기사항은 기재하지 않음(고등, 중1). 행동특성에 봉사 태도를 녹여냄.
+
+
+
+
+
+[5. 행동특성 및 종합의견 (Bidirectional)]
+
+1. 정방향: 사용자의 누가기록(날짜/사건)을 입력받아 종합적인 행발 문장으로 변환.
+
+2. 역방향: 키워드(배려, 나눔) 요청 시, 문장 생성과 함께 이를 뒷받침할 '가상의 누가기록 예시'도 함께 제안.
+
+3. 성장 샌드위치: 단점 기술 시 [노력/과정 → 아쉬움(완곡) → 긍정적 변화 가능성] 순서로 배치.
+
+
+
+[7. 출력 형식 및 데이터 생성 (Output Protocol)]
+
+1. 포맷: 모든 결과물은 줄글 형태로 작성한다.
+
+ 2. 내용: [세부능력 및 특기사항] 열 작성 시 **[의사소통], [문제해결]**과 같은 인위적인 소제목(Header)이나 대괄호 표기를 절대 사용하지 않는다. 대신 해당 역량이 문장 속에 자연스럽게 녹아들도록 '완벽한 줄글(Narrative)' 형태로 서술한다.
+
+3. 다른 문장은 말하지 않고 오직 생활기록부 결과물만 출력하여 보여준다.
+
+
+
+[9.] 독창성 및 안전성 확보 (AI 탐지 회피) 원칙
+
+
+
+GEMS는 AI 탐지 회피 및 글의 독창성 극대화를 위해, 사용자가 제공한 '날것의 정보'를 바탕으로 아래의 기술적 원칙을 준수하여 문장을 생성한다.
+
+
+
+1.  **고유성 주입:** 사용자가 입력한 '날것의 관찰 메모(고유명사, 특정 일화)'를 문장 중간에 필수적으로 삽입하여 글의 고유성(인간의 지문)을 확보해야 한다. (허위 정보 생성 절대 금지)
+
+2.  **문장 분절:** 문장을 통째로 길게 연결하지 말고, 2~3개의 짧은 호흡으로 분절하여 구성한다.
+
+3.  **구조 변환:** 문장 구조의 다양성을 위해 수동태/능동태, 명사형/서술형 종결을 의도적으로 교차 사용하여 AI 패턴 예측을 회피한다.
+
+4.  **접속어 교체:** 흔하게 사용되는 접속사(예: '뿐만 아니라', '또한', '이에')는 다양한 대체어(예: '더불어', '이 과정에서', '나아가', '결과적으로')로 변환하여 사용함으로써 유사도를 낮춘다.
+
+5.  **내용 중심:** '열심히', '성실하게' 등 감정적 수식어는 배제하고, 학생이 '무엇을 했는지'에 해당하는 구체적인 동사와 성과를 중심으로 문장을 구성한다.
+
+6.  **역량 강조:** 평가 기준은 '우수하다' 대신 '탐구적 사고를 정립함', '논리적 분석 능력을 증명함' 등 교육적 역량 중심으로 기술한다.
+
+
+
+
+
+[10. 중복 방지: 7대 프리즘 (7-Prisms)]
+
+다수 학생 생성 요청 시 다음 7가지 관점을 교차 적용하여 중복을 방지한다.
+
+①학업심화형 ②과정주도형 ③문제해결형 ④소통협력형 ⑤융합창의형 ⑥진로연계형 ⑦실천윤리형.`; 
+
+
+const GEMS_REFERENCE_DATA = `
+
+1. 교육부 기재 금지어 및 안전 필터 (Red Flags)
+- 절대 금지: 교외 대회/수상, 공인어학성적, 영재원/발명특허, 해외 활동, 부모 직업/배경 암시.
+- 금지 단어: 구체적 대학명/기관명/상호명(유튜브, 구글 등), 강사 실명, 모의고사/수능 기출.
+- 논문 기재 금지: '소논문' 명칭 불가 ➔ '주제 탐구 보고서', '교과 탐구 자료'로 우회 서술.
+- 서술 제한: '1등급', '전교 10등' 등 구체적 수치 금지. 교사의 주관적 미사여구('매우 탁월함') 지양 및 객관적 사실(Action Evidence) 기반 명사형 종결(~함, ~임).
+
+2. 주요 대학(서울대/연세대/경희대/동국대) 핵심 평가 요소
+- 학업 역량: 단순 내신 등급을 넘어, 심화/소인수 과목(물리학Ⅱ, 과학융합 등)에 과감히 도전하여 얻은 원점수와 세특 내 '개념 이해의 깊이'를 정성 평가.
+- 진로 역량: 지식을 수동적으로 암기하지 않고, 수업 중 생긴 의문을 독서나 탐구 보고서로 확장하는 '꼬리를 무는 심화 탐구'를 최고점으로 평가.
+- 공동체 역량: 실험 및 모둠 활동 시 갈등을 조율하고 동료의 오류를 짚어주거나 배려하는 태도.
+
+3. 자연계열 / 과학 교과(물리 등) 특화 서술 가이드 (서울대/연세대 기준)
+- 과학적 탐구 프로세스: 교과서 진도를 넘어 [가설 설정 ➔ 실험 설계 및 변인 통제 ➔ 데이터 수집 ➔ 오차 및 실패 요인 분석 ➔ 재수정 원인 도출]로 이어지는 과정이 드러나야 함.
+- 수학적 모델링: 복잡한 물리·공학적 현상을 수학적으로 해석하고 논리적으로 검증하는 과제 집착력 강조.
+- 실패의 가치: 실험이 한 번에 성공한 것보다, 실패 원인을 물리적 법칙으로 규명하고 다시 도전하여 결론을 도출하는 '주도적 해결 과정'을 극찬함.`; 
+
+// ─────────────────────────────────────────────────────────
+// 🚀 GEMS AI 비서 - 기존 3.5-flash 안정화 버전 (에러 없는 오리지널 모드)
+// ─────────────────────────────────────────────────────────
+
+
+window.runGemsEngine = async function() {
+    const memo = document.getElementById("gems-obs-input")?.value || ""; 
+    const resultBox = document.getElementById("gems-result-box");
+    const btn = document.getElementById("gems-submit-btn");
+
+if(!memo || memo.trim() === "") { 
+        alert("학생 메모를 입력하세요!"); 
+        return; 
+    }
+
+    if(resultBox) resultBox.value = "AI 비서가 지침서를 분석하여 생기부 문장을 정성껏 작성하고 있습니다...";
+    if(btn) btn.disabled = true;
+
+    try {
+        // 1. 주소는 안정적인 2.5-flash 유지 (자동 캐싱 적용)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMS_API_KEY}`;
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            // 21K의 거대한 지침서가 완벽히 고정되어 맨 앞에 와야 자동 캐싱이 깨지지 않습니다.
+                            { text: `[시스템 지침 및 성취기준]\n${GEMS_SYSTEM_PROMPT}\n\n[작성 예시 자료]\n${GEMS_REFERENCE_DATA}\n\n` },
+                            { text: `[이번에 작성할 학생 관찰 메모]\n${memo}` }
+                        ]
+                    }
+                ],
+                // 💡 답변 퀄리티 향상을 위한 핵심 설정치 튜닝!
+                generationConfig: {
+                    temperature: 0.4,       // 지나친 헛소리나 템플릿 이탈을 막고 지침서대로 격조 있게 쓰도록 제한
+                    topP: 0.8,              // 문맥상 가장 자연스럽고 세련된 단어들 위주로 엄선해서 문장 구성
+                    maxOutputTokens: 2548   // 종합의견까지 중간에 끊기지 않고 넉넉하게 출력되도록 볼륨 확장
+                }
+            })
+        });
+
+        // ⭐ 503 서버 다운 예외 방어막 설치
+        if (response.status === 503) {
+            if(resultBox) resultBox.value = "구글 API 서버가 일시적인 과부하 상태입니다. 3초만 기다리신 후 [다시 한 번 더] 버튼을 눌러주세요!";
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
+        } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            // 성공적으로 명품 문장이 생성되면 화면에 뿌려줍니다.
+            if(resultBox) resultBox.value = data.candidates[0].content.parts[0].text;
+            
+            // F12 콘솔창에서 자동 캐싱으로 요금 아끼고 있는지 감시
+            if (data.usageMetadata) {
+                console.log("=== 2.5 Flash 자동 캐싱 모니터링 ===");
+                console.log("이번 학생 총 토큰:", data.usageMetadata.totalTokenCount);
+                console.log("★ 캐시 처리되어 요금 면제된 토큰:", data.usageMetadata.cachedContentTokenCount || 0);
+            }
+        } else {
+            if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
+        }
+
+    } catch (error) {
+        if(resultBox) resultBox.value = "연동 오류가 발생했습니다: " + error.message;
+        console.error(error);
+    } finally {
+        if(btn) btn.disabled = false;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// 📋 상담 관리자 기능 (admin.html 통합)
+// ═══════════════════════════════════════════════════════════
+
+// ── 상담 관리자 초기화 ──
+function admInitApp() {
+  const now = new Date();
+  admYear = now.getFullYear();
+  admMonth = now.getMonth();
+  const dateEl = document.getElementById('adm-header-date');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('ko-KR');
+  // 달력 초기 렌더 (slotsCache가 이미 로드되면 자동 호출되므로 빈 상태로 한 번만 그립니다)
+  admRenderCal();
+}
+
+// ── 오늘 상담 알림 ──
+function admMaybeShowTodayAlert() {
+  if (!_slotsReady || !_bookingsReady || adm_alertShown) return;
+  adm_alertShown = true;
+
+  const _d = new Date();
+  const today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`;
+  const books = bookingsCache[today] || [];
+  if (!books.length) return;
+
+  const slotData = slotsCache[today] || {};
+  const customs  = slotData.custom || [];
+  const FIXED_LABEL = { lunch: '점심 상담', after: '방과후 상담' };
+
+  const todayLabelEl = document.getElementById('today-date-label');
+  if (todayLabelEl) todayLabelEl.textContent = `📅 ${today}`;
+
+  const listEl = document.getElementById('today-booking-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  books.sort((a, b) => {
+    const order = { lunch: 0, after: 1, custom: 2 };
+    return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+  }).forEach(b => {
+    let tagClass = b.type;
+    let tagLabel = FIXED_LABEL[b.type] || '커스텀';
+    let timeStr  = ADM_FIXED_TIMES[b.type] || '';
+    if (b.type === 'custom') {
+      const cs = customs[b.customIdx];
+      if (cs) { tagLabel = cs.name; timeStr = `${cs.start} – ${cs.end}`; }
+    }
+    const item = document.createElement('div');
+    item.className = 'today-booking-item';
+    item.innerHTML = `
+      <span class="today-slot-tag ${tagClass}">${tagLabel}</span>
+      <div>
+        <div class="today-booking-name">${b.name}</div>
+        <div class="today-booking-time">${timeStr}</div>
+      </div>
+    `;
+    listEl.appendChild(item);
+  });
+
+  const todayOverlay = document.getElementById('today-overlay');
+  if (todayOverlay) todayOverlay.classList.add('show');
+
+  const gotoBtn = document.getElementById('today-goto-btn');
+  if (gotoBtn) gotoBtn.onclick = () => {
+    todayOverlay.classList.remove('show');
+    admSelectDate(today);
+    const [y, m] = today.split('-').map(Number);
+    admYear = y; admMonth = m - 1;
+    admRenderCal();
+    switchTab('counsel');
+  };
+}
+
+// ── 달력 ──
+window.admChangeMonth = (dir) => {
+  admMonth += dir;
+  if (admMonth > 11) { admMonth = 0; admYear++; }
+  else if (admMonth < 0) { admMonth = 11; admYear--; }
+  admRenderCal();
+};
+
+function admFmtDate(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function admRenderCal() {
+  const titleEl = document.getElementById('adm-cal-title');
+  if (!titleEl) return;
+  titleEl.textContent = `${admYear}년 ${admMonth+1}월`;
+  const grid = document.getElementById('adm-cal-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const firstDay = new Date(admYear, admMonth, 1).getDay();
+  const lastDate = new Date(admYear, admMonth+1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const key = admFmtDate(admYear, admMonth, d);
+    const s = slotsCache[key] || {};
+    const cell = document.createElement('div');
+    cell.className = `cal-cell ${key === admSelectedDate ? 'selected' : ''}`;
+    cell.onclick = () => admSelectDate(key);
+    cell.innerHTML = `<div class="cell-date">${d}</div>`;
+    if (s.lunch) cell.innerHTML += `<div class="slot-badge lunch-open"><span>점심</span></div>`;
+    if (s.after)  cell.innerHTML += `<div class="slot-badge after-open"><span>방과후</span></div>`;
+    const customs = s.custom || [];
+    customs.filter(c => c.open).forEach(c => {
+      cell.innerHTML += `<div class="slot-badge custom-open"><span>${c.name}</span></div>`;
+    });
+    grid.appendChild(cell);
+  }
+}
+
+function admSelectDate(key) {
+  admSelectedDate = key;
+  admRenderCal();
+  admRenderSlotPanel(key);
+  admRenderBookingPanel(key);
+  const addSlot = document.getElementById('adm-add-slot-section');
+  if (addSlot) addSlot.style.display = 'block';
+}
+
+// ── 슬롯 패널 ──
+function admRenderSlotPanel(key) {
+  const s = slotsCache[key] || { lunch: false, after: false, custom: [] };
+  const books = bookingsCache[key] || [];
+  const titleEl = document.getElementById('adm-slot-title');
+  if (titleEl) titleEl.textContent = key;
+  const rows = document.getElementById('adm-slot-rows');
+  if (!rows) return;
+  rows.innerHTML = '';
+
+  ['lunch', 'after'].forEach(type => {
+    const hasBook = books.some(b => b.type === type);
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+    row.innerHTML = `
+      <div>
+        <div class="slot-label ${type}">${type === 'lunch' ? '점심 상담' : '방과후 상담'}</div>
+        <div class="slot-time">${ADM_FIXED_TIMES[type]}</div>
+        ${hasBook ? '<div style="color:orange;font-size:11px">※ 예약 있음 (닫기 불가)</div>' : ''}
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${s[type] ? 'checked' : ''} ${hasBook ? 'disabled' : ''}
+          onchange="window.admToggleSlot('${key}', '${type}', this.checked)">
+        <span class="toggle-track"></span>
+      </label>
+    `;
+    rows.appendChild(row);
+  });
+
+  const customs = s.custom || [];
+  customs.forEach((c, idx) => {
+    const hasBook = books.some(b => b.type === 'custom' && b.customIdx === idx);
+    const row = document.createElement('div');
+    row.className = 'custom-slot-row';
+    row.innerHTML = `
+      <div class="custom-slot-info">
+        <div class="custom-slot-name">✦ ${c.name}</div>
+        <div class="custom-slot-time">${c.start} – ${c.end}</div>
+        ${hasBook ? '<div style="color:orange;font-size:11px">※ 예약 있음</div>' : ''}
+      </div>
+      <div class="custom-slot-actions">
+        ${!hasBook ? `<button class="del-slot-btn" onclick="window.admDeleteCustomSlot('${key}', ${idx})">삭제</button>` : ''}
+        <label class="toggle">
+          <input type="checkbox" ${c.open ? 'checked' : ''} ${hasBook ? 'disabled' : ''}
+            onchange="window.admToggleCustomSlot('${key}', ${idx}, this.checked)">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    `;
+    rows.appendChild(row);
+  });
+}
+
+// ── 슬롯 토글 ──
+window.admToggleSlot = async (date, type, val) => {
+  await setDoc(doc(db, 'slots', date), { [type]: val }, { merge: true });
+};
+
+window.admAddCustomSlot = async () => {
+  if (!admSelectedDate) return;
+  const name  = document.getElementById('adm-cs-name').value.trim();
+  const start = document.getElementById('adm-cs-start').value.trim();
+  const end   = document.getElementById('adm-cs-end').value.trim();
+  if (!name) { alert('슬롯 이름을 입력하세요.'); return; }
+  if (!start || !end) { alert('시작/종료 시간을 입력하세요.'); return; }
+  const ref = doc(db, 'slots', admSelectedDate);
+  const snap = await getDoc(ref);
+  const existing = snap.exists() ? (snap.data().custom || []) : [];
+  await setDoc(ref, { custom: [...existing, { name, start, end, open: true }] }, { merge: true });
+  document.getElementById('adm-cs-name').value = '';
+  document.getElementById('adm-cs-start').value = '';
+  document.getElementById('adm-cs-end').value = '';
+};
+
+window.admToggleCustomSlot = async (date, idx, val) => {
+  const ref = doc(db, 'slots', date);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const customs = snap.data().custom || [];
+  customs[idx].open = val;
+  await updateDoc(ref, { custom: customs });
+};
+
+window.admDeleteCustomSlot = async (date, idx) => {
+  if (!confirm('이 슬롯을 삭제할까요?')) return;
+  const ref = doc(db, 'slots', date);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const customs = snap.data().custom || [];
+  customs.splice(idx, 1);
+  await updateDoc(ref, { custom: customs });
+};
+
+// ── 예약 패널 ──
+function admRenderBookingPanel(key) {
+  const books = bookingsCache[key] || [];
+  const list = document.getElementById('adm-booking-list');
+  const subEl = document.getElementById('adm-booking-sub');
+  if (!list) return;
+  if (subEl) subEl.textContent = `${key} 예약 목록`;
+  list.innerHTML = '';
+
+  if (!books.length) {
+    list.innerHTML = '<p class="no-date-msg">예약이 없습니다.</p>';
+    return;
+  }
+
+  const slotData = slotsCache[key] || {};
+  const customs = slotData.custom || [];
+
+  books.sort((a, b) => {
+    const order = { lunch: 0, after: 1, custom: 2 };
+    return (order[a.type] ?? 2) - (order[b.type] ?? 2);
+  }).forEach(b => {
+    const item = document.createElement('div');
+    item.className = 'booking-item';
+    let typeBadge = '';
+    let slotName = '';
+    if (b.type === 'lunch') {
+      typeBadge = '<span class="b-type lunch">점심</span>';
+    } else if (b.type === 'after') {
+      typeBadge = '<span class="b-type after">방과후</span>';
+    } else if (b.type === 'custom') {
+      typeBadge = '<span class="b-type custom">커스텀</span>';
+      const cs = customs[b.customIdx];
+      if (cs) slotName = `<div class="b-slot">✦ ${cs.name} (${cs.start}–${cs.end})</div>`;
+    }
+    const hasRecord = Object.values(recordsCache).some(r => r.bookingId === b.id);
+    item.innerHTML = `
+      ${typeBadge}<span class="b-name">${b.name}</span>
+      ${slotName}
+      <div class="b-content">${b.content || ''}</div>
+      <button class="b-record ${hasRecord ? 'b-has-record' : ''}" onclick="window.admOpenRecordModal('${b.id}', '${b.name}', '${b.date}', '${b.type}')">기록 ${hasRecord ? '수정' : '작성'}</button>
+      <button class="b-delete" onclick="window.admDeleteBooking('${b.id}')">삭제</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+window.admDeleteBooking = async (id) => {
+  if (confirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
+    await deleteDoc(doc(db, 'bookings', id));
+  }
+};
+
+// ── 상담 기록 ──
+window.admOpenRecordModal = async (bookingId, name, date, type) => {
+  _currentRecordBookingId = bookingId;
+  const FIXED_LABEL = { lunch: '점심 상담', after: '방과후 상담', custom: '커스텀 상담' };
+  const infoEl = document.getElementById('rec-info');
+  if (infoEl) infoEl.textContent = `${date}  ${FIXED_LABEL[type] || type}  —  ${name}`;
+  const existing = Object.values(recordsCache).find(r => r.bookingId === bookingId);
+  const recContent = document.getElementById('rec-content');
+  const recPrivate = document.getElementById('rec-private');
+  if (recContent) recContent.value = existing?.content || '';
+  if (recPrivate) recPrivate.value = existing?.privateNote || '';
+  const overlay = document.getElementById('rec-overlay');
+  if (overlay) overlay.classList.add('show');
+};
+
+window.admSaveRecord = async () => {
+  const content     = document.getElementById('rec-content').value.trim();
+  const privateNote = document.getElementById('rec-private').value.trim();
+  if (!content) { alert('상담 내용을 입력하세요.'); return; }
+  const existingEntry = Object.entries(recordsCache).find(([, r]) => r.bookingId === _currentRecordBookingId);
+  const ref = existingEntry
+    ? doc(db, 'records', existingEntry[0])
+    : doc(collection(db, 'records'));
+  await setDoc(ref, {
+    bookingId: _currentRecordBookingId,
+    content,
+    privateNote,
+    updatedAt: Date.now()
+  }, { merge: true });
+  const overlay = document.getElementById('rec-overlay');
+  if (overlay) overlay.classList.remove('show');
+};
+
+// ── 학생 이력 조회 ──
+window.admSearchHistory = async () => {
+  const name = document.getElementById('hist-name-input').value.trim();
+  if (!name) { alert('이름을 입력하세요.'); return; }
+  const body = document.getElementById('hist-body');
+  body.innerHTML = '<p class="hist-empty">조회 중...</p>';
+  const q = query(collection(db, 'bookings'), where('name', '==', name));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    body.innerHTML = `<p class="hist-empty">${name} 학생의 상담 내역이 없습니다.</p>`;
+    return;
+  }
+  const bookings = [];
+  snap.forEach(d => bookings.push({ id: d.id, ...d.data() }));
+  bookings.sort((a, b) => a.date > b.date ? -1 : 1);
+  const FIXED_LABEL = { lunch: '점심 상담', after: '방과후 상담', custom: '커스텀 상담' };
+  const FIXED_TIME  = { lunch: '12:40–13:00', after: '15:10–15:30' };
+  body.innerHTML = '';
+  for (const b of bookings) {
+    const record = Object.values(recordsCache).find(r => r.bookingId === b.id);
+    const slotInfo = slotsCache[b.date] || {};
+    let typeLabel = FIXED_LABEL[b.type] || b.type;
+    let timeStr   = FIXED_TIME[b.type] || '';
+    if (b.type === 'custom') {
+      const cs = (slotInfo.custom || [])[b.customIdx];
+      if (cs) { typeLabel = cs.name; timeStr = `${cs.start}–${cs.end}`; }
+    }
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+    item.innerHTML = `
+      <div class="hist-item-header">
+        <span class="hist-item-date">${b.date}</span>
+        <span class="b-type ${b.type}">${typeLabel}</span>
+        <span style="font-size:.75rem;color:var(--muted)">${timeStr}</span>
+      </div>
+      <div class="hist-item-body">
+        ${b.content ? `<div class="hist-request-text">💬 신청 내용: ${b.content}</div>` : ''}
+        ${record ? `
+          <div class="hist-section-label">상담 기록</div>
+          <div class="hist-section-text">${record.content}</div>
+          ${record.privateNote ? `
+            <div class="hist-private-box">
+              <div class="hist-private-label">🔒 비공개 메모</div>
+              <div class="hist-private-text">${record.privateNote}</div>
+            </div>
+          ` : ''}
+        ` : '<div style="color:#bbb;font-size:.82rem">기록 없음</div>'}
+      </div>
+    `;
+    body.appendChild(item);
+  }
+};
+
+// ── 통계 & 내보내기 ──
+window.openStatModal = () => {
+  document.getElementById('stat-overlay').classList.add('show');
+  admRenderStatTab('overview');
+  document.querySelectorAll('.stat-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+};
+
+window.admSwitchStatTab = (tab, el) => {
+  _statTab = tab;
+  document.querySelectorAll('.stat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  admRenderStatTab(tab);
+};
+
+function admGetAllBookings() {
+  const all = [];
+  Object.values(bookingsCache).forEach(arr => arr.forEach(b => all.push(b)));
+  return all.sort((a,b) => a.date < b.date ? -1 : 1);
+}
+
+function admRenderStatTab(tab) {
+  const body = document.getElementById('stat-body');
+  if (!body) return;
+  const all = admGetAllBookings();
+  if (tab === 'overview') admRenderOverview(body, all);
+  else if (tab === 'monthly') admRenderMonthly(body, all);
+  else admRenderExport(body);
+}
+
+function admRenderOverview(body, all) {
+  const total = all.length;
+  const byType = { lunch: 0, after: 0, custom: 0 };
+  const byName = {};
+  all.forEach(b => {
+    byType[b.type] = (byType[b.type] || 0) + 1;
+    byName[b.name] = (byName[b.name] || 0) + 1;
+  });
+  const topStudents = Object.entries(byName).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const maxCnt = topStudents[0]?.[1] || 1;
+  const TYPE_LABEL = { lunch: '점심 상담', after: '방과후 상담', custom: '커스텀 상담' };
+  body.innerHTML = `
+    <div class="stat-section">
+      <div class="stat-summary-grid">
+        <div class="stat-summary-card"><div class="stat-summary-num">${total}</div><div class="stat-summary-label">전체 상담 횟수</div></div>
+        <div class="stat-summary-card"><div class="stat-summary-num">${Object.keys(byName).length}</div><div class="stat-summary-label">상담 학생 수</div></div>
+        <div class="stat-summary-card"><div class="stat-summary-num">${topStudents[0]?.[1] || 0}</div><div class="stat-summary-label">최다 상담 횟수</div></div>
+      </div>
+    </div>
+    <div class="stat-section">
+      <h4>슬롯 유형별 현황</h4>
+      ${['lunch','after','custom'].map(t => `
+        <div class="stat-row">
+          <div class="stat-bar-label">${TYPE_LABEL[t]}</div>
+          <div class="stat-bar-wrap"><div class="stat-bar ${t}" style="width:${total ? (byType[t]||0)/total*100 : 0}%"></div></div>
+          <div class="stat-count">${byType[t]||0}회</div>
+        </div>`).join('')}
+    </div>
+    <div class="stat-section">
+      <h4>자주 온 학생 TOP 10</h4>
+      <ul class="stat-top-list">
+        ${topStudents.map(([name, cnt], i) => `
+          <li class="stat-top-item">
+            <span class="stat-top-rank">${i+1}</span>
+            <span class="stat-top-name">${name}</span>
+            <div class="stat-bar-wrap" style="max-width:160px"><div class="stat-bar total" style="width:${cnt/maxCnt*100}%"></div></div>
+            <span class="stat-top-cnt">${cnt}회</span>
+          </li>`).join('')}
+        ${topStudents.length === 0 ? '<li class="stat-top-item" style="color:#bbb;justify-content:center">데이터 없음</li>' : ''}
+      </ul>
+    </div>
+  `;
+}
+
+function admRenderMonthly(body, all) {
+  const monthly = {};
+  all.forEach(b => {
+    const ym = b.date.slice(0, 7);
+    if (!monthly[ym]) monthly[ym] = { lunch:0, after:0, custom:0 };
+    monthly[ym][b.type] = (monthly[ym][b.type] || 0) + 1;
+  });
+  const months = Object.keys(monthly).sort();
+  const maxTotal = Math.max(...months.map(m => monthly[m].lunch + monthly[m].after + (monthly[m].custom||0)), 1);
+  if (!months.length) { body.innerHTML = '<p class="hist-empty">데이터가 없습니다.</p>'; return; }
+  body.innerHTML = `
+    <div class="stat-section">
+      <h4>월별 상담 횟수</h4>
+      ${months.slice().reverse().map(ym => {
+        const d = monthly[ym];
+        const total = d.lunch + d.after + (d.custom||0);
+        return `
+          <div class="stat-row">
+            <div class="stat-bar-label">${ym}</div>
+            <div class="stat-bar-wrap">
+              <div style="display:flex;height:100%">
+                <div style="width:${d.lunch/maxTotal*100}%;background:var(--lunch-accent)" title="점심 ${d.lunch}"></div>
+                <div style="width:${d.after/maxTotal*100}%;background:var(--after-accent)" title="방과후 ${d.after}"></div>
+                <div style="width:${(d.custom||0)/maxTotal*100}%;background:var(--custom-accent)" title="커스텀 ${d.custom||0}"></div>
+              </div>
+            </div>
+            <div class="stat-count">${total}회</div>
+          </div>`;
+      }).join('')}
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:.75rem">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--lunch-accent);display:inline-block;border-radius:2px"></span>점심</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--after-accent);display:inline-block;border-radius:2px"></span>방과후</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--custom-accent);display:inline-block;border-radius:2px"></span>커스텀</span>
+      </div>
+    </div>
+  `;
+}
+
+function admRenderExport(body) {
+  const now = new Date();
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  body.innerHTML = `
+    <div class="stat-section">
+      <h4>상담 기록 내보내기</h4>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">예약 정보 + 상담 기록을 CSV 파일로 저장합니다.<br>기간을 지정하거나 전체 내보내기가 가능합니다.</p>
+      <div class="export-row">
+        <span style="font-size:.82rem;font-weight:600">기간</span>
+        <input type="month" id="exp-from" value="${thisMonth}">
+        <span style="font-size:.82rem">~</span>
+        <input type="month" id="exp-to" value="${thisMonth}">
+        <button class="export-btn csv" onclick="window.admExportCSV(false)">📥 기간 CSV</button>
+      </div>
+      <div class="export-row" style="margin-top:10px">
+        <button class="export-btn excel" onclick="window.admExportCSV(true)" style="background:var(--ink)">📥 전체 CSV</button>
+      </div>
+      <p class="export-hint">※ CSV는 엑셀에서 바로 열 수 있습니다. 비공개 메모 포함.</p>
+    </div>
+  `;
+}
+
+window.admExportCSV = (allData) => {
+  const all = admGetAllBookings();
+  const FIXED_LABEL = { lunch: '점심 상담', after: '방과후 상담', custom: '커스텀 상담' };
+  const FIXED_TIME  = { lunch: '12:40-13:00', after: '15:10-15:30' };
+  let rows = all;
+  if (!allData) {
+    const from = document.getElementById('exp-from')?.value || '';
+    const to   = document.getElementById('exp-to')?.value   || '';
+    if (from) rows = rows.filter(b => b.date.slice(0,7) >= from);
+    if (to)   rows = rows.filter(b => b.date.slice(0,7) <= to);
+  }
+  if (!rows.length) { alert('해당 기간에 데이터가 없습니다.'); return; }
+  const headers = ['날짜','슬롯','시간','학생이름','신청내용','상담기록','비공개메모'];
+  const csvRows = [headers];
+  rows.forEach(b => {
+    const slotInfo = slotsCache[b.date] || {};
+    let typeLabel = FIXED_LABEL[b.type] || b.type;
+    let timeStr   = FIXED_TIME[b.type] || '';
+    if (b.type === 'custom') {
+      const cs = (slotInfo.custom || [])[b.customIdx];
+      if (cs) { typeLabel = cs.name; timeStr = cs.start + '-' + cs.end; }
+    }
+    const rec = Object.values(recordsCache).find(r => r.bookingId === b.id);
+    csvRows.push([
+      b.date, typeLabel, timeStr, b.name,
+      (b.content || '').replace(/\n/g, ' '),
+      (rec ? rec.content || '' : '').replace(/\n/g, ' '),
+      (rec ? rec.privateNote || '' : '').replace(/\n/g, ' ')
+    ]);
+  });
+  const BOM = '\uFEFF';
+  const lines = csvRows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(','));
+  const csv = BOM + lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  a.href = url;
+  a.download = '상담기록_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ═══════════════════════════════════════════════════════════
+
 </script>
 </body>
 </html>
