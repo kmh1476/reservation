@@ -775,6 +775,65 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   .adm-main-wrap { grid-template-columns: 1fr; }
   .adm-header { padding: 0 16px; }
 }
+
+/* ── 비밀번호 변경 모달 전체 배경 (어둡게 처리) ── */
+.pw-modal-overlay {
+  display: none;       /* 기본 상태는 숨김 */
+  position: fixed;     /* 화면에 고정 */
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* 뒷배경을 어둡게 */
+  justify-content: center; /* 가로 가운데 정렬 */
+  align-items: center;     /* 세로 가운데 정렬 */
+  z-index: 99999;          /* 화면 가장 맨 위에 띄우기 */
+}
+
+/* ── 모달 실제 하얀색 박스 ── */
+.pw-modal-box {
+  background: #222;    /* 어두운 테마용 배경색 (밝은 테마면 #fff로 변경) */
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 320px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* ── 모달 헤더 (제목과 X버튼) ── */
+.pw-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+.pw-modal-header h3 { margin: 0; font-size: 1.1rem; }
+.modal-close { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem; }
+
+/* ── 모달 바디 (인풋창과 버튼) ── */
+.pw-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pw-modal-body input {
+  padding: 8px 12px;
+  background: #333;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+.pw-modal-save {
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.pw-modal-save:hover { background: #357abd; }
+.pw-modal-msg { text-align: center; font-size: 0.85rem; margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -807,8 +866,10 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
       <span class="p-highlight" id="p-text">조회 중..</span>
       <span class="p-timer" id="p-timer"></span>
     </div>
-    <span class="topbar-clock" id="topbar-clock"></span>
+    <span class="topbar-clock" id="topbar-clock"></span>  
     <button onclick="openPwModal()" title="비밀번호 변경" style="background:none;border:none;color:#888;cursor:pointer;font-size:0.8rem;padding:2px 4px;line-height:1;" >🔑</button>
+    <button onclick="openSettingsModal()" style="background:none; border:1px solid #555; color:#fff; cursor:pointer; padding:2px 6px; border-radius:3px; font-size:0.75rem;">설정</button>
+    <button onclick="doLogout()" style="background:none; border:none; color:#aaa; cursor:pointer;">로그아웃</button>
   </div>
 </div>
 
@@ -1172,7 +1233,7 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     </div>
   </div>
 
-  <div id="gems-ai-body" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+<div id="gems-ai-body" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
       <span style="font-size: 0.8rem; font-weight: bold; color: var(--muted);">학생 관찰 메모</span>
@@ -1184,10 +1245,17 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
       </div>
     </div>
 
+    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px;">
+      <label for="gems-byte-limit" style="font-size: 0.75rem; color: var(--muted);">생성 길이 제한</label>
+      <input type="number" id="gems-byte-limit" value="1000" min="100" step="50"
+        style="width: 72px; background: var(--paper); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 0.75rem; color: var(--ink); font-family: 'Pretendard', sans-serif; outline: none; text-align: right;">
+      <span style="font-size: 0.75rem; color: var(--muted);">Byte 이내</span>
+    </div>
+
     <textarea id="gems-obs-input" class="memo-input" style="height:120px; resize:none; font-size:0.85rem;" placeholder="여기에 학생 관찰 메모를 입력하거나 위 버튼을 눌러 불러오세요..."></textarea>
     
     <button id="gems-submit-btn" class="memo-add-btn" style="background:var(--accent2); font-size:0.9rem; padding:12px; border-radius:6px;" onclick="runGemsEngine()">생기부 생성하기 🚀</button>
-    
+<button id="gems-stop-btn" class="memo-add-btn" style="background:#999; font-size:0.9rem; padding:12px; border-radius:6px; display:none;" onclick="stopGemsEngine()">중지 ⏹</button>
     <textarea id="gems-result-box" class="memo-input" style="height:180px; resize:none; font-size:0.85rem; background:var(--paper);" readonly placeholder="AI가 작성한 결과가 여기에 출력됩니다..."></textarea>
     
     <div style="text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: -8px; margin-bottom: 2px;">
@@ -1197,9 +1265,119 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   
 </div>
 
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>사용자 설정</h2>
+      <button class="modal-close" onclick="document.getElementById('settingsModal').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <label>학교 검색</label>
+      <div style="display:flex; gap:5px; margin-bottom:15px;">
+        <input type="text" id="searchSchoolName" placeholder="학교명 입력" style="flex:1; padding:8px;">
+        <button onclick="searchSchool()">검색</button>
+      </div>
+      
+      <select id="schoolSelect" style="width:100%; margin-bottom:20px;"></select>
+      <div id="schoolResultDiv" style="display: none; margin-bottom: 20px;">
+        <button onclick="applySchoolCode()" class="tt-save-btn">선택한 학교 적용하기</button>
+      </div>
+      
+
+      <label>일과 시작 시간</label>
+      <input type="time" id="startTime" value="08:30" style="display:block; margin-bottom:10px; width:100%;">
+
+      <label>점심시간 직전 교시</label>
+      <div style="margin-bottom:15px;">
+        <label><input type="radio" name="lunchAfter" value="4" checked> 4교시 후</label> &nbsp;
+        <label><input type="radio" name="lunchAfter" value="5"> 5교시 후</label>
+      </div>
+
+      <label>수업 시간 일괄 적용</label>
+      <div style="display:flex; gap:5px; margin-bottom:20px;">
+        <button onclick="applySchedule(50)">50분</button>
+        <button onclick="applySchedule(45)">45분</button>
+        <button onclick="applySchedule(40)">40분</button>
+        <button onclick="applySchedule(35)">35분</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { signOut, getAuth} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";       // 로그아웃용
+
+// 렌더러 스크립트 최상단(혹은 DOMContentLoaded 직후)에 추가
+(function () {
+  const originalAlert = window.alert;
+  window.alert = function (message) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.4);
+      display:flex; align-items:center; justify-content:center;
+      z-index:99999;`;
+    const box = document.createElement('div');
+    box.style.cssText = `
+      background:#fff; padding:24px 28px; border-radius:8px;
+      max-width:360px; box-shadow:0 4px 20px rgba(0,0,0,0.2);
+      font-size:15px; line-height:1.5; text-align:center;`;
+    box.innerHTML = `<div style="margin-bottom:16px;">${String(message)}</div>
+      <button id="__customAlertOk" style="padding:6px 20px; border:none; border-radius:4px; background:#3b82f6; color:#fff; cursor:pointer;">확인</button>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    const btn = box.querySelector('#__customAlertOk');
+    btn.focus();
+    const close = () => {
+      overlay.remove();
+      // 모달이 닫힌 후 직전 입력창에 포커스 복귀
+      const last = document.activeElement;
+      setTimeout(() => last && last.blur && last.blur(), 0);
+    };
+    btn.addEventListener('click', close);
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === 'Escape') close(); });
+  };
+})();
+
+function customConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.4);
+      display:flex; align-items:center; justify-content:center;
+      z-index:99999;`;
+    const box = document.createElement('div');
+    box.style.cssText = `
+      background:#fff; padding:24px 28px; border-radius:8px;
+      max-width:360px; box-shadow:0 4px 20px rgba(0,0,0,0.2);
+      font-size:15px; line-height:1.5; text-align:center; white-space:pre-line;`;
+    box.innerHTML = `
+      <div style="margin-bottom:16px;">${message}</div>
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <button id="__confirmOk" style="padding:6px 20px; border:none; border-radius:4px; background:#3b82f6; color:#fff; cursor:pointer;">확인</button>
+        <button id="__confirmCancel" style="padding:6px 20px; border:none; border-radius:4px; background:#e5e7eb; color:#333; cursor:pointer;">취소</button>
+      </div>`;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    const okBtn = box.querySelector('#__confirmOk');
+    const cancelBtn = box.querySelector('#__confirmCancel');
+    okBtn.focus();
+
+    const close = (result) => {
+      overlay.remove();
+      resolve(result);
+    };
+    okBtn.addEventListener('click', () => close(true));
+    cancelBtn.addEventListener('click', () => close(false));
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') close(true);
+      if (e.key === 'Escape') close(false);
+    });
+  });
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFGcLsVUPWrczjPyT4caEg1o7zdKGN-b8",
@@ -1209,8 +1387,19 @@ const firebaseConfig = {
   messagingSenderId: "51705550332",
   appId: "1:51705550332:web:67766fdeb1214524190e79"
 };
+
+
 const app = initializeApp(firebaseConfig);
+window.app = app;
+
+// 2. 앱이 켜진 것을 확인한 후, 안전하게 auth와 db를 로드합니다.
+const auth = getAuth(app);
+window.auth = auth;
+
 const db = getFirestore(app);
+window.db = db;
+
+console.log("🔥 파이어베이스(App, Auth, DB) 거실에 등록 완료!");
 
 const DAYS = ['mon','tue','wed','thu','fri'];
 const DAY_LABELS = ['월','화','수','목','금'];
@@ -1230,9 +1419,49 @@ let _statTab = 'overview';
 const ADM_FIXED_TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
 let memos = [];
 
-const NEIS_API_KEY = "fb89c0e73fb7448cb1de95d45afda2d6";
-const OFFICE_CODE = "B10";
-const SCHOOL_CODE = "7010083";
+window.NEIS_API_KEY = "";
+window.GEMS_API_KEY = ""; 
+async function loadApiKeys() {
+  try {
+    // 1. Firestore에서 문서 가져오기
+    const docRef = doc(db, "config", "apiKeys"); 
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // 🔥 [디버깅] 파이어베이스에서 실제로 들고 온 필드명 눈으로 확인하기
+
+      // 2. NEIS 키 매칭 (대소문자 방어)
+      window.NEIS_API_KEY = data['NEIS:'] || data.NEIS || "";
+if (window.NEIS_API_KEY) window.NEIS_API_KEY = window.NEIS_API_KEY.trim();
+      
+      // 3. GEMINI 키 매칭 (다양한 스펠링 방어)
+      window.GEMS_API_KEY = data['GEMINI:'] || data.GEMINI || "";
+if (window.GEMS_API_KEY) window.GEMS_API_KEY = window.GEMS_API_KEY.trim();
+      
+      console.log("🔒 API Keys 로드 완료");
+
+      // 4. 키 주입 성공 후 급식/학사일정 함수 안전하게 호출
+      if (window.NEIS_API_KEY) {
+        if (typeof fetchNeisMeal === "function") fetchNeisMeal();
+        if (typeof fetchSchoolSchedule === "function") {
+          const now = new Date();
+          fetchSchoolSchedule(now.getFullYear(), now.getMonth() + 1);
+        }
+      }
+    } else {
+      console.error("API 키 문서를 찾을 수 없습니다. (경로 확인 필요)");
+    }
+  } catch (e) {
+    console.error("API 키 로드 중 치명적 실패:", e);
+  }
+}
+
+// 💡 HTML 로드가 끝나면 자동으로 키를 불러오게 설정
+window.addEventListener('DOMContentLoaded', loadApiKeys);
+window.OFFICE_CODE = "B10";
+window.SCHOOL_CODE = "7010083";
 
 const SCHOOL_SCHEDULE = [
   { period: 1, start: "08:20", end: "09:10" },
@@ -1280,15 +1509,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (pwInput)  pwInput.addEventListener('keydown', e => { if (e.key === 'Enter') window.doMainLogin(); });
 });
 
-// ── 비밀번호 변경 모달 ──
-window.openPwModal = function() { document.getElementById('pw-modal').classList.add('show'); };
-window.closePwModal = function() {
-  document.getElementById('pw-modal').classList.remove('show');
-  document.getElementById('pw-cur').value = '';
-  document.getElementById('pw-new').value = '';
-  document.getElementById('pw-new2').value = '';
-  document.getElementById('pw-modal-msg').textContent = '';
-};
+// // ── 비밀번호 변경 모달 ──
+// window.openPwModal = function() { document.getElementById('pw-modal').classList.add('show'); };
+// window.closePwModal = function() {
+//   document.getElementById('pw-modal').classList.remove('show');
+//   document.getElementById('pw-cur').value = '';
+//   document.getElementById('pw-new').value = '';
+//   document.getElementById('pw-new2').value = '';
+//   document.getElementById('pw-modal-msg').textContent = '';
+// };
+
+
 window.doChangePw = async function() {
   const cur = document.getElementById('pw-cur').value;
   const nw = document.getElementById('pw-new').value;
@@ -1418,6 +1649,7 @@ window.saveClassTabs = async function() {
 // ── 앱 초기화 (로그인 후 호출) ──
 async function initApp() {
   await loadClassTabs();
+  await loadApiKeys();
   renderClassTabBar();
   updateClock();
   fetchNeisMeal();
@@ -1454,12 +1686,19 @@ async function initApp() {
   });
   onSnapshot(doc(db,'cal_notes','data'), snap => {
     calNotes = snap.exists() ? (snap.data().notes||{}) : {};
-    renderMiniCalDots();
-    updateAlertBanner(); // 달력 메모 변경 시 알림 배너도 갱신
-    if (currentViewDate) {
-      const evts = (scheduleCache[`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`]||[]).filter(e=>e.date===currentViewDate);
-      showScheduleForDate(currentViewDate, evts, true);
-    }
+    window.calNotes = calNotes; // 확실하게 전역 변수로 공유
+  
+  // ⚠️ 기존 renderMiniCalDots(); 대신 달력 전체를 다시 그리도록 수정!
+  if (typeof renderMiniCal === "function") {
+    renderMiniCal(); 
+  }
+  // ─────────────────
+
+  updateAlertBanner(); // 달력 메모 변경 시 알림 배너도 갱신
+  if (currentViewDate) {
+    const evts = (scheduleCache[`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`]||[]).filter(e=>e.date===currentViewDate);
+    showScheduleForDate(currentViewDate, evts, true);
+  }
   });
   onSnapshot(collection(db,'ddays'), snap => {
     const container=document.getElementById('dday-container');const manageList=document.getElementById('dday-manage-list');
@@ -1493,98 +1732,202 @@ async function initApp() {
   admInitApp();
 }
 
-// ── 시계 ──
-function updateClock() {
-  const now = new Date();
-  const days = ['일','월','화','수','목','금','토'];
-  document.getElementById('topbar-date').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`;
-  document.getElementById('topbar-clock').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  updatePeriodStatus(now);
-}
-function updatePeriodStatus(now) {
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const seconds = now.getSeconds();
-  const txtEl = document.getElementById('p-text');
-  const timerEl = document.getElementById('p-timer');
-  
-  // 기존 하이라이트 지우기
-  document.querySelectorAll('#tt-body tr').forEach(tr => tr.classList.remove('current-period-row'));
+// 전역 변수 세팅
+  window.SCHOOL_SCHEDULE = [];
+  window.LUNCH_AFTER = 4; // 기본값 4교시
 
-  // 1교시 시작 시간과 마지막 교시 종료 시간 자동 추출
-  const firstStart = SCHOOL_SCHEDULE[0].start.split(':').map(Number);
-  const firstStartMins = firstStart[0] * 60 + firstStart[1];
-  const lastEnd = SCHOOL_SCHEDULE[SCHOOL_SCHEDULE.length-1].end.split(':').map(Number);
-  const lastEndMins = lastEnd[0] * 60 + lastEnd[1];
-
-  // 초 단위 타이머 계산 보정 (0초일 때 60초로 표기되는 버그 수정)
-  const secText = seconds === 0 ? 0 : 60 - seconds;
-  const minOffset = seconds === 0 ? 0 : 1;
-
-  // 1. 방과후 (7교시 종료 후)
-  if (currentMinutes >= lastEndMins) {
-    txtEl.textContent = "방과후";
-    timerEl.textContent = "";
-    return;
-  }
-
-  // 2. 일과 전 (1교시 시작 전)
-  if (currentMinutes < firstStartMins) {
-    const diff = firstStartMins - currentMinutes - minOffset;
-    txtEl.textContent = "일과 전";
-    timerEl.textContent = `${diff}분 ${secText}초 전`;
-    return;
-  }
-
-  let statusText = "", remainingText = "", currentPeriod = null;
-
-  for (let i = 0; i < SCHOOL_SCHEDULE.length; i++) {
-    const s = SCHOOL_SCHEDULE[i];
-    const [sH, sM] = s.start.split(':').map(Number);
-    const [eH, eM] = s.end.split(':').map(Number);
-    const st = sH * 60 + sM;
-    const et = eH * 60 + eM;
-
-    // 수업 시간 중
-    if (currentMinutes >= st && currentMinutes < et) {
-      currentPeriod = s.period;
-      const diff = et - currentMinutes - minOffset;
-      statusText = `${s.period}교시`;
-      remainingText = `${diff}분 ${secText}초 남음`;
-      break;
-    }
-
-    // 쉬는 시간 및 점심 시간
-    if (i < SCHOOL_SCHEDULE.length - 1) {
-      const ns = SCHOOL_SCHEDULE[i + 1];
-      const [nsH, nsM] = ns.start.split(':').map(Number);
-      const nst = nsH * 60 + nsM;
-
-      if (currentMinutes >= et && currentMinutes < nst) {
-        const diff = nst - currentMinutes - minOffset;
-        
-        // 4교시(s.period === 4)와 5교시(ns.period === 5) 사이는 점심시간으로 판별
-        if (s.period === 4 && ns.period === 5) {
-          statusText = "점심시간 🍱";
-        } else {
-          statusText = "쉬는 시간";
-        }
-        
-        remainingText = `${ns.period}교시까지 ${diff}분 ${secText}초`;
-        break;
+  // ── [A] Firebase 실시간 동기화 (핸드폰, PC 공통) ──
+  onSnapshot(doc(db, "schedules", "today"), (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      window.SCHOOL_SCHEDULE = data.list;
+      window.LUNCH_AFTER = data.lunchAfter || 4;
+      
+      // UI 동기화 (다른 기기에서 바꿨을 때 내 화면도 바뀜)
+      if(document.getElementById('startTime')) document.getElementById('startTime').value = data.startTime || "08:30";
+      const radioEl = document.querySelector(`input[name="lunchAfter"][value="${window.LUNCH_AFTER}"]`);
+      if(radioEl) radioEl.checked = true;
+      if (data.officeCode && data.schoolCode) {
+      const isChanged = (window.OFFICE_CODE !== data.officeCode || window.SCHOOL_CODE !== data.schoolCode);
+      
+      window.OFFICE_CODE = data.officeCode;
+      window.SCHOOL_CODE = data.schoolCode;
+      
+      // 만약 학교 코드가 기존과 달라졌다면, 급식/학사일정 함수를 새로 호출합니다.
+      if (isChanged) {
+        console.log(`학교 변경 감지됨: ${window.OFFICE_CODE} / ${window.SCHOOL_CODE}`);
+        // 💡 여기에 선생님이 기존에 쓰시던 급식/학사일정 호출 함수 이름을 넣어주세요!
+// 올바른 호출 방법
+      if (typeof fetchNeisMeals === "function") fetchNeisMeals(); 
+      if (typeof saveCalNotes === "function") saveCalNotes();
       }
     }
+    }
+
+
+
+
+  });
+
+  // ── [B] 시간표 자동 생성 및 저장 (버튼 클릭 시 실행) ──
+  window.applySchedule = async function(duration) {
+    const startTimeInput = document.getElementById('startTime').value;
+    if (!startTimeInput) return alert("시작 시간을 입력해주세요.");
+
+    const lunchAfterPeriod = Number(document.querySelector('input[name="lunchAfter"]:checked').value);
+    const [startH, startM] = startTimeInput.split(':').map(Number);
+    let currentMins = startH * 60 + startM;
+
+    const newSchedule = [];
+    const BREAK_TIME = 10;   // 일반 쉬는 시간 (10분)
+    const LUNCH_TIME = 60;   // 점심 시간 (60분)
+    const TOTAL_PERIODS = 7; // 총 7교시
+
+    for (let i = 1; i <= TOTAL_PERIODS; i++) {
+      const sH = Math.floor(currentMins / 60);
+      const sM = currentMins % 60;
+      const startTimeStr = `${String(sH).padStart(2,'0')}:${String(sM).padStart(2,'0')}`;
+
+      currentMins += duration;
+      const eH = Math.floor(currentMins / 60);
+      const eM = currentMins % 60;
+      const endTimeStr = `${String(eH).padStart(2,'0')}:${String(eM).padStart(2,'0')}`;
+
+      newSchedule.push({ period: i, start: startTimeStr, end: endTimeStr });
+
+      // 선택한 교시 이후에 점심시간 적용
+      if (i === lunchAfterPeriod) {
+        currentMins += LUNCH_TIME; 
+      } else {
+        currentMins += BREAK_TIME; 
+      }
+    }
+
+    try {
+      await setDoc(doc(db, "schedules", "today"), {
+        startTime: startTimeInput,
+        duration: duration,
+        lunchAfter: lunchAfterPeriod,
+        list: newSchedule,
+        updatedAt: new Date()
+      });
+      alert(`${duration}분 수업 시간표가 전 기기에 적용되었습니다!`);
+    } catch (e) {
+      console.error("저장 에러: ", e);
+    }
   }
 
-  // 화면에 텍스트 렌더링
-  txtEl.innerHTML = statusText;
-  timerEl.textContent = remainingText;
+  // ── [C] 시계 및 상태 업데이트 (기존 함수 교체) ──
+  function updateClock() {
+    const now = new Date();
+    const days = ['일','월','화','수','목','금','토'];
+    
+    // 주말 예외 처리 (선택)
+    if (now.getDay() === 0 || now.getDay() === 6) {
+      const txtEl = document.getElementById('p-text');
+      const timerEl = document.getElementById('p-timer');
+      if(txtEl) txtEl.textContent = "주말/휴일";
+      if(timerEl) timerEl.textContent = "";
+      return;
+    }
 
-  // 주간 시간표에서 현재 교시에 해당하는 행 하이라이트
-  if (currentPeriod) {
-    const r = document.getElementById('tt-body').children[currentPeriod - 1];
-    if (r) r.classList.add('current-period-row');
+    if(document.getElementById('topbar-date')) {
+      document.getElementById('topbar-date').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`;
+    }
+    if(document.getElementById('topbar-clock')) {
+      document.getElementById('topbar-clock').textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    }
+    
+    updatePeriodStatus(now);
   }
-}setInterval(updateClock, 1000); updateClock();
+
+  function updatePeriodStatus(now) {
+    const txtEl = document.getElementById('p-text');
+    const timerEl = document.getElementById('p-timer');
+
+    // 예외 처리: 데이터가 아직 로드되지 않았을 때
+    if (!window.SCHOOL_SCHEDULE || window.SCHOOL_SCHEDULE.length === 0) {
+      if (txtEl) txtEl.textContent = "시간표 불러오는 중...";
+      return;
+    }
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const seconds = now.getSeconds();
+    
+    document.querySelectorAll('#tt-body tr').forEach(tr => tr.classList.remove('current-period-row'));
+
+    const firstStart = window.SCHOOL_SCHEDULE[0].start.split(':').map(Number);
+    const firstStartMins = firstStart[0] * 60 + firstStart[1];
+    const lastEnd = window.SCHOOL_SCHEDULE[window.SCHOOL_SCHEDULE.length-1].end.split(':').map(Number);
+    const lastEndMins = lastEnd[0] * 60 + lastEnd[1];
+
+    const secText = seconds === 0 ? 0 : 60 - seconds;
+    const minOffset = seconds === 0 ? 0 : 1;
+
+    if (currentMinutes >= lastEndMins) {
+      if (txtEl) txtEl.textContent = "방과후";
+      if (timerEl) timerEl.textContent = "";
+      return;
+    }
+
+    if (currentMinutes < firstStartMins) {
+      const diff = firstStartMins - currentMinutes - minOffset;
+      if (txtEl) txtEl.textContent = "일과 전";
+      if (timerEl) timerEl.textContent = `${diff}분 ${secText}초 전`;
+      return;
+    }
+
+    let statusText = "", remainingText = "", currentPeriod = null;
+
+    for (let i = 0; i < window.SCHOOL_SCHEDULE.length; i++) {
+      const s = window.SCHOOL_SCHEDULE[i];
+      const [sH, sM] = s.start.split(':').map(Number);
+      const [eH, eM] = s.end.split(':').map(Number);
+      const st = sH * 60 + sM;
+      const et = eH * 60 + eM;
+
+      if (currentMinutes >= st && currentMinutes < et) {
+        currentPeriod = s.period;
+        const diff = et - currentMinutes - minOffset;
+        statusText = `${s.period}교시`;
+        remainingText = `${diff}분 ${secText}초 남음`;
+        break;
+      }
+
+      if (i < window.SCHOOL_SCHEDULE.length - 1) {
+        const ns = window.SCHOOL_SCHEDULE[i + 1];
+        const [nsH, nsM] = ns.start.split(':').map(Number);
+        const nst = nsH * 60 + nsM;
+
+        if (currentMinutes >= et && currentMinutes < nst) {
+          const diff = nst - currentMinutes - minOffset;
+          
+          // 동적 점심시간 적용부
+          const targetLunchPeriod = window.LUNCH_AFTER || 4; 
+          if (s.period === targetLunchPeriod && ns.period === (targetLunchPeriod + 1)) {
+            statusText = "점심시간 🍱";
+          } else {
+            statusText = "쉬는 시간";
+          }
+          
+          remainingText = `${ns.period}교시까지 ${diff}분 ${secText}초`;
+          break;
+        }
+      }
+    }
+
+    if (txtEl) txtEl.innerHTML = statusText;
+    if (timerEl) timerEl.textContent = remainingText;
+
+    if (currentPeriod && document.getElementById('tt-body')) {
+      const r = document.getElementById('tt-body').children[currentPeriod - 1];
+      if (r) r.classList.add('current-period-row');
+    }
+  }
+
+  // 매초 실행
+  setInterval(updateClock, 1000);
+  updateClock();
 
 // ── 탭 ──
 window.switchTab = function(tab) {
@@ -1629,7 +1972,7 @@ async function fetchNeisMeal() {
   const schoolLabel=document.getElementById('meal-school');
   const now=new Date();
   const yyyymmdd=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  const url=`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&MLSV_YMD=${yyyymmdd}`;
+  const url=`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${window.NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${window.OFFICE_CODE}&SD_SCHUL_CODE=${window.SCHOOL_CODE}&MLSV_YMD=${yyyymmdd}`;
   try {
     const res=await fetch(url); const data=await res.json(); mealData={lunch:[],dinner:[]};
     if(data.mealServiceDietInfo){
@@ -1754,7 +2097,7 @@ window.addDDay=async function(){
   if(!title||!targetDate){alert('이름과 날짜를 입력해주세요!');return;}
   try{await addDoc(collection(db,'ddays'),{title,targetDate});ti.value='';di.value='';}catch(e){alert("저장 실패");}
 };
-window.deleteDDay=async function(id){if(!confirm('삭제하시겠습니까?'))return;try{await deleteDoc(doc(db,'ddays',id));}catch(e){alert("삭제 실패");}};
+window.deleteDDay=async function(id){if(!(await customConfirm('삭제하시겠습니까?')))return;try{await deleteDoc(doc(db,'ddays',id));}catch(e){alert("삭제 실패");}};
 
 // ── 학사일정 달력 ──
 let miniCalYear, miniCalMonth;
@@ -1773,16 +2116,25 @@ window.miniCalMove=function(dir){
   const key=`${miniCalYear}-${String(miniCalMonth).padStart(2,'0')}`;
   if(!scheduleCache[key])fetchSchoolSchedule(miniCalYear,miniCalMonth);
 };
-
 async function fetchSchoolSchedule(year,month){
   const key=`${year}-${String(month).padStart(2,'0')}`;
   const ym=`${year}${String(month).padStart(2,'0')}`;
-  const url=`https://open.neis.go.kr/hub/SchoolSchedule?KEY=${NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${OFFICE_CODE}&SD_SCHUL_CODE=${SCHOOL_CODE}&AA_YMD=${ym}`;
+  
+  // 🔥 window.OFFICE_CODE와 window.SCHOOL_CODE를 확실하게 바라보도록 수정
+  const url=`https://open.neis.go.kr/hub/SchoolSchedule?KEY=${window.NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${window.OFFICE_CODE}&SD_SCHUL_CODE=${window.SCHOOL_CODE}&AA_YMD=${ym}`;
+  
   try{
-    const res=await fetch(url);const data=await res.json();
+    const res=await fetch(url);
+    const data=await res.json();
     const rows=data?.SchoolSchedule?.[1]?.row||[];
-    scheduleCache[key]=rows.map(r=>({date:r.AA_YMD,name:r.EVENT_NM,isHoliday:r.EVENT_NM.includes('방학')||r.EVENT_NM.includes('휴업')||r.EVENT_NM.includes('공휴일')}));
-  }catch(e){scheduleCache[key]=[];}
+    scheduleCache[key]=rows.map(r=>({
+      date:r.AA_YMD,
+      name:r.EVENT_NM,
+      isHoliday:r.EVENT_NM.includes('방학')||r.EVENT_NM.includes('휴업')||r.EVENT_NM.includes('공휴일')
+    }));
+  }catch(e){
+    scheduleCache[key]=[];
+  }
   window.renderMiniCal();
 }
 
@@ -1976,7 +2328,7 @@ document.getElementById('excel-file').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-reader.onload = function(evt) {
+reader.onload = async function(evt) {
     const data = new Uint8Array(evt.target.result);
     const workbook = XLSX.read(data, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -2038,7 +2390,7 @@ reader.onload = function(evt) {
     }
     
     const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
-    if (confirm(`[${tabLabel}] 탭에 ${parsedStudents.length}명을 등록할까요?\n(기존 명렬이 덮어씌워집니다.)`)) {
+    if (await customConfirm(`[${tabLabel}] 탭에 ${parsedStudents.length}명을 등록할까요?\n(기존 명렬이 덮어씌워집니다.)`)) {
       const batch = writeBatch(db);
       parsedStudents.forEach(s => {
         // 💡 원래 코드의 경로 규칙(studentsCol 함수 호출 형태)을 그대로 유지합니다.
@@ -2059,7 +2411,7 @@ reader.onload = function(evt) {
 });
 document.getElementById('btn-clear-students').onclick = async function() {
   const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
-  if (!confirm(`[${tabLabel}] 탭의 학생 명렬을 완전히 초기화하시겠습니까?\n(삭제 후 복구가 불가능합니다.)`)) return;
+  if (!(await customConfirm(`[${tabLabel}] 탭의 학생 명렬을 완전히 초기화하시겠습니까?\n(삭제 후 복구가 불가능합니다.)`))) return;
   try {
     const snap = await getDocs(collection(db, studentsCol(currentClassTabId)));
     if (snap.empty) { alert('삭제할 학생 데이터가 없습니다.'); return; }
@@ -2136,7 +2488,7 @@ async function addStudentRecord() {
 window.addStudentRecord = addStudentRecord;
 
 async function deleteStudentRecord(recId) {
-  if (!confirm("해당 관찰 내역을 삭제하시겠습니까?")) return;
+  if (!(await customConfirm("해당 관찰 내역을 삭제하시겠습니까?"))) return;
   try {
     await deleteDoc(doc(db, studentRecordsCol(currentClassTabId, currentStudentId), recId));
   } catch(e) { alert("삭제 실패"); }
@@ -2249,7 +2601,7 @@ async function updateStickyText(id, value) {
 
 // 4. 메모 삭제
 async function deleteStickyNote(id) {
-  if (!confirm("삭제하시겠습니까?")) return;
+  if (!(await customConfirm("삭제하시겠습니까?"))) return;
   try {
     const docRef = doc(db, "sticky_notes", id);
     await deleteDoc(docRef);
@@ -2655,7 +3007,7 @@ window.toggleGemsBody = function() {
 };
 
 // API 설정 및 프롬프트 (선생님의 고유 키와 프롬프트 지침 데이터를 백틱 내부에 유지하세요)
-const GEMS_API_KEY = "AQ.Ab8RN6Je2CRjdZzBvUaHBZwh5eZ4aewxLcvidWeOpnp8k_3BIw"; 
+
 const GEMS_SYSTEM_PROMPT = `너는 [2025 유초중고 생기부 AI 비서 젬스(GEMS)]이다. 너는 교육부 기재요령 점검 장학사의 시각을 가진 생기부 작성 전문가이며, 아래의 통합 지침을 절대적인 헌법으로 준수한다.
 
 
@@ -2932,7 +3284,7 @@ const GEMS_SYSTEM_PROMPT = `너는 [2025 유초중고 생기부 AI 비서 젬스
 
 1. 포맷: 모든 결과물은 줄글 형태로 작성한다.
 
- 2. 내용: [세부능력 및 특기사항] 열 작성 시 **[의사소통], [문제해결]**과 같은 인위적인 소제목(Header)이나 대괄호 표기를 절대 사용하지 않는다. 대신 해당 역량이 문장 속에 자연스럽게 녹아들도록 '완벽한 줄글(Narrative)' 형태로 서술한다.
+2. 내용: [세부능력 및 특기사항] 열 작성 시 **[의사소통], [문제해결]**과 같은 인위적인 소제목(Header)이나 대괄호 표기를 절대 사용하지 않는다. 대신 해당 역량이 문장 속에 자연스럽게 녹아들도록 '완벽한 줄글(Narrative)' 형태로 서술한다.
 
 3. 다른 문장은 말하지 않고 오직 생활기록부 결과물만 출력하여 보여준다.
 
@@ -2991,23 +3343,35 @@ const GEMS_REFERENCE_DATA = `
 // 🚀 GEMS AI 비서 - 기존 3.5-flash 안정화 버전 (에러 없는 오리지널 모드)
 // ─────────────────────────────────────────────────────────
 
+// 함수 바깥(전역)에 한 줄 추가
+let gemsController = null;
 
 window.runGemsEngine = async function() {
     const memo = document.getElementById("gems-obs-input")?.value || ""; 
     const resultBox = document.getElementById("gems-result-box");
     const btn = document.getElementById("gems-submit-btn");
+    const stopBtn = document.getElementById("gems-stop-btn");
+    const byteLimitInput = document.getElementById("gems-byte-limit");
 
-if(!memo || memo.trim() === "") { 
+    if(!memo || memo.trim() === "") { 
         alert("학생 메모를 입력하세요!"); 
         return; 
     }
 
+    let byteLimit = parseInt(byteLimitInput?.value, 10);
+    if (!byteLimit || byteLimit <= 0) byteLimit = 1000;
+
     if(resultBox) resultBox.value = "AI 비서가 지침서를 분석하여 생기부 문장을 정성껏 작성하고 있습니다...";
     if(btn) btn.disabled = true;
+    if(btn) btn.style.display = "none";      // 생성 버튼 숨기기
+    if(stopBtn) stopBtn.style.display = "inline-block"; // 중지 버튼 보이기
+
+    gemsController = new AbortController();  // ← 추가
 
     try {
-        // 1. 주소는 안정적인 2.5-flash 유지 (자동 캐싱 적용)
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMS_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${window.GEMS_API_KEY}`;
+
+        const byteLimitInstruction = `[글자 수(바이트) 제한 안내]\n반드시 아래 기준으로 바이트를 계산해서, 최종 결과물 전체가 ${byteLimit}바이트에 가깝게 작성해줘.\n- 바이트 계산 기준: 문자 하나마다 유니코드 코드값이 128을 초과하면(한글 등) 3바이트로, 128 이하이면(영문, 숫자, 공백, 마침표 등 기본 기호) 1바이트로 계산한다.\n- 예시: "안녕 Hi."는 한글 2글자(6바이트) + 공백/영문/마침표 4글자(4바이트) = 총 10바이트.\n- 위 기준으로 직접 계산해보면서, ${byteLimit}바이트를 넘지 않는 선에서 최대한 알맹이 있는 문장으로 작성해줘.`;
 
         const response = await fetch(url, {
             method: "POST",
@@ -3017,22 +3381,22 @@ if(!memo || memo.trim() === "") {
                     {
                         role: "user",
                         parts: [
-                            // 21K의 거대한 지침서가 완벽히 고정되어 맨 앞에 와야 자동 캐싱이 깨지지 않습니다.
                             { text: `[시스템 지침 및 성취기준]\n${GEMS_SYSTEM_PROMPT}\n\n[작성 예시 자료]\n${GEMS_REFERENCE_DATA}\n\n` },
+                            { text: byteLimitInstruction },
                             { text: `[이번에 작성할 학생 관찰 메모]\n${memo}` }
                         ]
                     }
                 ],
-                // 💡 답변 퀄리티 향상을 위한 핵심 설정치 튜닝!
                 generationConfig: {
-                    temperature: 0.4,       // 지나친 헛소리나 템플릿 이탈을 막고 지침서대로 격조 있게 쓰도록 제한
-                    topP: 0.8,              // 문맥상 가장 자연스럽고 세련된 단어들 위주로 엄선해서 문장 구성
-                    maxOutputTokens: 2548   // 종합의견까지 중간에 끊기지 않고 넉넉하게 출력되도록 볼륨 확장
-                }
-            })
+    temperature: 0.4,
+    topP: 0.8,
+    maxOutputTokens: Math.min(8192, Math.max(3500, byteLimit + 2000)), // 사고 토큰분 여유 확보
+  
+}
+            }),
+            signal: gemsController.signal   // ← 추가
         });
 
-        // ⭐ 503 서버 다운 예외 방어막 설치
         if (response.status === 503) {
             if(resultBox) resultBox.value = "구글 API 서버가 일시적인 과부하 상태입니다. 3초만 기다리신 후 [다시 한 번 더] 버튼을 눌러주세요!";
             return;
@@ -3043,24 +3407,37 @@ if(!memo || memo.trim() === "") {
         if (data.error) {
             if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
         } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            // 성공적으로 명품 문장이 생성되면 화면에 뿌려줍니다.
             if(resultBox) resultBox.value = data.candidates[0].content.parts[0].text;
             
-            // F12 콘솔창에서 자동 캐싱으로 요금 아끼고 있는지 감시
             if (data.usageMetadata) {
                 console.log("=== 2.5 Flash 자동 캐싱 모니터링 ===");
                 console.log("이번 학생 총 토큰:", data.usageMetadata.totalTokenCount);
                 console.log("★ 캐시 처리되어 요금 면제된 토큰:", data.usageMetadata.cachedContentTokenCount || 0);
             }
         } else {
-            if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
+          console.log("=== 전체 응답 디버깅 ===");
+          console.log(JSON.stringify(data, null, 2));  
+          if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
         }
 
     } catch (error) {
-        if(resultBox) resultBox.value = "연동 오류가 발생했습니다: " + error.message;
-        console.error(error);
+        if (error.name === "AbortError") {                      // ← 추가
+            if(resultBox) resultBox.value = "생기부 생성이 중지되었습니다.";
+        } else {
+            if(resultBox) resultBox.value = "연동 오류가 발생했습니다: " + error.message;
+            console.error(error);
+        }
     } finally {
-        if(btn) btn.disabled = false;
+        if(btn) { btn.disabled = false; btn.style.display = "inline-block"; }
+        if(stopBtn) stopBtn.style.display = "none";
+        gemsController = null;
+    }
+}
+
+// 새로 추가하는 중지 함수
+window.stopGemsEngine = function() {
+    if (gemsController) {
+        gemsController.abort();
     }
 }
 
@@ -3270,7 +3647,7 @@ window.admToggleCustomSlot = async (date, idx, val) => {
 };
 
 window.admDeleteCustomSlot = async (date, idx) => {
-  if (!confirm('이 슬롯을 삭제할까요?')) return;
+  if (!(await customConfirm('이 슬롯을 삭제할까요?'))) return;
   const ref = doc(db, 'slots', date);
   const snap = await getDoc(ref);
   if (!snap.exists()) return;
@@ -3326,7 +3703,7 @@ function admRenderBookingPanel(key) {
 }
 
 window.admDeleteBooking = async (id) => {
-  if (confirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
+  if (await customConfirm('이 예약을 삭제할까요? 학생 페이지에서도 사라집니다.')) {
     await deleteDoc(doc(db, 'bookings', id));
   }
 };
@@ -3594,6 +3971,237 @@ window.admExportCSV = (allData) => {
 };
 
 // ═══════════════════════════════════════════════════════════
+
+
+// 설정 모달 열기
+// script.js 내에서
+window.openSettingsModal = function() {
+    document.getElementById('settingsModal').classList.add('show');
+};
+
+window.closeSettingsModal = function() {
+    document.getElementById('settingsModal').classList.remove('show');
+}
+// ── [B] 학교 검색 및 Firebase 업로드 로직 ──
+
+// 1. NEIS API 학교 검색
+window.searchSchool = async function() {
+  const schoolName = document.getElementById('searchSchoolName').value;
+  if (!schoolName) return alert("학교 이름을 입력하세요.");
+
+  const url = `https://open.neis.go.kr/hub/schoolInfo?Type=json&KEY=${window.NEIS_API_KEY}&SCHUL_NM=${encodeURIComponent(schoolName)}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.schoolInfo) {
+      const schools = data.schoolInfo[1].row;
+      const selectEl = document.getElementById('schoolSelect');
+      selectEl.innerHTML = ""; 
+
+      schools.forEach(school => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ 
+          office: school.ATPT_OFCDC_SC_CODE, 
+          school: school.SD_SCHUL_CODE 
+        });
+        option.text = `[${school.LCTN_SC_NM}] ${school.SCHUL_NM}`; 
+        selectEl.appendChild(option);
+      });
+
+      document.getElementById('schoolResultDiv').style.display = "block";
+    } else {
+      alert("검색 결과가 없습니다.");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("학교 정보를 불러오는 데 실패했습니다.");
+  }
+}
+
+// 2. 선택한 학교 코드를 로컬 변수에 반영하고 + Firebase에 업로드하기
+window.applySchoolCode = async function() {
+  const selectEl = document.getElementById('schoolSelect');
+  if (!selectEl.value) return;
+
+  const codes = JSON.parse(selectEl.value);
+  
+  window.OFFICE_CODE = codes.office;
+  window.SCHOOL_CODE = codes.school;
+
+  try {
+    await setDoc(doc(db, "schedules", "today"), {
+      officeCode: window.OFFICE_CODE,
+      schoolCode: window.SCHOOL_CODE,
+      updatedAt: new Date()
+    }, { merge: true });
+    
+    alert("학교 설정이 전 기기에 실시간 적용되었습니다!");
+    
+    // 1. 🔥 [핵심] 기존 학교의 학사일정 캐시를 통째로 비웁니다.
+    // 이렇게 해야 새 학교의 학사일정으로 깨끗하게 덮어씌워집니다.
+    if (typeof scheduleCache !== 'undefined') {
+      scheduleCache = {}; 
+    }
+
+    // 2. 🔥 [핵심] 현재 달력 화면에 보이는 연도와 월을 기준으로 학사일정을 새로 불러옵니다.
+    if (typeof miniCalYear !== 'undefined' && typeof miniCalMonth !== 'undefined') {
+      fetchSchoolSchedule(miniCalYear, miniCalMonth);
+    }
+
+    // 3. 내 화면에서도 즉시 급식 새로고침 (typeof 오류 수정)
+    if (typeof fetchNeisMeal === "function") fetchNeisMeal();
+
+    // 모달창 닫기
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.classList.remove('show');
+
+  } catch (e) {
+    console.error("Firebase 학교 저장 에러:", e);
+    alert("Firebase 저장에 실패했습니다.");
+  }
+}
+// 4. 설정 저장 함수
+window.saveSettings = function() {
+    const schoolCode = document.getElementById('schoolResult').value;
+    const startTime = document.getElementById('startTime').value;
+    
+    // 로컬 스토리지 등에 저장하여 새로고침 후에도 유지되게 합니다.
+    localStorage.setItem('user_school_code', schoolCode);
+    localStorage.setItem('user_start_time', startTime);
+    
+    alert('설정이 저장되었습니다.');
+    closeSettingsModal();
+}
+
+// ── [최종] 비밀번호 변경 관련 스크립트 ──
+
+// 1. 모달 열기
+window.openPwModal = function() {
+  const modal = document.getElementById("pw-modal");
+  if (modal) {
+    // 🔥 [핵심 치트키] 모달을 부모 요소 밖으로 꺼내서 body 바로 아래로 강제 이동시킵니다.
+    // 이렇게 하면 다른 레이어 뒤에 파묻히는 현상이 원천 차단됩니다.
+    document.body.appendChild(modal); 
+    
+    // 화면에 강제로 주입 및 중앙 정렬 활성화
+    modal.style.setProperty("display", "flex", "important");
+    
+    // 인풋창 초기화
+    document.getElementById("pw-cur").value = "";
+    document.getElementById("pw-new").value = "";
+    document.getElementById("pw-new2").value = "";
+    document.getElementById("pw-modal-msg").innerText = "";
+    
+    console.log("🎯 모달을 body 최상단 레이어로 이동하고 display: flex를 적용했습니다.");
+  } else {
+    console.error("❌ 아이디가 'pw-modal'인 요소를 HTML에서 찾을 수 없습니다.");
+  }
+};
+
+// 2. 모달 닫기
+window.closePwModal = function() {
+  const modal = document.getElementById("pw-modal");
+  if (modal) modal.style.display = "none";
+};
+
+// 3. 비밀번호 변경 실행
+window.doChangePw = async function() {
+  const curPw = document.getElementById("pw-cur").value.trim();
+  const newPw = document.getElementById("pw-new").value.trim();
+  const newPw2 = document.getElementById("pw-new2").value.trim();
+  const msgEl = document.getElementById("pw-modal-msg");
+
+  if (!curPw || !newPw || !newPw2) {
+    msgEl.style.color = "red";
+    msgEl.innerText = "❌ 모든 항목을 입력해주세요.";
+    return;
+  }
+  if (newPw.length < 4) {
+    msgEl.style.color = "red";
+    msgEl.innerText = "❌ 새 비밀번호는 4자 이상이어야 합니다.";
+    return;
+  }
+  if (newPw !== newPw2) {
+    msgEl.style.color = "red";
+    msgEl.innerText = "❌ 새 비밀번호가 일치하지 않습니다.";
+    return;
+  }
+
+  try {
+    // 💡 window.db가 살아있으므로, 내부 라이브러리를 동적으로 안전하게 활용합니다.
+    const { doc, getDoc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    
+    const docRef = doc(window.db, "settings", "adminInfo");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const currentAdminPw = docSnap.data().pw;
+
+      if (curPw !== currentAdminPw) {
+        msgEl.style.color = "red";
+        msgEl.innerText = "❌ 현재 비밀번호가 일치하지 않습니다.";
+        return;
+      }
+
+      // 새 비밀번호로 파이어베이스 업데이트
+      await updateDoc(docRef, { pw: newPw });
+      
+      msgEl.style.color = "green";
+      msgEl.innerText = "✅ 비밀번호가 성공적으로 변경되었습니다!";
+      
+      // 1.5초 후 자동 닫기
+      setTimeout(() => {
+        window.closePwModal();
+      }, 1500);
+
+    } else {
+      msgEl.style.color = "red";
+      msgEl.innerText = "❌ 파이어베이스에서 adminInfo 문서를 찾을 수 없습니다.";
+    }
+  } catch (error) {
+    console.error("비밀번호 변경 중 오류:", error);
+    msgEl.style.color = "red";
+    msgEl.innerText = "❌ 오류가 발생했습니다. 콘솔을 확인해 주세요.";
+  }
+};
+
+// ── [2번 기능] 로그아웃 버튼 스크립트 ──
+
+window.doLogout = async function() {
+  if (await customConfirm("로그아웃 하시겠습니까?")) {
+    try {
+      // 1. 필요한 파이어베이스 기능들을 그 자리에서 직접 로드합니다.
+      const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      
+      // 2. 파일에 이미 존재하는 auth 객체나 초기화된 app 객체를 찾아서 매칭합니다.
+      let currentAuth = window.auth;
+      
+      if (!currentAuth) {
+        // 만약 window.auth가 비어있다면, 이미 선언된 firebaseApp이나 app을 찾아 auth를 강제 생성합니다.
+        const targetApp = window.app || window.firebaseApp;
+        if (targetApp) {
+          currentAuth = getAuth(targetApp);
+        } else {
+          // 최후의 수단: 그냥 기본 인증 객체를 호출
+          currentAuth = getAuth();
+        }
+      }
+
+      // 3. 로그아웃 실행
+      await signOut(currentAuth);
+      
+      alert("로그아웃 되었습니다.");
+      location.reload(); // 새로고침해서 로그인 화면으로 이동
+    } catch (error) {
+      console.error("로그아웃 중 오류 발생:", error);
+      alert("로그아웃 실패: " + error.message);
+    }
+  }
+};
+
 
 </script>
 </body>
