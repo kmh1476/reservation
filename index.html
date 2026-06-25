@@ -84,7 +84,7 @@
 <body>
 
 <header>
-  <h1>📅 학생 상담 신청 with 흠쌤</h1>
+  <h1>📅 상담 신청 with 흠쌤</h1>
   <button class="check-btn" onclick="document.getElementById('check-overlay').classList.add('show')">📋 확인/취소</button>
 </header>
 
@@ -317,7 +317,7 @@ async function submitBooking() {
       pw: simpleHash(pw),
       createdAt: Date.now()
     });
-    alert('예약이 완료되었습니다!');
+    alert('예약이 완료되었습니다! 예약한 시간에 방문해주세요!');
     location.reload();
   } catch(e) {
     alert('신청 중 오류가 발생했습니다.');
