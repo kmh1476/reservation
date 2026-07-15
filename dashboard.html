@@ -869,6 +869,11 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     <span class="topbar-clock" id="topbar-clock"></span>  
     <button onclick="openPwModal()" title="비밀번호 변경" style="background:none;border:none;color:#888;cursor:pointer;font-size:0.8rem;padding:2px 4px;line-height:1;" >🔑</button>
     <button onclick="openSettingsModal()" style="background:none; border:1px solid #555; color:#fff; cursor:pointer; padding:2px 6px; border-radius:3px; font-size:0.75rem;">설정</button>
+    <div style="display:flex; align-items:center; gap:4px;">
+  <button id="font-decrease-btn" title="글자 작게" style="background:var(--paper); border:1px solid var(--border); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:0.8rem; font-weight:bold;">A-</button>
+  <button id="font-reset-btn" title="기본 크기로" style="background:var(--paper); border:1px solid var(--border); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:0.85rem; font-weight:bold;">A</button>
+  <button id="font-increase-btn" title="글자 크게" style="background:var(--paper); border:1px solid var(--border); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:0.95rem; font-weight:bold;">A+</button>
+</div>
     <button onclick="doLogout()" style="background:none; border:none; color:#aaa; cursor:pointer;">로그아웃</button>
   </div>
 </div>
@@ -1097,9 +1102,11 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     <div style="display:flex; gap:6px; flex-wrap: wrap;">
       <input type="file" id="excel-file" accept=".xlsx, .xls" style="display:none;">
       <button class="memo-add-btn" style="flex: 1; background:var(--accent2); min-width: 130px;" onclick="document.getElementById('excel-file').click()">NEIS 명렬 엑셀 업로드</button>
+      <button class="memo-add-btn" style="background:#3b82f6; color:#fff;" id="btn-add-student" onclick="openAddStudentModal()">+ 학생 추가</button>
       <button class="memo-add-btn" style="background:var(--accent); display:none;" id="btn-clear-students">초기화</button>
       <button class="memo-add-btn" style="background:#9b59b6; color:#fff;" id="btn-gems-main" onclick="openGemsWindow()">젬즈(GEMS)</button>
 <button class="memo-add-btn" style="background:#27ae60; color:#fff;" id="btn-gems-ai" onclick="openGemsPanel()">✨ AI 비서</button>
+      <button class="memo-add-btn" style="background:#e67e22; color:#fff;" id="btn-download-records" onclick="downloadClassRecordsExcel()">📥 기록 다운로드</button>
     </div>
     
     <div class="student-items" id="student-items">
@@ -1222,8 +1229,34 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   </div>
 </div>
 
+<div class="modal-overlay" id="add-student-modal">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-header">
+      <h2>🧑‍🎓 학생 수동 추가</h2>
+      <button class="modal-close" onclick="closeAddStudentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label style="display:block;font-size:.8rem;color:#888;margin-bottom:4px;">반 (이동수업 아니면 비워두세요)</label>
+          <input type="number" id="add-student-class" placeholder="예: 8" min="1" style="width:100%;padding:8px;border:1.5px solid var(--border);background:var(--paper);font-family:inherit;font-size:.85rem;outline:none;border-radius:4px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;color:#888;margin-bottom:4px;">번호 *</label>
+          <input type="number" id="add-student-number" placeholder="예: 16" min="1" style="width:100%;padding:8px;border:1.5px solid var(--border);background:var(--paper);font-family:inherit;font-size:.85rem;outline:none;border-radius:4px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:.8rem;color:#888;margin-bottom:4px;">이름 *</label>
+          <input type="text" id="add-student-name" placeholder="예: 홍길동" style="width:100%;padding:8px;border:1.5px solid var(--border);background:var(--paper);font-family:inherit;font-size:.85rem;outline:none;border-radius:4px;box-sizing:border-box;">
+        </div>
+        <button onclick="confirmAddStudent()" style="margin-top:4px;padding:9px;background:var(--ink);color:#fff;border:none;cursor:pointer;font-size:.85rem;font-weight:600;border-radius:4px;">추가하기</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-<div id="gems-ai-panel" style="display:none; position:fixed; bottom:24px; right:24px; width:420px; background:var(--card); border:2px solid var(--ink); border-radius:8px; box-shadow:4px 4px 0 rgba(26,26,46,0.15); z-index:9999; flex-direction:column; overflow:hidden; transition: all 0.3s ease;">
+
+<div id="gems-ai-panel" style="display:none; position:fixed; bottom:24px; right:24px; max-height:calc(100vh - 48px); width:850px; background:var(--card); border:2px solid var(--ink); border-radius:8px; box-shadow:-4px 4px 15px rgba(0,0,0,0.15); z-index:9999; flex-direction:column; overflow:hidden; transition: all 0.3s ease;">
   
   <div style="background:var(--ink); color:#fff; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleGemsBody()">
     <div style="font-family:'Nanum Myeongjo', serif; font-size:1rem; font-weight:700;">✨ GEMS 생기부 비서</div>
@@ -1233,36 +1266,91 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     </div>
   </div>
 
-<div id="gems-ai-body" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+  <!-- 좌우 분할을 위해 flex-direction: row 적용 -->
+  <div id="gems-ai-body" style="padding:16px; display:flex; flex-direction:row; gap:20px; overflow-y:auto; align-items: stretch;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
-      <span style="font-size: 0.8rem; font-weight: bold; color: var(--muted);">학생 관찰 메모</span>
-      <div style="display: flex; gap: 4px; align-items: center;">
-        <select id="gems-tag-filter" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 0.75rem; color: var(--ink); font-family: 'Pretendard', sans-serif; outline: none; cursor: pointer;">
-          <option value="all">전체 태그</option>
-        </select>
-        <button onclick="importStudentRecord()" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; color: var(--ink); font-family: 'Pretendard', sans-serif;">📋 기록 불러오기</button>
+    <!-- 좌측 영역: 가이드 첨부 및 엔진 선택 (고정 너비) -->
+    <div style="flex: 0 0 300px; display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- 가이드 첨부 -->
+      <div class="gems-file-upload-section" style="padding: 15px; border: 1px dashed #4A90E2; background-color: #f9fbfd; border-radius: 5px;">
+          <label style="font-weight: bold; display: block; margin-bottom: 8px;">📚 물리학 성취기준 가이드 첨부</label>
+          
+          <div style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+              <input type="file" id="gems-file-input" accept=".pdf,.xlsx,.xls,.txt,.docx" style="width: 100%; font-size: 0.8rem;" />
+              <button type="button" onclick="uploadGemsFile('gems-file-input')" style="background-color: #4A90E2; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-size: 0.85rem;">구글 서버 업로드</button>
+          </div>
+
+          <div style="margin-top: 12px; display: flex; align-items: flex-start;">
+              <input type="checkbox" id="gems-use-file-checkbox" style="width: 16px; height: 16px; margin-right: 6px; margin-top: 2px; cursor: pointer;" />
+              <label for="gems-use-file-checkbox" style="font-size: 0.8rem; cursor: pointer; color: #333; font-weight: 500; line-height: 1.4;">
+                  생성 시 업로드한 성취기준 가이드 반영하기 (교과세특용)
+              </label>
+          </div>
+          <small style="color: #666; display: block; margin-top: 6px; font-size: 0.75rem; line-height: 1.3;">* 체크를 해제하면 파일 없이 일반 모드(행발 등)로 작동하여 토큰을 아낍니다.</small>
+      </div>
+
+      <!-- 엔진 선택 -->
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 15px; background: var(--paper); border: 1px solid var(--border); border-radius: 5px;">
+          <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">엔진 선택</span>
+          
+          <label style="font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="gems-model-select" value="gemini-3.5-flash" checked style="cursor: pointer;">
+              ⚡ 3.5 Flash (기본/빠른속도)
+          </label>
+          
+          <label style="font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="gems-model-select" value="gemini-2.5-pro" style="cursor: pointer;">
+              🧠 2.5 Pro (심화)
+          </label>
+      </div>
+
+      <!-- 생성 길이 제한 (우측 공간 확보를 위해 좌측으로 이동) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--paper); border: 1px solid var(--border); border-radius: 5px;">
+        <label for="gems-byte-limit" style="font-size: 0.8rem; font-weight: bold; color: var(--muted);">생성 길이 제한</label>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="number" id="gems-byte-limit" value="1000" min="100" step="50"
+            style="width: 65px; background: #fff; border: 1px solid var(--border); padding: 4px; border-radius: 4px; font-size: 0.75rem; outline: none; text-align: right;">
+          <span style="font-size: 0.75rem; color: var(--muted);">Byte</span>
+        </div>
       </div>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px;">
-      <label for="gems-byte-limit" style="font-size: 0.75rem; color: var(--muted);">생성 길이 제한</label>
-      <input type="number" id="gems-byte-limit" value="1000" min="100" step="50"
-        style="width: 72px; background: var(--paper); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 0.75rem; color: var(--ink); font-family: 'Pretendard', sans-serif; outline: none; text-align: right;">
-      <span style="font-size: 0.75rem; color: var(--muted);">Byte 이내</span>
-    </div>
+    <!-- 우측 영역: 메모 입력, 실행 버튼, 결과 출력 (유연한 너비) -->
+    <div style="flex: 1; display:flex; flex-direction:column; gap:12px;">
+      
+      <!-- 메모 상단 헤더 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+        <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">학생 관찰 메모</span>
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <select id="gems-tag-filter" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 0.75rem; outline: none; cursor: pointer;">
+            <option value="all">전체 태그</option>
+          </select>
+          <button onclick="importStudentRecord()" style="background: var(--paper); border: 1px solid var(--border); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">📋 기록 불러오기</button>
+        </div>
+      </div>
 
-    <textarea id="gems-obs-input" class="memo-input" style="height:120px; resize:none; font-size:0.85rem;" placeholder="여기에 학생 관찰 메모를 입력하거나 위 버튼을 눌러 불러오세요..."></textarea>
-    
-    <button id="gems-submit-btn" class="memo-add-btn" style="background:var(--accent2); font-size:0.9rem; padding:12px; border-radius:6px;" onclick="runGemsEngine()">생기부 생성하기 🚀</button>
-<button id="gems-stop-btn" class="memo-add-btn" style="background:#999; font-size:0.9rem; padding:12px; border-radius:6px; display:none;" onclick="stopGemsEngine()">중지 ⏹</button>
-    <textarea id="gems-result-box" class="memo-input" style="height:180px; resize:none; font-size:0.85rem; background:var(--paper);" readonly placeholder="AI가 작성한 결과가 여기에 출력됩니다..."></textarea>
-    
-    <div style="text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: -8px; margin-bottom: 2px;">
-      결과 바이트: <span id="gems-result-byte-counter" style="font-weight: bold; color: var(--accent2);">0 Byte</span>
-    </div>
-  </div>
-  
+      <!-- 메모 입력창 (세로로 길게) -->
+      <textarea id="gems-obs-input" class="memo-input" style="flex: 1; min-height: 180px; resize: vertical; font-size: 0.85rem; padding: 10px;" placeholder="여기에 학생 관찰 메모를 입력하거나 위 버튼을 눌러 불러오세요..."></textarea>
+      
+      <!-- 실행 버튼 -->
+      <button id="gems-submit-btn" class="memo-add-btn" style="background:var(--accent2); color:white; font-size:0.95rem; font-weight:bold; padding:12px; border-radius:6px; border:none; cursor:pointer;" onclick="runGemsEngine()">생기부 생성하기 🚀</button>
+      <button id="gems-stop-btn" class="memo-add-btn" style="background:#999; color:white; font-size:0.95rem; font-weight:bold; padding:12px; border-radius:6px; border:none; cursor:pointer; display:none;" onclick="stopGemsEngine()">중지 ⏹</button>
+      
+      <!-- 결과 상단 헤더 -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px;">
+        <span style="font-size: 0.85rem; font-weight: bold; color: var(--muted);">AI 생성 결과</span>
+        <div style="text-align: right; font-size: 0.75rem; color: var(--muted);">
+          결과 바이트: <span id="gems-result-byte-counter" style="font-weight: bold; color: var(--accent2);">0 Byte</span>
+          <span id="gems-byte-ratio" style="margin-left:6px;"></span>
+        </div>
+      </div>
+
+      <!-- 결과 출력창 (세로로 길게) -->
+      <textarea id="gems-result-box" class="memo-input" style="flex: 1.2; min-height: 220px; resize: vertical; font-size: 0.85rem; background: var(--paper); padding: 10px;" readonly placeholder="AI가 작성한 결과가 여기에 출력됩니다..."></textarea>
+      
+    </div> 
+  </div> 
 </div>
 
 <div id="settingsModal" class="modal-overlay">
@@ -2293,6 +2381,13 @@ let unsubscribeStudents = null;
 function studentsCol(tabId) { return `class_students/${tabId}/list`; }
 function studentRecordsCol(tabId, studentId) { return `class_students/${tabId}/list/${studentId}/records`; }
 
+// 💡 반/번호 → 문서 ID 생성 규칙 통일 (엑셀 업로드 · 수동 추가 공통 사용)
+function makeStudentDocId(classNum, number) {
+  return classNum
+    ? `${String(classNum).padStart(2,'0')}-${String(number).padStart(2,'0')}`
+    : String(number).padStart(2, '0');
+}
+
 // 특정 탭의 학생 목록 구독
 function subscribeStudents(tabId) {
   if (unsubscribeStudents) { unsubscribeStudents(); unsubscribeStudents = null; }
@@ -2310,16 +2405,30 @@ function subscribeStudents(tabId) {
     }
     clearBtn.style.display = 'block';
     const list = [];
-    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-    list.sort((a, b) => a.number - b.number);
-    list.forEach(s => {
-      const div = document.createElement('div');
-      div.className = `student-item ${currentStudentId === s.id ? 'active' : ''}`;
-      div.id = `stud-${s.id}`;
-      div.innerHTML = `<span><strong>${String(s.number).padStart(2,'0')}번</strong> ${s.name}</span> <span>❯</span>`;
-      div.onclick = () => selectStudent(s.id, s.name);
-      container.appendChild(div);
-    });
+snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+// 💡 반이 있으면 반→번호 순, 없으면 번호 순으로 정렬
+list.sort((a, b) => (a.classNum || 0) - (b.classNum || 0) || a.number - b.number);
+list.forEach(s => {
+  const div = document.createElement('div');
+  div.className = `student-item ${currentStudentId === s.id ? 'active' : ''}`;
+  div.id = `stud-${s.id}`;
+  // 💡 반 정보가 있으면 "8/16" 형식, 없으면 기존 "16번" 형식
+  const label = s.classNum
+    ? `${s.classNum}/${String(s.number).padStart(2,'0')}`
+    : `${String(s.number).padStart(2,'0')}번`;
+  div.innerHTML = `
+    <span><strong>${label}</strong> ${s.name}</span>
+    <span style="display:flex; align-items:center; gap:6px;">
+      <button class="memo-del" onclick="deleteStudentManually(event, '${s.id}', '${s.name.replace(/'/g,"\\'")}')" title="학생 삭제">✕</button>
+      <span>❯</span>
+    </span>
+  `;
+  div.addEventListener('click', (e) => {
+    if (e.target.closest('.memo-del')) return; // 삭제 버튼 클릭 시 학생 선택 방지
+    selectStudent(s.id, s.name, s.number, s.classNum);
+  });
+  container.appendChild(div);
+});
   });
 }
 
@@ -2361,28 +2470,32 @@ reader.onload = async function(evt) {
     const parsedStudents = [];
     
     // 2. 학생 데이터 추출
-    for (let i = headerIdx + 1; i < rows.length; i++) {
-      const row = rows[i];
-      let num = NaN;
-      const name = String(row[nameColIdx] || '').trim();
-      
-      // 케이스 1: 일반 담임용 명렬표 ('번호' 열 사용)
-      if (numColIdx !== -1) {
-        num = parseInt(row[numColIdx]);
-      } 
-      // 케이스 2: 교과 세특 양식 ('반/번호' 열에서 분리)
-      else if (banNumColIdx !== -1 && row[banNumColIdx]) {
-        const banNumStr = String(row[banNumColIdx]).trim();
-        if (banNumStr.includes('/')) {
-          const parts = banNumStr.split('/');
-          num = parseInt(parts[1]); // 💡 "3/5" 나 "5/12"에서 뒤쪽 번호만 추출
-        }
-      }
-      
-      if (!isNaN(num) && name && name !== 'undefined') {
-        parsedStudents.push({ id: String(num).padStart(2, '0'), number: num, name });
-      }
+for (let i = headerIdx + 1; i < rows.length; i++) {
+  const row = rows[i];
+  let num = NaN;
+  let classNum = null; // 💡 반 번호 저장용 변수 추가
+  const name = String(row[nameColIdx] || '').trim();
+  
+  // 케이스 1: 일반 담임용 명렬표 ('번호' 열 사용)
+  if (numColIdx !== -1) {
+    num = parseInt(row[numColIdx]);
+  } 
+  // 케이스 2: 교과 세특 양식 ('반/번호' 열에서 분리)
+  else if (banNumColIdx !== -1 && row[banNumColIdx]) {
+    const banNumStr = String(row[banNumColIdx]).trim();
+    if (banNumStr.includes('/')) {
+      const parts = banNumStr.split('/');
+      classNum = parseInt(parts[0]); // 💡 앞쪽: 반
+      num = parseInt(parts[1]);      // 뒤쪽: 번호
     }
+  }
+  
+  if (!isNaN(num) && name && name !== 'undefined') {
+    // 💡 반 정보가 있으면 "반-번호" 조합으로 고유 ID 생성 (충돌 방지)
+    const docId = makeStudentDocId(classNum, num);
+    parsedStudents.push({ id: docId, number: num, classNum, name });
+  }
+}
     
     if (!parsedStudents.length) {
       alert("파싱된 학생 정보가 없습니다.");
@@ -2391,11 +2504,14 @@ reader.onload = async function(evt) {
     
     const tabLabel = classTabs.find(t => t.id === currentClassTabId)?.label || currentClassTabId;
     if (await customConfirm(`[${tabLabel}] 탭에 ${parsedStudents.length}명을 등록할까요?\n(기존 명렬이 덮어씌워집니다.)`)) {
-      const batch = writeBatch(db);
-      parsedStudents.forEach(s => {
-        // 💡 원래 코드의 경로 규칙(studentsCol 함수 호출 형태)을 그대로 유지합니다.
-        batch.set(doc(db, studentsCol(currentClassTabId), s.id), { number: s.number, name: s.name });
-      });
+     const batch = writeBatch(db);
+parsedStudents.forEach(s => {
+  batch.set(doc(db, studentsCol(currentClassTabId), s.id), {
+    number: s.number,
+    classNum: s.classNum || null, // 💡 반 정보도 함께 저장
+    name: s.name
+  });
+});
       
       batch.commit()
         .then(() => alert("명렬 등록이 완료되었습니다."))
@@ -2429,7 +2545,7 @@ document.getElementById('btn-clear-students').onclick = async function() {
 };
 
 // 학생 선택
-function selectStudent(id, name) {
+function selectStudent(id, name, number, classNum) {
   currentStudentId = id;
   currentStudentName = name;
   document.querySelectorAll('.student-item').forEach(el => el.classList.remove('active'));
@@ -2437,7 +2553,11 @@ function selectStudent(id, name) {
   if (target) target.classList.add('active');
   document.getElementById('record-empty-notice').style.display = 'none';
   document.getElementById('record-main-panel').style.display = 'block';
-  document.getElementById('selected-student-name').textContent = `${id}번 ${name}`;
+  // 💡 반 정보 유무에 따라 표시 형식 분기
+  const label = classNum
+    ? `${classNum}/${String(number).padStart(2,'0')} ${name}`
+    : `${id}번 ${name}`;
+  document.getElementById('selected-student-name').textContent = label;
   document.getElementById('record-date').value = todayStr();
   document.getElementById('record-content').value = '';
   if (unsubscribeRecords) unsubscribeRecords();
@@ -2470,6 +2590,64 @@ function selectStudent(id, name) {
 }
 window.selectStudent = selectStudent;
 
+// ── 학생 수동 추가 ──
+window.openAddStudentModal = function() {
+  document.getElementById('add-student-class').value = '';
+  document.getElementById('add-student-number').value = '';
+  document.getElementById('add-student-name').value = '';
+  document.getElementById('add-student-modal').classList.add('show');
+};
+window.closeAddStudentModal = function() {
+  document.getElementById('add-student-modal').classList.remove('show');
+};
+window.confirmAddStudent = async function() {
+  const classNumRaw = document.getElementById('add-student-class').value.trim();
+  const numberRaw = document.getElementById('add-student-number').value.trim();
+  const name = document.getElementById('add-student-name').value.trim();
+
+  const number = parseInt(numberRaw);
+  const classNum = classNumRaw ? parseInt(classNumRaw) : null;
+
+  if (isNaN(number) || !name) {
+    alert('번호와 이름은 필수입니다.');
+    return;
+  }
+
+  const docId = makeStudentDocId(classNum, number);
+
+  try {
+    const existing = await getDoc(doc(db, studentsCol(currentClassTabId), docId));
+    if (existing.exists()) {
+      const label = classNum ? `${classNum}/${number}` : `${number}번`;
+      if (!(await customConfirm(`이미 등록된 ${label} 학생(${existing.data().name})이 있습니다.\n덮어쓸까요?`))) {
+        return;
+      }
+    }
+    await setDoc(doc(db, studentsCol(currentClassTabId), docId), {
+      number, classNum, name
+    });
+    closeAddStudentModal();
+  } catch (e) {
+    alert('추가 중 오류가 발생했습니다: ' + e.message);
+  }
+};
+
+// ── 학생 수동 삭제 ──
+window.deleteStudentManually = async function(event, studentId, studentName) {
+  event.stopPropagation(); // 부모 div의 클릭(학생 선택) 이벤트 방지
+  if (!(await customConfirm(`${studentName} 학생을 명렬에서 삭제할까요?\n(상담 기록은 별도로 남아있습니다.)`))) return;
+  try {
+    await deleteDoc(doc(db, studentsCol(currentClassTabId), studentId));
+    if (currentStudentId === studentId) {
+      currentStudentId = null;
+      document.getElementById('record-empty-notice').style.display = 'flex';
+      document.getElementById('record-main-panel').style.display = 'none';
+    }
+  } catch (e) {
+    alert('삭제 중 오류가 발생했습니다: ' + e.message);
+  }
+};
+
 async function addStudentRecord() {
   if (!currentStudentId) return;
   const date = document.getElementById('record-date').value;
@@ -2494,6 +2672,79 @@ async function deleteStudentRecord(recId) {
   } catch(e) { alert("삭제 실패"); }
 }
 window.deleteStudentRecord = deleteStudentRecord;
+
+// ── 반별 학생 관찰기록 일괄 엑셀 다운로드 ──
+async function downloadClassRecordsExcel() {
+  const btn = document.getElementById('btn-download-records');
+  const tabId = currentClassTabId;
+  const tabLabel = classTabs.find(t => t.id === tabId)?.label || tabId;
+
+  const originalText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 다운로드 준비 중...'; }
+
+  try {
+    // 1. 현재 반의 학생 명렬 가져오기
+    const studentsSnap = await getDocs(collection(db, studentsCol(tabId)));
+    if (studentsSnap.empty) {
+      alert(`'${tabLabel}' 반에 등록된 학생이 없습니다.`);
+      return;
+    }
+    const students = [];
+    studentsSnap.forEach(d => students.push({ id: d.id, ...d.data() }));
+    students.sort((a, b) => (a.classNum || 0) - (b.classNum || 0) || (a.number || 0) - (b.number || 0));
+
+    // 2. 학생별 관찰 기록 전부 가져오기 (오래된 순으로 정렬)
+    let maxRecordCount = 0;
+    const studentRows = [];
+    for (const s of students) {
+      const recSnap = await getDocs(collection(db, studentRecordsCol(tabId, s.id)));
+      const recs = [];
+      recSnap.forEach(d => recs.push({ id: d.id, ...d.data() }));
+      recs.sort((a, b) => (a.stamp || 0) - (b.stamp || 0));
+      if (recs.length > maxRecordCount) maxRecordCount = recs.length;
+      studentRows.push({ student: s, records: recs });
+    }
+
+    // 3. 헤더 구성: 반 / 번호 / 이름 / 관찰 내용1 / 관찰 내용2 / ...
+    const header = ['반', '번호', '이름'];
+    for (let i = 1; i <= maxRecordCount; i++) header.push(`관찰 내용 ${i}`);
+
+    // 4. 데이터 행 구성
+    const aoa = [header];
+    studentRows.forEach(({ student, records }) => {
+      const row = [
+        student.classNum || '',
+        student.number || '',
+        student.name || ''
+      ];
+      records.forEach(r => {
+        const dateStr = r.date || '';
+        const catStr = r.category || '';
+        const contentStr = r.content || '';
+        row.push(`[${dateStr}${catStr ? ' ' + catStr : ''}] ${contentStr}`.trim());
+      });
+      aoa.push(row);
+    });
+
+    // 5. 엑셀 파일 생성 및 다운로드
+    const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+    // 열 너비 대략 지정 (반/번호/이름 좁게, 관찰내용은 넓게)
+    worksheet['!cols'] = [
+      { wch: 6 }, { wch: 6 }, { wch: 10 },
+      ...Array(maxRecordCount).fill({ wch: 40 })
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, tabLabel.substring(0, 31));
+
+    const todayForFile = todayStr();
+    XLSX.writeFile(workbook, `${tabLabel}_학생기록_${todayForFile}.xlsx`);
+  } catch (e) {
+    alert('엑셀 다운로드 중 오류가 발생했습니다: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = originalText; }
+  }
+}
+window.downloadClassRecordsExcel = downloadClassRecordsExcel;
 
 window.openGemsWindow = function() {
   const gemsUrl = "https://gemini.google.com/gem/1MJumdSg_ypiivyg8-jE3PGV8jPavmkL0?usp=sharing";
@@ -2895,11 +3146,32 @@ function calculateGemsBytes(str) {
 }
 
 // 1. AI 결과창 바이트 표시 갱신 함수
-window.updateGemsResultBytes = function() {
+window.updateGemsResultBytes = function(targetByteLimit) {
   const resultBox = document.getElementById("gems-result-box");
   const counterSpan = document.getElementById("gems-result-byte-counter");
-  if (resultBox && counterSpan) {
-    counterSpan.textContent = calculateGemsBytes(resultBox.value) + " Byte";
+  const ratioSpan = document.getElementById("gems-byte-ratio");
+  if (!resultBox || !counterSpan) return;
+
+  const actualBytes = calculateGemsBytes(resultBox.value);
+  counterSpan.textContent = actualBytes + " Byte";
+
+  if (!ratioSpan) return;
+  const limitInput = document.getElementById("gems-byte-limit");
+  const target = targetByteLimit || parseInt(limitInput?.value, 10) || null;
+
+  if (!target || actualBytes === 0) {
+    ratioSpan.textContent = "";
+    return;
+  }
+  const ratio = Math.round((actualBytes / target) * 100);
+  ratioSpan.textContent = `(목표 ${target} Byte 대비 ${ratio}%)`;
+  // 목표치에서 15% 이상 벗어나면 빨간색으로 경고 표시
+  if (Math.abs(ratio - 100) > 15) {
+    ratioSpan.style.color = "#e74c3c";
+    ratioSpan.style.fontWeight = "700";
+  } else {
+    ratioSpan.style.color = "var(--muted)";
+    ratioSpan.style.fontWeight = "400";
   }
 };
 
@@ -3012,15 +3284,36 @@ const GEMS_SYSTEM_PROMPT = `너는 [2025 유초중고 생기부 AI 비서 젬스
 
 
 
+[대전제]
+1. 교과세특의 경우 업로드된 pdf파일에서 교육과정 참고
+2. 교육과정pdf - 프롬프트 - 교사 관찰 기록 - 글자수 점검의 순서를 엄격히 지킬 것.
+3. **교육과정 PDF 활용 규칙:**
+
+- 교육과정 PDF가 업로드된 경우, 엑셀 데이터와 별개로 PDF 전체를 읽고 해당 교과의 성취기준·핵심 개념·학습 요소를 파악합니다.
+
+- 파악한 내용은 **내부 참고용으로만 활용**하며, 생기부 문장 작성 시 자연스럽게 녹여냅니다.
+
+- **성취기준 코드(예: [12철학01-01])는 최종 출력 문장에 절대 표기하지 마십시오.**
+
+- PDF 활용 방안(어떤 성취기준과 핵심 개념을 활용할지)은 헤더 분석 대화 단계에서 선생님과 함께 논의합니다.
+
+- 교육과정 PDF가 없는 경우, 이 규칙은 적용하지 않고 기존 방식대로 작성합니다.
+
+     
+너는 [2025 유초중고 생기부 AI 비서 젬스(GEMS)]이다. 너는 교육부 기재요령 점검 장학사의 시각을 가진 생기부 작성 전문가이며, 아래의 통합 지침을 절대적인 헌법으로 준수한다.
+
+
+
 [시스템 기동 및 파일 처리 수칙]
 
-1. 대화 시작 전 [지식]의 'GEMS_통합_마스터_지침.txt' 파일을 최우선 로딩하여 판단 기준으로 삼는다.
+1. 대화 시작 전  '교육과정' 파일을 최우선 로딩하여 판단 기준으로 삼는다.
 
 
 [0. 대원칙: 입체적 참조 시스템]
 
 
 1. 할루시네이션 방지: 파일에 없는 수행평가나 행사는 창작하지 않는다. 정보 부족 시 사용자에게 공식 명칭을 되묻는다.
+2. 교과 세특의 경우 교육과정 파일 - 프롬프트 - 글자수 참고 - 학생 기록 순으로 읽고 작성한다.
 
 
 
@@ -3323,35 +3616,68 @@ GEMS는 AI 탐지 회피 및 글의 독창성 극대화를 위해, 사용자가 
 
 const GEMS_REFERENCE_DATA = `
 
-1. 교육부 기재 금지어 및 안전 필터 (Red Flags)
-- 절대 금지: 교외 대회/수상, 공인어학성적, 영재원/발명특허, 해외 활동, 부모 직업/배경 암시.
-- 금지 단어: 구체적 대학명/기관명/상호명(유튜브, 구글 등), 강사 실명, 모의고사/수능 기출.
-- 논문 기재 금지: '소논문' 명칭 불가 ➔ '주제 탐구 보고서', '교과 탐구 자료'로 우회 서술.
-- 서술 제한: '1등급', '전교 10등' 등 구체적 수치 금지. 교사의 주관적 미사여구('매우 탁월함') 지양 및 객관적 사실(Action Evidence) 기반 명사형 종결(~함, ~임).
-
-2. 주요 대학(서울대/연세대/경희대/동국대) 핵심 평가 요소
-- 학업 역량: 단순 내신 등급을 넘어, 심화/소인수 과목(물리학Ⅱ, 과학융합 등)에 과감히 도전하여 얻은 원점수와 세특 내 '개념 이해의 깊이'를 정성 평가.
-- 진로 역량: 지식을 수동적으로 암기하지 않고, 수업 중 생긴 의문을 독서나 탐구 보고서로 확장하는 '꼬리를 무는 심화 탐구'를 최고점으로 평가.
-- 공동체 역량: 실험 및 모둠 활동 시 갈등을 조율하고 동료의 오류를 짚어주거나 배려하는 태도.
-
-3. 자연계열 / 과학 교과(물리 등) 특화 서술 가이드 (서울대/연세대 기준)
-- 과학적 탐구 프로세스: 교과서 진도를 넘어 [가설 설정 ➔ 실험 설계 및 변인 통제 ➔ 데이터 수집 ➔ 오차 및 실패 요인 분석 ➔ 재수정 원인 도출]로 이어지는 과정이 드러나야 함.
-- 수학적 모델링: 복잡한 물리·공학적 현상을 수학적으로 해석하고 논리적으로 검증하는 과제 집착력 강조.
-- 실패의 가치: 실험이 한 번에 성공한 것보다, 실패 원인을 물리적 법칙으로 규명하고 다시 도전하여 결론을 도출하는 '주도적 해결 과정'을 극찬함.`; 
-
+뉴턴의 중력 법칙을 학습하며 지표면 근처의 중력 퍼텐셜 에너지와 우주 공간에서의 중력 퍼텐셜 에너지 공식의 형태가 다른 이유에 대해 의문을 품고 탐구 보고서를 작성함. 두 공식의 차이가 중력의 크기가 일정하다고 가정하는지, 혹은 거리에 따라 변한다고 가정하는지에 따라 달라진다는 점을 명확히 분석함. 나아가 만유인력이 거리의 제곱에 반비례하는 변하는 힘이라는 사실로부터 일-에너지 정리를 적용하여 우주 공간에서의 중력 퍼텐셜 에너지 공식을 수학적으로 유도해내는 과정을 통해 물리 개념을 논리적으로 증명하는 탐구 역량을 보여줌. 이러한 이론적 이해에 그치지 않고, 학습한 개념을 실제 현상에 적용하여 검증하는 과학적 태도를 보임. 직접 지구의 질량, 반지름, 만유인력 상수 값을 조사하고 이를 공식에 대입하여 지표면에서의 중력가속도 값을 성공적으로 계산해냄. 이 과정에서 이론값이 실제 측정값과 근소한 차이를 보이는 이유를 지구의 자전과 불균일한 질량 분포 등과 연관 지어 분석하며 문제의 본질을 다각적으로 파악하는 비판적 사고력을 보여줌. 추상적인 물리 법칙을 구체적인 수치로 현실 세계와 연결하는 경험을 통해 물리학에 대한 깊은 관심을 보이는 학생임.`; 
 // ─────────────────────────────────────────────────────────
 // 🚀 GEMS AI 비서 - 기존 3.5-flash 안정화 버전 (에러 없는 오리지널 모드)
 // ─────────────────────────────────────────────────────────
 
-// 함수 바깥(전역)에 한 줄 추가
 let gemsController = null;
+window.GEMS_FILE_DATA = null;
 
+// [파일 업로드 함수]
+window.uploadGemsFile = async function(fileInputId) {
+    const fileInput = document.getElementById(fileInputId);
+    if (!fileInput || !fileInput.files[0]) {
+        alert("업로드할 물리학 성취기준 파일을 선택하세요!");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const resultBox = document.getElementById("gems-result-box");
+    if(resultBox) resultBox.value = "구글 서버에 성취기준 가이드를 업로드하는 중입니다...";
+
+    try {
+        const metadata = { file: { displayName: file.name } };
+        const formData = new FormData();
+        formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+        formData.append("file", file);
+
+        const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=multipart&key=${window.GEMS_API_KEY}`;
+
+        const response = await fetch(url, { method: "POST", body: formData });
+        if (!response.ok) throw new Error(`업로드 실패 (HTTP ${response.status})`);
+
+        const data = await response.json();
+        
+        window.GEMS_FILE_DATA = {
+            uri: data.file.uri,
+            mimeType: data.file.mimeType,
+            fileName: file.name
+        };
+
+        // 파일이 성공적으로 올라가면 체크박스를 자동으로 켜줍니다.
+        const fileCheckbox = document.getElementById("gems-use-file-checkbox");
+        if (fileCheckbox) fileCheckbox.checked = true;
+
+        if(resultBox) resultBox.value = `🎉 성취기준 파일 처리 완료!\n파일명: ${file.name}\n\n'성취기준 가이드 반영' 체크박스가 켜진 상태에서 생기부를 생성하면 이 파일을 바탕으로 작성됩니다.`;
+
+    } catch (error) {
+        if(resultBox) resultBox.value = "파일 연동 중 에러 발생: " + error.message;
+        console.error(error);
+    }
+};
+
+// [생기부 생성 엔진 함수]
 window.runGemsEngine = async function() {
     const memo = document.getElementById("gems-obs-input")?.value || ""; 
     const resultBox = document.getElementById("gems-result-box");
     const btn = document.getElementById("gems-submit-btn");
     const stopBtn = document.getElementById("gems-stop-btn");
     const byteLimitInput = document.getElementById("gems-byte-limit");
+    
+    // 💥 [추가] 파일 사용 여부 체크박스 가져오기
+    const fileCheckbox = document.getElementById("gems-use-file-checkbox");
+    const shouldIncludeFile = fileCheckbox ? fileCheckbox.checked : false;
 
     if(!memo || memo.trim() === "") { 
         alert("학생 메모를 입력하세요!"); 
@@ -3361,80 +3687,105 @@ window.runGemsEngine = async function() {
     let byteLimit = parseInt(byteLimitInput?.value, 10);
     if (!byteLimit || byteLimit <= 0) byteLimit = 1000;
 
-    if(resultBox) resultBox.value = "AI 비서가 지침서를 분석하여 생기부 문장을 정성껏 작성하고 있습니다...";
+    if(resultBox) resultBox.value = "AI 비서가 생기부 문장을 정성껏 작성하고 있습니다...";
     if(btn) btn.disabled = true;
-    if(btn) btn.style.display = "none";      // 생성 버튼 숨기기
-    if(stopBtn) stopBtn.style.display = "inline-block"; // 중지 버튼 보이기
+    if(btn) btn.style.display = "none";      
+    if(stopBtn) stopBtn.style.display = "inline-block"; 
 
-    gemsController = new AbortController();  // ← 추가
+    gemsController = new AbortController();  
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${window.GEMS_API_KEY}`;
+        // 💥 1. 라디오 버튼에서 현재 체크된 모델의 value(이름)를 가져옵니다.
+const selectedModel = document.querySelector('input[name="gems-model-select"]:checked').value;
 
-        const byteLimitInstruction = `[글자 수(바이트) 제한 안내]\n반드시 아래 기준으로 바이트를 계산해서, 최종 결과물 전체가 ${byteLimit}바이트에 가깝게 작성해줘.\n- 바이트 계산 기준: 문자 하나마다 유니코드 코드값이 128을 초과하면(한글 등) 3바이트로, 128 이하이면(영문, 숫자, 공백, 마침표 등 기본 기호) 1바이트로 계산한다.\n- 예시: "안녕 Hi."는 한글 2글자(6바이트) + 공백/영문/마침표 4글자(4바이트) = 총 10바이트.\n- 위 기준으로 직접 계산해보면서, ${byteLimit}바이트를 넘지 않는 선에서 최대한 알맹이 있는 문장으로 작성해줘.`;
+// 💥 2. URL 중간에 있는 모델 이름 자리에 변수(${selectedModel})를 쏙 넣어줍니다.
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${window.GEMS_API_KEY}`;
+        // 💡 LLM은 "바이트를 직접 계산해서 맞추기" 같은 정밀 산술에 약하므로,
+        // 모델이 실제로 잘 지킬 수 있는 '글자 수' 목표치를 1차 기준으로 주고
+        // 나이스 바이트 기준은 참고 정보로만 덧붙인다. (최종 검증은 클라이언트에서 재계산)
+const inflatedByteLimit = byteLimit * 1.55; 
+const approxCharTarget = Math.round(inflatedByteLimit / 2.6); 
+const minCharTarget = Math.round(approxCharTarget * 0.85);
+        const byteLimitInstruction = `[분량 지침 - 반드시 준수]\n- 목표 분량: 한글 기준 약 ${minCharTarget}~${approxCharTarget}자 사이로 작성해줘. (이 글자 수 목표를 최우선으로 지켜줘)\n- 참고: 나이스(NEIS) 바이트 환산 기준으로는 약 ${byteLimit}바이트에 해당하는 분량이다. (한글 등 유니코드 128 초과 문자는 3바이트, 영문/숫자/공백/기본기호는 1바이트로 환산)\n- 바이트를 문장 쓰면서 직접 암산하려 하지 말고, 위에 제시된 글자 수 범위 안에서 자연스럽고 완결된 문장으로 작성하는 데 집중해줘.\n- 글자 수가 부족한 채로 문장을 어색하게 끊지 말고, 범위 내에서 알맹이 있는 내용으로 채워줘.`;
+
+        const requestParts = [];
+
+        // 💥 [수정] 체크박스가 켜져 있고 + 업로드된 파일 데이터가 있을 때만 파일 전송!
+        if (shouldIncludeFile && window.GEMS_FILE_DATA) {
+            requestParts.push({
+                fileData: {
+                    mimeType: window.GEMS_FILE_DATA.mimeType,
+                    fileUri: window.GEMS_FILE_DATA.uri
+                }
+            });
+        } else if (shouldIncludeFile && !window.GEMS_FILE_DATA) {
+            // 체크박스는 켰는데 정작 파일을 안 올린 경우 경고 후 중단
+            alert("성취기준 가이드 반영이 체크되어 있지만, 업로드된 파일이 없습니다. 파일을 먼저 업로드하거나 체크박스를 해제해 주세요.");
+            if(resultBox) resultBox.value = "파일이 없습니다. 업로드 후 다시 시도해 주세요.";
+            // 강제로 버튼 UI 원상복구
+            if(btn) { btn.disabled = false; btn.style.display = "inline-block"; }
+            if(stopBtn) { stopBtn.style.display = "none"; }
+            return;
+        }
+
+        requestParts.push(
+            { text: `[시스템 지침 및 기본 규칙]\n${GEMS_SYSTEM_PROMPT}\n\n[작성 예시 자료]\n${GEMS_REFERENCE_DATA}\n\n` },
+            { text: byteLimitInstruction },
+            { text: `[이번에 작성할 학생 관찰 메모]\n${memo}` }
+        );
 
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [
-                    {
-                        role: "user",
-                        parts: [
-                            { text: `[시스템 지침 및 성취기준]\n${GEMS_SYSTEM_PROMPT}\n\n[작성 예시 자료]\n${GEMS_REFERENCE_DATA}\n\n` },
-                            { text: byteLimitInstruction },
-                            { text: `[이번에 작성할 학생 관찰 메모]\n${memo}` }
-                        ]
-                    }
-                ],
+                contents: [{ role: "user", parts: requestParts }],
+                // 💡 maxOutputTokens을 안 주면 모델 기본값에 맡겨지는데, 이 경우 답변이 예기치 않게
+                // 잘리는 사례가 있어 목표 분량보다 넉넉하게(여유분 포함) 상한선을 함께 지정한다.
                 generationConfig: {
-    temperature: 0.4,
-    topP: 0.8,
-    maxOutputTokens: Math.min(8192, Math.max(3500, byteLimit + 2000)), // 사고 토큰분 여유 확보
-  
-}
+                    temperature: 0.4,
+                    topP: 0.8,
+                    maxOutputTokens: Math.min(8192, Math.max(2048, byteLimit * 3))
+                }
             }),
-            signal: gemsController.signal   // ← 추가
+            signal: gemsController.signal   
         });
-
-        if (response.status === 503) {
-            if(resultBox) resultBox.value = "구글 API 서버가 일시적인 과부하 상태입니다. 3초만 기다리신 후 [다시 한 번 더] 버튼을 눌러주세요!";
-            return;
-        }
 
         const data = await response.json();
 
         if (data.error) {
-            if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
+            // 💥 [추가] 파일 API 만료(48시간 지나 구글 서버에서 지워짐) 에러 핸들링
+            // 구글 File API 만료 시 주로 404 (NOT_FOUND) 에러나 'files/' 관련 메시지가 떨어집니다.
+            if (data.error.status === "NOT_FOUND" || data.error.message.includes("files/")) {
+                alert("⚠️ 구글 서버에 올라간 성취기준 가이드 파일이 만료되었습니다 (최대 48시간 유지).\n파일을 다시 선택해 [구글 서버 업로드] 버튼을 눌러주세요!");
+                if(resultBox) resultBox.value = "성취기준 가이드 파일이 만료되었습니다. 파일을 다시 업로드해 주세요.";
+                window.GEMS_FILE_DATA = null; // 만료된 주소 초기화
+            } else {
+                if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
+            }
         } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             if(resultBox) resultBox.value = data.candidates[0].content.parts[0].text;
-            
-            if (data.usageMetadata) {
-                console.log("=== 2.5 Flash 자동 캐싱 모니터링 ===");
-                console.log("이번 학생 총 토큰:", data.usageMetadata.totalTokenCount);
-                console.log("★ 캐시 처리되어 요금 면제된 토큰:", data.usageMetadata.cachedContentTokenCount || 0);
+            // 응답이 도중에 잘렸다면(MAX_TOKENS) 사용자에게 알려준다
+            if (data.candidates[0].finishReason === "MAX_TOKENS") {
+                if(resultBox) resultBox.value += "\n\n[⚠️ 응답이 최대 길이 제한으로 중간에 잘렸습니다. '생성 길이 제한' 값을 낮추거나 다시 시도해 주세요.]";
             }
         } else {
-          console.log("=== 전체 응답 디버깅 ===");
-          console.log(JSON.stringify(data, null, 2));  
-          if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
+            if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
         }
 
     } catch (error) {
-        if (error.name === "AbortError") {                      // ← 추가
+        if (error.name === "AbortError") {                      
             if(resultBox) resultBox.value = "생기부 생성이 중지되었습니다.";
         } else {
             if(resultBox) resultBox.value = "연동 오류가 발생했습니다: " + error.message;
-            console.error(error);
         }
     } finally {
         if(btn) { btn.disabled = false; btn.style.display = "inline-block"; }
-        if(stopBtn) stopBtn.style.display = "none";
+        if(stopBtn) { stopBtn.style.display = "none"; }
+        updateGemsResultBytes(byteLimit); // 💡 결과 바이트 카운터 갱신 (기존엔 이 호출이 누락되어 항상 0Byte로 표시됨)
         gemsController = null;
     }
 }
 
-// 새로 추가하는 중지 함수
 window.stopGemsEngine = function() {
     if (gemsController) {
         gemsController.abort();
@@ -4202,6 +4553,37 @@ window.doLogout = async function() {
   }
 };
 
+
+const FONT_SIZE_KEY = "dashboard-font-size";
+const DEFAULT_FONT_SIZE = 16;
+const MIN_FONT_SIZE = 13;
+const MAX_FONT_SIZE = 22;
+const STEP = 1;
+
+function applyFontSize(size) {
+    document.documentElement.style.fontSize = size + "px";
+    localStorage.setItem(FONT_SIZE_KEY, size);
+}
+
+function getCurrentFontSize() {
+    const saved = localStorage.getItem(FONT_SIZE_KEY);
+    return saved ? parseInt(saved, 10) : DEFAULT_FONT_SIZE;
+}
+
+// 페이지 로드 시 저장된 크기 적용
+applyFontSize(getCurrentFontSize());
+
+document.getElementById("font-increase-btn").addEventListener("click", () => {
+    applyFontSize(Math.min(MAX_FONT_SIZE, getCurrentFontSize() + STEP));
+});
+
+document.getElementById("font-decrease-btn").addEventListener("click", () => {
+    applyFontSize(Math.max(MIN_FONT_SIZE, getCurrentFontSize() - STEP));
+});
+
+document.getElementById("font-reset-btn").addEventListener("click", () => {
+    applyFontSize(DEFAULT_FONT_SIZE);
+});
 
 </script>
 </body>
