@@ -278,6 +278,11 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .meal-list li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--after-accent); flex-shrink: 0; }
 .meal-loading { color: var(--muted); font-size: .78rem; text-align: center; padding: 16px 0; }
 .meal-school { font-size: .7rem; color: var(--muted); margin-bottom: 8px; }
+.meal-date-nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
+.meal-nav-btn { background: none; border: 1.5px solid var(--border); border-radius: 4px; width: 22px; height: 22px; cursor: pointer; font-size: .68rem; color: var(--muted); display: flex; align-items: center; justify-content: center; padding: 0; }
+.meal-nav-btn:hover { border-color: var(--ink); color: var(--ink); }
+.meal-date-label { font-size: .76rem; font-weight: 700; cursor: pointer; min-width: 92px; text-align: center; }
+.meal-date-label:hover { color: var(--accent); }
 
 /* ── 모달 ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 12px; }
@@ -930,7 +935,12 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
     </div>
 
     <div class="panel meal-panel">
-      <div class="panel-title">🍱 오늘의 급식</div>
+      <div class="panel-title">🍱 급식</div>
+      <div class="meal-date-nav">
+        <button class="meal-nav-btn" onclick="changeMealDate(-1)" title="이전 날">◀</button>
+        <span class="meal-date-label" id="meal-date-label" onclick="resetMealDate()" title="클릭하면 오늘로 이동">오늘</span>
+        <button class="meal-nav-btn" onclick="changeMealDate(1)" title="다음 날">▶</button>
+      </div>
       <div class="meal-school" id="meal-school">조회 중...</div>
       <div class="meal-tab-row">
         <button class="meal-tab active" onclick="showMeal('lunch', this)">중식</button>
@@ -1128,11 +1138,12 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
   <div style="display:flex; gap:8px; flex-wrap:wrap;">
     <input type="date" id="record-date" class="memo-input" style="flex:1; min-width:130px;">
     <select id="record-category" class="memo-input" style="flex:1; min-width:130px; background:var(--paper); cursor:pointer;">
-      <option value="물리학 과세특>">물리학 과세특></option>
-      <option value="행발>"> 행발></option>
-      <option value="진로/창체>"> 진로/창체></option>
-      <option value="상담/기타>"> 상담/기타></option>
+      <option value="물리학 과세특">물리학 과세특</option>
+      <option value="행발">행발</option>
+      <option value="진로/창체">진로/창체</option>
+      <option value="상담/기타">상담/기타</option>
     </select>
+    <button type="button" onclick="openRecordCategoryModal()" title="기록 태그 관리" style="border:1.5px solid var(--border); background:var(--paper); border-radius:4px; padding:0 10px; cursor:pointer; font-size:.85rem; color:var(--muted);">⚙️</button>
   </div>
   <textarea id="record-content" class="memo-input" rows="4" placeholder="누적할 관찰 내용이나 특이 사항을 입력해 주세요. (추후 생기부 원클릭 가공용)" style="resize:none; font-family:inherit; line-height:1.4;"></textarea>
   <button class="memo-add-btn" style="width:100%; padding:10px; font-size:0.85rem;" onclick="addStudentRecord()">📌 관찰 내용 기록하기</button>
@@ -1192,6 +1203,24 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
         <button class="memo-add-btn" onclick="addClassTab()">추가</button>
       </div>
       <button class="tt-save-btn" onclick="saveClassTabs()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="classtab-modal-overlay" id="categorytag-modal">
+  <div class="classtab-modal-box">
+    <div class="modal-header">
+      <h2>🏷️ 기록 태그 관리</h2>
+      <button class="modal-close" onclick="closeRecordCategoryModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">학생 기록 작성 시 사용할 태그를 편집하거나 추가/삭제하세요.</p>
+      <div id="categorytag-edit-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        <input type="text" id="categorytag-new-input" placeholder="새 태그 이름 (예: 독서활동)" class="memo-input" style="flex:1;">
+        <button class="memo-add-btn" onclick="addRecordCategoryTag()">추가</button>
+      </div>
+      <button class="tt-save-btn" onclick="saveRecordCategories()">저장하기</button>
     </div>
   </div>
 </div>
@@ -1734,9 +1763,88 @@ window.saveClassTabs = async function() {
   closeClassTabModal();
 };
 
+// ── 학생 기록 태그(카테고리) 관리 ──
+const DEFAULT_RECORD_CATEGORIES = ['물리학 과세특', '행발', '진로/창체', '상담/기타'];
+let recordCategories = [...DEFAULT_RECORD_CATEGORIES];
+let editingRecordCategories = [];
+
+async function loadRecordCategories() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'recordCategories'));
+    if (snap.exists() && Array.isArray(snap.data().list) && snap.data().list.length > 0) {
+      recordCategories = snap.data().list;
+    }
+  } catch(e) { console.warn('기록 태그 Firebase 로드 실패(localStorage 폴백):', e);
+    try { const s=localStorage.getItem('hmm_record_categories'); if(s) recordCategories=JSON.parse(s); } catch(_){}
+  }
+  renderRecordCategorySelect();
+}
+
+async function saveRecordCategoriesLocal() {
+  try {
+    await setDoc(doc(db, 'settings', 'recordCategories'), { list: recordCategories });
+    localStorage.setItem('hmm_record_categories', JSON.stringify(recordCategories));
+  } catch(e) {
+    console.warn('Firebase 저장 실패, localStorage만 저장:', e);
+    localStorage.setItem('hmm_record_categories', JSON.stringify(recordCategories));
+  }
+}
+
+function renderRecordCategorySelect() {
+  const sel = document.getElementById('record-category');
+  if (!sel) return;
+  const prevVal = sel.value;
+  sel.innerHTML = recordCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (recordCategories.includes(prevVal)) sel.value = prevVal;
+}
+
+window.openRecordCategoryModal = function() {
+  editingRecordCategories = [...recordCategories];
+  renderRecordCategoryEditList();
+  document.getElementById('categorytag-modal').classList.add('show');
+};
+window.closeRecordCategoryModal = function() {
+  document.getElementById('categorytag-modal').classList.remove('show');
+};
+function renderRecordCategoryEditList() {
+  const list = document.getElementById('categorytag-edit-list');
+  list.innerHTML = '';
+  editingRecordCategories.forEach((tag, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    row.innerHTML = `
+      <input value="${tag}" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);background:var(--paper);font-size:.85rem;font-family:inherit;outline:none;border-radius:4px;" oninput="updateEditCategoryTag(${i}, this.value)">
+      ${editingRecordCategories.length > 1 ? `<button onclick="removeEditCategoryTag(${i})" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:2px 6px;">✕</button>` : ''}
+    `;
+    list.appendChild(row);
+  });
+}
+window.updateEditCategoryTag = function(i, val) { editingRecordCategories[i] = val; };
+window.removeEditCategoryTag = function(i) {
+  editingRecordCategories.splice(i, 1);
+  renderRecordCategoryEditList();
+};
+window.addRecordCategoryTag = function() {
+  const input = document.getElementById('categorytag-new-input');
+  const val = input.value.trim();
+  if (!val) return;
+  editingRecordCategories.push(val);
+  input.value = '';
+  renderRecordCategoryEditList();
+};
+window.saveRecordCategories = async function() {
+  const cleaned = editingRecordCategories.map(t => t.trim()).filter(Boolean);
+  if (!cleaned.length) { alert('태그를 최소 1개 이상 입력해주세요.'); return; }
+  recordCategories = cleaned;
+  await saveRecordCategoriesLocal();
+  renderRecordCategorySelect();
+  closeRecordCategoryModal();
+};
+
 // ── 앱 초기화 (로그인 후 호출) ──
 async function initApp() {
   await loadClassTabs();
+  await loadRecordCategories();
   await loadApiKeys();
   renderClassTabBar();
   updateClock();
@@ -2056,9 +2164,19 @@ function closeTTEdit() { document.getElementById('tt-modal').classList.remove('s
 window.openTTEdit=openTTEdit; window.closeTTEdit=closeTTEdit;
 
 // ── 급식 ──
-async function fetchNeisMeal() {
+let currentMealDate = new Date();
+function formatMealDateLabel(d) {
+  const today = new Date();
+  const isToday = d.toDateString() === today.toDateString();
+  const label = `${d.getMonth()+1}월 ${d.getDate()}일`;
+  return isToday ? `오늘 (${label})` : label;
+}
+async function fetchNeisMeal(targetDate) {
+  if (targetDate) currentMealDate = targetDate;
   const schoolLabel=document.getElementById('meal-school');
-  const now=new Date();
+  const dateLabel=document.getElementById('meal-date-label');
+  const now=currentMealDate;
+  if (dateLabel) dateLabel.textContent = formatMealDateLabel(now);
   const yyyymmdd=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
   const url=`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${window.NEIS_API_KEY}&Type=json&pIndex=1&pSize=100&ATPT_OFCDC_SC_CODE=${window.OFFICE_CODE}&SD_SCHUL_CODE=${window.SCHOOL_CODE}&MLSV_YMD=${yyyymmdd}`;
   try {
@@ -2074,6 +2192,14 @@ async function fetchNeisMeal() {
   } catch(e) { schoolLabel.textContent="데이터 에러"; }
   renderMeal('lunch'); renderMeal('dinner');
 }
+window.changeMealDate = function(delta) {
+  const d = new Date(currentMealDate);
+  d.setDate(d.getDate() + delta);
+  fetchNeisMeal(d);
+};
+window.resetMealDate = function() {
+  fetchNeisMeal(new Date());
+};
 function renderMeal(type) {
   const el=document.getElementById(`meal-${type}-content`); const items=mealData[type];
   if(!items||!items.length){el.innerHTML=`<p class="meal-loading">오늘 ${type==='lunch'?'중식':'석식'} 정보가 없습니다.</p>`;return;}
