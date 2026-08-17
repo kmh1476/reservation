@@ -160,7 +160,8 @@ body { background: var(--paper); color: var(--ink); font-family: 'Pretendard', s
 .tt-table th { background: var(--ink); color: #ccc; padding: 4px 1px; text-align: center; font-weight: 500; font-size: .6rem; }
 .tt-table th:first-child { width: 36px; }
 .tt-table th.today-col { color: #7ab8f5; }
-.tt-table td { padding: 5px 1px; text-align: center; border-bottom: 1px solid var(--border); font-size: .62rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tt-table td { padding: 5px 1px; text-align: center; border-bottom: 1px solid var(--border); overflow: hidden; }
+.tt-table td .tt-cell-text { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: .62rem; }
 .tt-table td.today-col { background: #e8f0fe; color: #1a5cb5; font-weight: 600; }
 .tt-table td.current-period-row { background: #ffeaa7 !important; color: #d35400 !important; font-weight: 700; }
 .tt-table td.period { color: var(--muted); font-size: .58rem; background: var(--paper); width: 36px; font-weight: 600; }
@@ -2141,10 +2142,31 @@ function renderTimetable() {
   const tbody=document.getElementById('tt-body'); tbody.innerHTML='';
   for(let p=1;p<=PERIODS;p++){
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="period">${p}교</td>`+DAYS.map(d=>{const v=timetable[p]?.[d]||'';const cls=d===todayCol?'today-col':(v===''?'empty':'');return`<td class="${cls}">${v||'—'}</td>`;}).join('');
+    tr.innerHTML=`<td class="period">${p}교</td>`+DAYS.map(d=>{const v=timetable[p]?.[d]||'';const cls=d===todayCol?'today-col':(v===''?'empty':'');return`<td class="${cls}"><span class="tt-cell-text">${v||'—'}</span></td>`;}).join('');
     tbody.appendChild(tr);
   }
+  requestAnimationFrame(fitTimetableText);
 }
+
+// ── 시간표 칸에 맞춰 글씨 크기 자동 축소 ──
+const TT_FONT_MAX = 0.62; // .tt-table td 기본 font-size(rem)와 동일
+const TT_FONT_MIN = 0.42; // 이 이하로는 줄이지 않고 말줄임(...) 처리에 맡김
+function fitTimetableText() {
+  document.querySelectorAll('#tt-body td:not(.period) .tt-cell-text').forEach(span => {
+    const td = span.parentElement;
+    let size = TT_FONT_MAX;
+    span.style.fontSize = size + 'rem';
+    while (span.scrollWidth > td.clientWidth && size > TT_FONT_MIN) {
+      size -= 0.02;
+      span.style.fontSize = size.toFixed(2) + 'rem';
+    }
+  });
+}
+let ttResizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(ttResizeTimer);
+  ttResizeTimer = setTimeout(fitTimetableText, 150);
+});
 async function saveTimetable() {
   const tt={};
   for(let p=1;p<=PERIODS;p++){tt[p]={};DAYS.forEach(d=>{tt[p][d]=document.getElementById(`tt-${p}-${d}`)?.value.trim()||'';});}
