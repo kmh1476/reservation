@@ -130,7 +130,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc }
+import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -308,14 +308,14 @@ async function submitBooking() {
   }
 
   btn.disabled = true; btn.textContent = '처리 중...';
-  try {
+try {
     await addDoc(collection(db, 'bookings'), {
       date: selDate,
       type: selSlot.type,
       customIdx: selSlot.customIdx ?? null,
       name, content,
       pw: simpleHash(pw),
-      createdAt: Date.now()
+      createdAt: serverTimestamp() // Firebase 서버의 정확한 요청 도착 시간으로 변경!
     });
     alert('예약이 완료되었습니다! 예약한 시간에 방문해주세요!');
     location.reload();
