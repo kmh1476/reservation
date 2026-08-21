@@ -1529,7 +1529,7 @@ window.openGemsWindow = function() {
 const stickyColRef = collection(db, "sticky_notes"); 
 
 // 1. 실시간 리스너 및 버튼 이벤트 연결
-function initStickyNotes() {
+async function initStickyNotes() {
   // 상단 [+] 버튼 연동 (타이밍 에러 방지)
   const addBtn = document.getElementById('add-sticky-btn');
   if (addBtn) {
@@ -1538,6 +1538,10 @@ function initStickyNotes() {
       addStickyNote();
     });
   }
+
+  // 🔒 익명 인증이 끝날 때까지 기다린 뒤 Firestore를 구독합니다.
+  // (인증 전에 구독하면 규칙에 막혀 permission-denied가 나고, 그 뒤로 복구가 안 됩니다)
+  await window._gemsAuthReady;
 
   // Firestore 실시간 감시 시작
   onSnapshot(stickyColRef, (snapshot) => {
@@ -1685,6 +1689,8 @@ function makeElementDraggable(elmnt) {
 }
 
 // 6. 페이지 로드 완수 시 구동 시작
+// 🔧 [버그 수정] 예전엔 initStickyNotes()가 여기서 한 번, 아래(7번)에서 또 한 번
+// 총 두 번 호출돼서 실시간 리스너가 중복으로 붙고 있었습니다. 하나만 남깁니다.
 (() => {
   initStickyNotes();
 })(); // (defer 스크립트라 DOM은 이미 준비됨 — DOMContentLoaded 대기 제거)
@@ -1694,11 +1700,6 @@ function makeElementDraggable(elmnt) {
 window.addStickyNote = addStickyNote;
 window.deleteStickyNote = deleteStickyNote;
 window.updateStickyText = updateStickyText;
-
-// 7. HTML 로드가 끝나면 스티커 노트 실시간 동기화 시작
-(() => {
-  initStickyNotes();
-})(); // (defer 스크립트라 DOM은 이미 준비됨 — DOMContentLoaded 대기 제거)
 
 // ─────────────────────────────────────────────────────────
 // 📌 ⚡ 퀵 키워드 자동 입력 및 Firestore 관리 로직
@@ -1729,9 +1730,11 @@ function initQuickKeywords() {
     "스스로 탐구 주제를 설정하고 해결하려는 의지가 돋보임."
   ];
 
-  // DB 실시간 감시
-  onSnapshot(kwDocRef, (docSnap) => {
-    let keywordsArray = defaultKeywords;
+  // 🔒 익명 인증이 끝날 때까지 기다린 뒤 Firestore를 구독합니다.
+  window._gemsAuthReady.then(() => {
+    // DB 실시간 감시
+    onSnapshot(kwDocRef, (docSnap) => {
+      let keywordsArray = defaultKeywords;
 
     if (docSnap.exists()) {
       const data = docSnap.data();
@@ -1765,7 +1768,8 @@ function initQuickKeywords() {
 
     // [수정 모드 화면] 텍스트 영역에 줄바꿈 형식으로 미리 채워두기
     rawInputEl.value = keywordsArray.join('\n');
-  });
+    });
+  }); // ← window._gemsAuthReady.then() 끝
 
   // 토글 버튼 누를 때 (수정 <-> 보기 모드 전환)
   toggleBtn.onclick = () => {
@@ -1807,8 +1811,7 @@ function initQuickKeywords() {
 
 // 💡 스크립트 맨 아래에 있는 DOMContentLoaded 리스너 안에 초기화 함수를 얹어줍니다.
 (() => {
-  if (typeof initStickyNotes === 'function') initStickyNotes();
-  
+  // (initStickyNotes()는 위쪽에서 이미 한 번 호출했으므로 여기선 중복 호출하지 않습니다)
   // ⚡ 퀵 키워드 엔진 가동
   initQuickKeywords();
 })(); // (defer 스크립트라 DOM은 이미 준비됨 — DOMContentLoaded 대기 제거)
@@ -2538,12 +2541,22 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
         const data = await response.json();
 
         if (data.error) {
-            // 💥 [추가] 파일 API 만료(48시간 지나 구글 서버에서 지워짐) 에러 핸들링
-            // 구글 File API 만료 시 주로 404 (NOT_FOUND) 에러나 'files/' 관련 메시지가 떨어집니다.
-            if (data.error.status === "NOT_FOUND" || data.error.message.includes("files/")) {
+            // 💥 파일 API 만료(48시간 지나 구글 서버에서 지워짐) 에러 핸들링
+            // ⚠️ [버그 수정] 예전 코드는 NOT_FOUND면 무조건 "파일 만료"로 떴는데,
+            // 모델명이 잘못됐을 때도 NOT_FOUND가 오기 때문에 파일을 안 쓴 요청에도
+            // 엉뚱하게 "파일 만료" 메시지가 뜨는 문제가 있었습니다.
+            // → 파일을 실제로 사용한 요청이면서 + 메시지가 파일(files/) 관련일 때만
+            //   "파일 만료"로 안내하고, 그 외 NOT_FOUND는 모델명 오류 등으로 별도 안내합니다.
+            const isFileRelated = shouldIncludeFile && (
+                (data.error.message || "").includes("files/") ||
+                (data.error.message || "").toLowerCase().includes("file")
+            );
+            if (isFileRelated) {
                 alert("⚠️ 구글 서버에 올라간 성취기준 가이드 파일이 만료되었습니다 (최대 48시간 유지).\n파일을 다시 선택해 [구글 서버 업로드] 버튼을 눌러주세요!");
                 if(resultBox) resultBox.value = "성취기준 가이드 파일이 만료되었습니다. 파일을 다시 업로드해 주세요.";
                 window.GEMS_FILE_DATA = null; // 만료된 주소 초기화
+            } else if (data.error.status === "NOT_FOUND") {
+                if(resultBox) resultBox.value = "구글 API 에러 발생: 요청한 모델을 찾을 수 없습니다 (" + selectedModel + "). 모델 선택을 확인해 주세요.\n원본 메시지: " + data.error.message;
             } else {
                 if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
             }
