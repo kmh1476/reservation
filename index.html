@@ -130,7 +130,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, serverTimestamp }
+import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -145,6 +145,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 🔒 예약 조회/취소는 이제 이 Cloud Functions를 거칩니다.
+// (브라우저가 bookings 컬렉션을 직접 읽지 않아서, 다른 학부모의
+//  이름/상담내용이 브라우저에 내려가는 일이 없습니다)
+const FUNCTIONS_BASE = "https://asia-northeast3-my-counsel-9b532.cloudfunctions.net";
+
 const FIXED_DEF = {
   lunch: { label: '점심 상담', time: '12:40 – 13:00' },
   after: { label: '방과후 상담', time: '15:10 – 15:30' }
@@ -153,7 +158,7 @@ const FIXED_DEF = {
 let curYear, curMonth, selDate = null;
 // selSlot = { type: 'lunch'|'after'|'custom', customIdx: number|null }
 let selSlot = null;
-let slotsCache = {}, bookingsCache = {};
+let slotsCache = {}, availabilityCache = {};
 
 // ── 이벤트 리스너 ──
 document.getElementById('prev-btn').addEventListener('click', () => changeMonth(-1));
@@ -174,14 +179,10 @@ function init() {
     if (selDate) renderRight(selDate);
   });
 
-  onSnapshot(collection(db, 'bookings'), snap => {
-    bookingsCache = {};
-    snap.forEach(d => {
-      const b = { id: d.id, ...d.data() };
-      if (!bookingsCache[b.date]) bookingsCache[b.date] = [];
-      bookingsCache[b.date].push(b);
-    });
-    renderCal();
+  // 🔓 이름/상담내용이 없는 "찼는지 여부"만 담긴 요약 정보만 구독합니다.
+  onSnapshot(collection(db, 'availability'), snap => {
+    availabilityCache = {};
+    snap.forEach(d => availabilityCache[d.id] = d.data());
     if (selDate) renderRight(selDate);
   });
 }
@@ -240,14 +241,14 @@ function renderRight(key) {
   document.getElementById('form-date-title').textContent = `📅 ${key} 상담 신청`;
 
   const slotInfo = slotsCache[key] || {};
-  const dayBooks = bookingsCache[key] || [];
+  const dayAvail = availabilityCache[key] || {};
   const area = document.getElementById('slot-area');
   area.innerHTML = '';
 
   // 고정 슬롯
   ['lunch', 'after'].forEach(type => {
     if (!slotInfo[type]) return;
-    const taken = dayBooks.some(b => b.type === type);
+    const taken = !!dayAvail[type];
     const isSel = selSlot && selSlot.type === type;
     const card = document.createElement('div');
     card.className = `slot-card ${isSel ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
@@ -268,9 +269,10 @@ function renderRight(key) {
 
   // 커스텀 슬롯
   const customs = slotInfo.custom || [];
+  const takenCustomIdx = new Set(dayAvail.customTaken || []);
   customs.forEach((c, idx) => {
     if (!c.open) return;
-    const taken = dayBooks.some(b => b.type === 'custom' && b.customIdx === idx);
+    const taken = takenCustomIdx.has(idx);
     const isSel = selSlot && selSlot.type === 'custom' && selSlot.customIdx === idx;
     const card = document.createElement('div');
     card.className = `slot-card ${isSel ? 'selected-card' : ''} ${taken ? 'taken' : ''}`;
@@ -326,51 +328,84 @@ try {
 }
 
 // ── 예약 조회/취소 ──
-function doCheck() {
+async function doCheck() {
   const name = document.getElementById('check-name').value.trim();
-  const pw = simpleHash(document.getElementById('check-pw').value);
+  const pwHash = simpleHash(document.getElementById('check-pw').value);
   const res = document.getElementById('check-result');
-  const found = [];
 
-  Object.values(bookingsCache).forEach(arr =>
-    arr.forEach(b => { if (b.name === name && b.pw === pw) found.push(b); })
-  );
-
-  if (!found.length) {
-    alert('일치하는 예약 정보가 없습니다.');
+  if (!name || !document.getElementById('check-pw').value) {
+    alert('이름과 비밀번호를 입력해주세요.');
     return;
   }
 
-  res.style.display = 'block';
-  res.innerHTML = found.map(b => {
-    // 슬롯 표시 라벨 만들기
-    let slotLabel = '';
-    if (b.type === 'lunch' || b.type === 'after') {
-      slotLabel = FIXED_DEF[b.type].label;
-    } else if (b.type === 'custom') {
-      const cs = (slotsCache[b.date]?.custom || [])[b.customIdx];
-      slotLabel = cs ? `✦ ${cs.name} (${cs.start}–${cs.end})` : '커스텀 상담';
-    }
-    return `
-      <div style="background:#f9f9f9; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid var(--accent2);">
-        <div style="font-size:0.85rem; font-weight:700;">${b.date}</div>
-        <div style="font-size:0.75rem; color:var(--muted);">${slotLabel}</div>
-        <button class="cancel-btn" data-id="${b.id}">신청 취소하기</button>
-      </div>
-    `;
-  }).join('');
+  const checkBtn = document.getElementById('check-btn');
+  checkBtn.disabled = true; checkBtn.textContent = '조회 중...';
 
-  // 취소 버튼 이벤트 리스너
-  res.querySelectorAll('.cancel-btn').forEach(btn => {
-    btn.addEventListener('click', () => cancelBooking(btn.dataset.id));
-  });
+  try {
+    const resp = await fetch(`${FUNCTIONS_BASE}/getMyBookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, pwHash })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data?.error?.message || data?.error || '조회 중 오류가 발생했습니다.');
+      return;
+    }
+
+    const found = data.bookings || [];
+    if (!found.length) {
+      alert('일치하는 예약 정보가 없습니다.');
+      return;
+    }
+
+    res.style.display = 'block';
+    res.innerHTML = found.map(b => {
+      // 슬롯 표시 라벨 만들기
+      let slotLabel = '';
+      if (b.type === 'lunch' || b.type === 'after') {
+        slotLabel = FIXED_DEF[b.type].label;
+      } else if (b.type === 'custom') {
+        const cs = (slotsCache[b.date]?.custom || [])[b.customIdx];
+        slotLabel = cs ? `✦ ${cs.name} (${cs.start}–${cs.end})` : '커스텀 상담';
+      }
+      return `
+        <div style="background:#f9f9f9; padding:12px; border-radius:6px; margin-bottom:10px; border-left:4px solid var(--accent2);">
+          <div style="font-size:0.85rem; font-weight:700;">${b.date}</div>
+          <div style="font-size:0.75rem; color:var(--muted);">${slotLabel}</div>
+          <button class="cancel-btn" data-id="${b.id}">신청 취소하기</button>
+        </div>
+      `;
+    }).join('');
+
+    // 취소 버튼 이벤트 리스너
+    res.querySelectorAll('.cancel-btn').forEach(btn => {
+      btn.addEventListener('click', () => cancelBooking(btn.dataset.id, name, pwHash));
+    });
+  } catch (e) {
+    alert('조회 중 오류가 발생했습니다.');
+  } finally {
+    checkBtn.disabled = false; checkBtn.textContent = '조회하기';
+  }
 }
 
-async function cancelBooking(id) {
-  if (confirm('정말 이 상담 예약을 취소하시겠습니까?')) {
-    await deleteDoc(doc(db, 'bookings', id));
+async function cancelBooking(id, name, pwHash) {
+  if (!confirm('정말 이 상담 예약을 취소하시겠습니까?')) return;
+  try {
+    const resp = await fetch(`${FUNCTIONS_BASE}/cancelMyBooking`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name, pwHash })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data?.error?.message || data?.error || '취소 중 오류가 발생했습니다.');
+      return;
+    }
     alert('정상적으로 취소되었습니다.');
     location.reload();
+  } catch (e) {
+    alert('취소 중 오류가 발생했습니다.');
   }
 }
 
