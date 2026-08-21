@@ -4,7 +4,7 @@
 //      크로미움 CORS 정책 때문에 로드가 차단될 수 있습니다.
 let initializeApp;
 let getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs, query, where;
-let signOut, getAuth;
+let signOut, getAuth, signInAnonymously, onAuthStateChanged;
 
 (async function () {
   const appMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
@@ -13,7 +13,7 @@ let signOut, getAuth;
 
   ({ initializeApp } = appMod);
   ({ getFirestore, collection, onSnapshot, addDoc, deleteDoc, updateDoc, doc, setDoc, getDoc, writeBatch, getDocs, query, where } = fsMod);
-  ({ signOut, getAuth } = authMod);
+  ({ signOut, getAuth, signInAnonymously, onAuthStateChanged } = authMod);
 
 
 // 렌더러 스크립트 최상단(혹은 DOMContentLoaded 직후)에 추가
@@ -107,6 +107,31 @@ window.db = db;
 
 console.log("🔥 파이어베이스(App, Auth, DB) 거실에 등록 완료!");
 
+// ── 🔒 익명 인증: Cloud Functions(젬즈 AI 대리 호출) 인증용 ──
+// AI 호출은 더 이상 브라우저에서 API 키를 직접 들고 하지 않고,
+// Firebase Auth로 발급받은 ID 토큰을 들고 Cloud Functions를 거쳐서 호출합니다.
+// (키 자체는 서버에만 존재 → GitHub에 코드가 공개돼도 키는 노출되지 않음)
+window._gemsAuthReady = new Promise((resolve) => {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      resolve(user);
+    } else {
+      signInAnonymously(auth).catch((e) => {
+        console.error("익명 인증 실패:", e);
+      });
+    }
+  });
+});
+
+// Cloud Function 호출에 쓸 ID 토큰을 가져오는 헬퍼
+window.getGemsIdToken = async function () {
+  await window._gemsAuthReady;
+  if (!auth.currentUser) {
+    throw new Error("인증되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+  }
+  return await auth.currentUser.getIdToken();
+};
+
 const DAYS = ['mon','tue','wed','thu','fri'];
 const DAY_LABELS = ['월','화','수','목','금'];
 const PERIODS = 7;
@@ -126,9 +151,16 @@ const ADM_FIXED_TIMES = { lunch: '12:40 – 13:00', after: '15:10 – 15:30' };
 let memos = [];
 
 window.NEIS_API_KEY = "";
-window.GEMS_API_KEY = ""; 
+// 🔒 Gemini(GEMS) API 키는 이제 Firestore에서 읽어오지 않습니다.
+// Cloud Functions(gemsGenerateContent / gemsUploadFile)가 서버 쪽 비밀(Secret)로만
+// 갖고 있고, 브라우저에는 절대 내려오지 않습니다. Firestore config/apiKeys 문서에서
+// GEMINI 필드는 지워도 됩니다 (더 이상 쓰이지 않음).
 async function loadApiKeys() {
   try {
+    // 🔒 익명 인증이 끝날 때까지 기다린 뒤에 Firestore를 읽습니다.
+    // (인증 전에 읽으려고 하면 규칙에 막혀 permission-denied가 납니다)
+    await window._gemsAuthReady;
+
     // 1. Firestore에서 문서 가져오기
     const docRef = doc(db, "config", "apiKeys"); 
     const docSnap = await getDoc(docRef);
@@ -141,10 +173,6 @@ async function loadApiKeys() {
       // 2. NEIS 키 매칭 (대소문자 방어)
       window.NEIS_API_KEY = data['NEIS:'] || data.NEIS || "";
 if (window.NEIS_API_KEY) window.NEIS_API_KEY = window.NEIS_API_KEY.trim();
-      
-      // 3. GEMINI 키 매칭 (다양한 스펠링 방어)
-      window.GEMS_API_KEY = data['GEMINI:'] || data.GEMINI || "";
-if (window.GEMS_API_KEY) window.GEMS_API_KEY = window.GEMS_API_KEY.trim();
       
       console.log("🔒 API Keys 로드 완료");
 
@@ -2354,13 +2382,18 @@ const GEMS_REFERENCE_DATA = `
 
 뉴턴의 중력 법칙을 학습하며 지표면 근처의 중력 퍼텐셜 에너지와 우주 공간에서의 중력 퍼텐셜 에너지 공식의 형태가 다른 이유에 대해 의문을 품고 탐구 보고서를 작성함. 두 공식의 차이가 중력의 크기가 일정하다고 가정하는지, 혹은 거리에 따라 변한다고 가정하는지에 따라 달라진다는 점을 명확히 분석함. 나아가 만유인력이 거리의 제곱에 반비례하는 변하는 힘이라는 사실로부터 일-에너지 정리를 적용하여 우주 공간에서의 중력 퍼텐셜 에너지 공식을 수학적으로 유도해내는 과정을 통해 물리 개념을 논리적으로 증명하는 탐구 역량을 보여줌. 이러한 이론적 이해에 그치지 않고, 학습한 개념을 실제 현상에 적용하여 검증하는 과학적 태도를 보임. 직접 지구의 질량, 반지름, 만유인력 상수 값을 조사하고 이를 공식에 대입하여 지표면에서의 중력가속도 값을 성공적으로 계산해냄. 이 과정에서 이론값이 실제 측정값과 근소한 차이를 보이는 이유를 지구의 자전과 불균일한 질량 분포 등과 연관 지어 분석하며 문제의 본질을 다각적으로 파악하는 비판적 사고력을 보여줌. 추상적인 물리 법칙을 구체적인 수치로 현실 세계와 연결하는 경험을 통해 물리학에 대한 깊은 관심을 보이는 학생임.`; 
 // ─────────────────────────────────────────────────────────
-// 🚀 GEMS AI 비서 - 기존 3.5-flash 안정화 버전 (에러 없는 오리지널 모드)
+// 🚀 GEMS AI 비서 - Cloud Functions 대리 호출 버전
+// (Gemini API 키는 브라우저에 절대 내려오지 않고, 서버(Functions)에만 존재합니다)
 // ─────────────────────────────────────────────────────────
+
+// 🔧 배포 후 실제 Cloud Functions 리전/프로젝트ID에 맞게 확인하세요.
+//    firebase deploy 결과에 찍히는 Function URL을 그대로 넣으면 됩니다.
+const GEMS_FUNCTIONS_BASE = "https://asia-northeast3-my-counsel-9b532.cloudfunctions.net";
 
 let gemsController = null;
 window.GEMS_FILE_DATA = null;
 
-// [파일 업로드 함수]
+// [파일 업로드 함수] — 이제 Gemini에 직접 올리지 않고 Cloud Function을 거칩니다.
 window.uploadGemsFile = async function(fileInputId) {
     const fileInput = document.getElementById(fileInputId);
     if (!fileInput || !fileInput.files[0]) {
@@ -2373,15 +2406,24 @@ window.uploadGemsFile = async function(fileInputId) {
     if(resultBox) resultBox.value = "구글 서버에 성취기준 가이드를 업로드하는 중입니다...";
 
     try {
+        const idToken = await window.getGemsIdToken();
+
         const metadata = { file: { displayName: file.name } };
         const formData = new FormData();
         formData.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
         formData.append("file", file);
 
-        const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=multipart&key=${window.GEMS_API_KEY}`;
+        const url = `${GEMS_FUNCTIONS_BASE}/gemsUploadFile`;
 
-        const response = await fetch(url, { method: "POST", body: formData });
-        if (!response.ok) throw new Error(`업로드 실패 (HTTP ${response.status})`);
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${idToken}` },
+            body: formData
+        });
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody.error || `업로드 실패 (HTTP ${response.status})`);
+        }
 
         const data = await response.json();
         
@@ -2431,11 +2473,14 @@ window.runGemsEngine = async function() {
     gemsController = new AbortController();  
 
     try {
+        const idToken = await window.getGemsIdToken();
+
         // 💥 1. 라디오 버튼에서 현재 체크된 모델의 value(이름)를 가져옵니다.
 const selectedModel = document.querySelector('input[name="gems-model-select"]:checked').value;
 
-// 💥 2. URL 중간에 있는 모델 이름 자리에 변수(${selectedModel})를 쏙 넣어줍니다.
-const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${window.GEMS_API_KEY}`;
+// 💥 2. 이제 Gemini를 직접 부르지 않고, 우리 Cloud Function을 부릅니다.
+//    API 키는 서버(Functions)에만 있고 여기엔 전혀 등장하지 않습니다.
+const url = `${GEMS_FUNCTIONS_BASE}/gemsGenerateContent`;
         // 💡 LLM은 "바이트를 직접 계산해서 맞추기" 같은 정밀 산술에 약하므로,
         // 모델이 실제로 잘 지킬 수 있는 '글자 수' 목표치를 1차 기준으로 주고
         // 나이스 바이트 기준은 참고 정보로만 덧붙인다. (최종 검증은 클라이언트에서 재계산)
@@ -2472,8 +2517,12 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
 
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${idToken}`
+            },
             body: JSON.stringify({
+                model: selectedModel, // 🔧 어떤 Gemini 모델을 쓸지는 이제 body로 전달
                 contents: [{ role: "user", parts: requestParts }],
                 // 💡 maxOutputTokens을 안 주면 모델 기본값에 맡겨지는데, 이 경우 답변이 예기치 않게
                 // 잘리는 사례가 있어 목표 분량보다 넉넉하게(여유분 포함) 상한선을 함께 지정한다.
