@@ -2456,7 +2456,6 @@ window.runGemsEngine = async function() {
     const stopBtn = document.getElementById("gems-stop-btn");
     const byteLimitInput = document.getElementById("gems-byte-limit");
     
-    // 💥 [추가] 파일 사용 여부 체크박스 가져오기
     const fileCheckbox = document.getElementById("gems-use-file-checkbox");
     const shouldIncludeFile = fileCheckbox ? fileCheckbox.checked : false;
 
@@ -2478,23 +2477,16 @@ window.runGemsEngine = async function() {
     try {
         const idToken = await window.getGemsIdToken();
 
-        // 💥 1. 라디오 버튼에서 현재 체크된 모델의 value(이름)를 가져옵니다.
-const selectedModel = document.querySelector('input[name="gems-model-select"]:checked').value;
+        const selectedModel = document.querySelector('input[name="gems-model-select"]:checked').value;
+        const url = `${GEMS_FUNCTIONS_BASE}/gemsGenerateContent`;
 
-// 💥 2. 이제 Gemini를 직접 부르지 않고, 우리 Cloud Function을 부릅니다.
-//    API 키는 서버(Functions)에만 있고 여기엔 전혀 등장하지 않습니다.
-const url = `${GEMS_FUNCTIONS_BASE}/gemsGenerateContent`;
-        // 💡 LLM은 "바이트를 직접 계산해서 맞추기" 같은 정밀 산술에 약하므로,
-        // 모델이 실제로 잘 지킬 수 있는 '글자 수' 목표치를 1차 기준으로 주고
-        // 나이스 바이트 기준은 참고 정보로만 덧붙인다. (최종 검증은 클라이언트에서 재계산)
-const inflatedByteLimit = byteLimit * 1.55; 
-const approxCharTarget = Math.round(inflatedByteLimit / 2.6); 
-const minCharTarget = Math.round(approxCharTarget * 0.85);
+        const inflatedByteLimit = byteLimit * 1.1; 
+        const approxCharTarget = Math.round(inflatedByteLimit / 2.6); 
+        const minCharTarget = Math.round(approxCharTarget * 0.85);
         const byteLimitInstruction = `[분량 지침 - 반드시 준수]\n- 목표 분량: 한글 기준 약 ${minCharTarget}~${approxCharTarget}자 사이로 작성해줘. (이 글자 수 목표를 최우선으로 지켜줘)\n- 참고: 나이스(NEIS) 바이트 환산 기준으로는 약 ${byteLimit}바이트에 해당하는 분량이다. (한글 등 유니코드 128 초과 문자는 3바이트, 영문/숫자/공백/기본기호는 1바이트로 환산)\n- 바이트를 문장 쓰면서 직접 암산하려 하지 말고, 위에 제시된 글자 수 범위 안에서 자연스럽고 완결된 문장으로 작성하는 데 집중해줘.\n- 글자 수가 부족한 채로 문장을 어색하게 끊지 말고, 범위 내에서 알맹이 있는 내용으로 채워줘.`;
 
         const requestParts = [];
 
-        // 💥 [수정] 체크박스가 켜져 있고 + 업로드된 파일 데이터가 있을 때만 파일 전송!
         if (shouldIncludeFile && window.GEMS_FILE_DATA) {
             requestParts.push({
                 fileData: {
@@ -2503,10 +2495,8 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
                 }
             });
         } else if (shouldIncludeFile && !window.GEMS_FILE_DATA) {
-            // 체크박스는 켰는데 정작 파일을 안 올린 경우 경고 후 중단
             alert("성취기준 가이드 반영이 체크되어 있지만, 업로드된 파일이 없습니다. 파일을 먼저 업로드하거나 체크박스를 해제해 주세요.");
             if(resultBox) resultBox.value = "파일이 없습니다. 업로드 후 다시 시도해 주세요.";
-            // 강제로 버튼 UI 원상복구
             if(btn) { btn.disabled = false; btn.style.display = "inline-block"; }
             if(stopBtn) { stopBtn.style.display = "none"; }
             return;
@@ -2518,6 +2508,27 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
             { text: `[이번에 작성할 학생 관찰 메모]\n${memo}` }
         );
 
+        // 💥 thinking 설정: 모델 세대별로 방식이 다름
+        // - 2.5 계열: thinkingBudget (토큰 수). Pro는 끌 수 없어 최소값
+        // - 3.x 계열 및 별칭(flash-latest 등): thinkingLevel. MINIMAL은 에러가 날 수 있어 LOW 사용
+        // ※ 두 필드를 동시에 보내면 안 됨
+        const modelLower = (selectedModel || "").toLowerCase();
+        let thinkingConfig;
+        if (modelLower.includes("2.5")) {
+            thinkingConfig = modelLower.includes("pro")
+                ? { thinkingBudget: 128 }
+                : { thinkingBudget: 0 };
+        } else {
+            thinkingConfig = { thinkingLevel: "low" };
+        }
+
+        const generationConfig = {
+            temperature: 0.4,
+            topP: 0.8,
+            maxOutputTokens: Math.min(16384, Math.max(4096, byteLimit * 6)),
+            thinkingConfig: thinkingConfig
+        };
+
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -2525,28 +2536,19 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
                 "Authorization": `Bearer ${idToken}`
             },
             body: JSON.stringify({
-                model: selectedModel, // 🔧 어떤 Gemini 모델을 쓸지는 이제 body로 전달
+                model: selectedModel,
                 contents: [{ role: "user", parts: requestParts }],
-                // 💡 maxOutputTokens을 안 주면 모델 기본값에 맡겨지는데, 이 경우 답변이 예기치 않게
-                // 잘리는 사례가 있어 목표 분량보다 넉넉하게(여유분 포함) 상한선을 함께 지정한다.
-                generationConfig: {
-                    temperature: 0.4,
-                    topP: 0.8,
-                    maxOutputTokens: Math.min(8192, Math.max(2048, byteLimit * 3))
-                }
+                generationConfig: generationConfig
             }),
             signal: gemsController.signal   
         });
 
         const data = await response.json();
 
+        // 💡 디버깅용: 실제 사용 모델/토큰 사용량 확인 (필요 없으면 지워도 됨)
+        console.log("model:", data.modelVersion, "usage:", JSON.stringify(data.usageMetadata), "finish:", data.candidates?.[0]?.finishReason);
+
         if (data.error) {
-            // 💥 파일 API 만료(48시간 지나 구글 서버에서 지워짐) 에러 핸들링
-            // ⚠️ [버그 수정] 예전 코드는 NOT_FOUND면 무조건 "파일 만료"로 떴는데,
-            // 모델명이 잘못됐을 때도 NOT_FOUND가 오기 때문에 파일을 안 쓴 요청에도
-            // 엉뚱하게 "파일 만료" 메시지가 뜨는 문제가 있었습니다.
-            // → 파일을 실제로 사용한 요청이면서 + 메시지가 파일(files/) 관련일 때만
-            //   "파일 만료"로 안내하고, 그 외 NOT_FOUND는 모델명 오류 등으로 별도 안내합니다.
             const isFileRelated = shouldIncludeFile && (
                 (data.error.message || "").includes("files/") ||
                 (data.error.message || "").toLowerCase().includes("file")
@@ -2554,17 +2556,27 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
             if (isFileRelated) {
                 alert("⚠️ 구글 서버에 올라간 성취기준 가이드 파일이 만료되었습니다 (최대 48시간 유지).\n파일을 다시 선택해 [구글 서버 업로드] 버튼을 눌러주세요!");
                 if(resultBox) resultBox.value = "성취기준 가이드 파일이 만료되었습니다. 파일을 다시 업로드해 주세요.";
-                window.GEMS_FILE_DATA = null; // 만료된 주소 초기화
+                window.GEMS_FILE_DATA = null;
             } else if (data.error.status === "NOT_FOUND") {
                 if(resultBox) resultBox.value = "구글 API 에러 발생: 요청한 모델을 찾을 수 없습니다 (" + selectedModel + "). 모델 선택을 확인해 주세요.\n원본 메시지: " + data.error.message;
             } else {
                 if(resultBox) resultBox.value = "구글 API 에러 발생: " + data.error.message;
             }
-        } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            if(resultBox) resultBox.value = data.candidates[0].content.parts[0].text;
-            // 응답이 도중에 잘렸다면(MAX_TOKENS) 사용자에게 알려준다
-            if (data.candidates[0].finishReason === "MAX_TOKENS") {
-                if(resultBox) resultBox.value += "\n\n[⚠️ 응답이 최대 길이 제한으로 중간에 잘렸습니다. '생성 길이 제한' 값을 낮추거나 다시 시도해 주세요.]";
+        } else if (data.candidates && data.candidates[0]?.content?.parts?.length) {
+            const fullText = data.candidates[0].content.parts
+                .filter(p => typeof p.text === "string" && !p.thought)
+                .map(p => p.text)
+                .join("");
+
+            if (fullText) {
+                if(resultBox) resultBox.value = fullText;
+                // 💥 경고는 결과창에 붙이지 않고 alert로 (바이트 카운터 오염 방지)
+                if (data.candidates[0].finishReason === "MAX_TOKENS") {
+                    console.warn("MAX_TOKENS로 잘림", data.usageMetadata);
+                    alert("⚠️ 응답이 길이 제한으로 잘렸습니다. 다시 시도해 주세요.");
+                }
+            } else {
+                if(resultBox) resultBox.value = "본문이 생성되지 않았습니다 (finishReason: " + (data.candidates[0].finishReason || "알 수 없음") + "). 다시 시도해 주세요.";
             }
         } else {
             if(resultBox) resultBox.value = "구글 서버 응답이 올바르지 않습니다. 다시 시도해 주세요.";
@@ -2579,7 +2591,7 @@ const minCharTarget = Math.round(approxCharTarget * 0.85);
     } finally {
         if(btn) { btn.disabled = false; btn.style.display = "inline-block"; }
         if(stopBtn) { stopBtn.style.display = "none"; }
-        updateGemsResultBytes(byteLimit); // 💡 결과 바이트 카운터 갱신 (기존엔 이 호출이 누락되어 항상 0Byte로 표시됨)
+        updateGemsResultBytes(byteLimit);
         gemsController = null;
     }
 }
@@ -2589,6 +2601,7 @@ window.stopGemsEngine = function() {
         gemsController.abort();
     }
 }
+
 
 // ═══════════════════════════════════════════════════════════
 // 📋 상담 관리자 기능 (admin.html 통합)
